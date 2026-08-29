@@ -1,0 +1,30 @@
+name: Notion OS Sync
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    types: [opened, synchronize, reopened, closed]
+  workflow_dispatch:
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Publish repository event
+        env:
+          NOTION_SYNC_WEBHOOK_URL: ${{ secrets.NOTION_SYNC_WEBHOOK_URL }}
+          NOTION_SYNC_TOKEN: ${{ secrets.NOTION_SYNC_TOKEN }}
+        run: |
+          if [ -z "$NOTION_SYNC_WEBHOOK_URL" ]; then
+            echo "NOTION_SYNC_WEBHOOK_URL is not configured; skipping sync."
+            exit 0
+          fi
+          payload=$(cat <<'JSON'
+          {"repository":"${{ github.repository }}","event":"${{ github.event_name }}","ref":"${{ github.ref }}","sha":"${{ github.sha }}","actor":"${{ github.actor }}","run_id":"${{ github.run_id }}","run_url":"https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"}
+          JSON
+          )
+          curl --fail-with-body -X POST "$NOTION_SYNC_WEBHOOK_URL" \
+            -H "Content-Type: application/json" \
+            -H "Authorization: Bearer $NOTION_SYNC_TOKEN" \
+            --data "$payload"
