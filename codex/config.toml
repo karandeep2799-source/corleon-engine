@@ -1,0 +1,20 @@
+# Corleon Engine Codex project configuration
+# Keep credentials in the Codex/OpenAI connection, never in source control.
+
+[project]
+name = "corleon-engine"
+
+[security]
+production_writes = "approval_required"
+secret_access = "denied"
+destructive_db_operations = "approval_required"
+production_deployments = "approval_required"
+
+[skills]
+paths = [
+  "codex/skills/architecture/SKILL.md",
+  "codex/skills/nextjs/SKILL.md",
+  "codex/skills/prisma/SKILL.md",
+  "codex/skills/vercel/SKILL.md",
+  "codex/skills/security/SKILL.md"
+]
