@@ -1,0 +1,8 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/release-commissions",
+      "schedule": "0 0 * * *"
+    }
+  ]
+}
