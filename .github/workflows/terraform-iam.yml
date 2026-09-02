@@ -1,0 +1,47 @@
+name: terraform-iam
+
+on:
+  pull_request:
+    paths:
+      - 'infra/aws/iam/**'
+      - '.github/workflows/terraform-iam.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'infra/aws/iam/**'
+      - '.github/workflows/terraform-iam.yml'
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: infra/aws/iam
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+      - run: terraform fmt -check -recursive
+      - run: terraform init -backend=false
+      - run: terraform validate
+
+  plan:
+    if: github.event_name == 'push'
+    needs: validate
+    runs-on: ubuntu-latest
+    environment: production
+    defaults:
+      run:
+        working-directory: infra/aws/iam
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+          aws-region: ap-south-1
+      - run: terraform init
+      - run: terraform plan -var-file=prod.tfvars
