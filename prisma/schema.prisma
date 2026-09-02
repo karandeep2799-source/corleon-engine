@@ -1,0 +1,542 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum OrganizationRole { OWNER ADMIN FINANCE SUPPORT MEMBER }
+enum AffiliateStatus { PENDING ACTIVE SUSPENDED REJECTED TERMINATED }
+enum AttributionType { REFERRAL_LINK COUPON MANUAL API }
+enum AttributionStatus { ACTIVE EXPIRED REVOKED }
+enum BillingEventType { PAYMENT SUBSCRIPTION_STARTED SUBSCRIPTION_RENEWED SUBSCRIPTION_UPGRADED SUBSCRIPTION_DOWNGRADED SUBSCRIPTION_CANCELLED REFUND PARTIAL_REFUND CHARGEBACK CHARGEBACK_WON CHARGEBACK_LOST PAYMENT_FAILED }
+enum BillingEventStatus { RECEIVED PROCESSING PROCESSED FAILED IGNORED }
+enum CommissionType { ONE_TIME RECURRING LIFETIME FIXED TIERED BONUS }
+enum CommissionStatus { PENDING APPROVED AVAILABLE PAID REVERSED VOIDED DISPUTED }
+enum CommissionSource { BILLING_EVENT MANUAL BONUS ADJUSTMENT }
+enum LedgerEntryType { COMMISSION COMMISSION_REVERSAL COMMISSION_ADJUSTMENT PAYOUT PAYOUT_REVERSAL REFUND CHARGEBACK BONUS FEE MANUAL_CREDIT MANUAL_DEBIT }
+enum LedgerEntryStatus { PENDING POSTED REVERSED VOIDED }
+enum PayoutStatus { DRAFT PENDING PROCESSING PAID PARTIALLY_PAID FAILED CANCELLED }
+enum PayoutMethod { STRIPE PAYPAL WISE BANK_TRANSFER MANUAL }
+enum PayoutAccountStatus { PENDING VERIFIED DISABLED }
+enum FraudStatus { OPEN REVIEWING CLEARED CONFIRMED DISMISSED }
+enum FraudSeverity { LOW MEDIUM HIGH CRITICAL }
+enum SubscriptionStatus { TRIALING ACTIVE PAST_DUE PAUSED CANCELLED EXPIRED }
+enum OrderStatus { PENDING PAID FAILED REFUNDED PARTIALLY_REFUNDED CHARGEBACK CANCELLED }
+enum WebhookStatus { RECEIVED PROCESSING PROCESSED FAILED IGNORED }
+enum PayoutItemStatus { PENDING PROCESSING PAID FAILED REVERSED }
+enum ReconciliationStatus { OPEN MATCHED MISMATCH RESOLVED }
+enum AuditAction { CREATE UPDATE DELETE APPROVE REJECT SUSPEND PAY REVERSE LOGIN EXPORT MANUAL_ADJUSTMENT }
+
+model Organization {
+  id String @id @default(cuid())
+  name String
+  slug String @unique
+  currency String @default("USD")
+  timezone String @default("UTC")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  users OrganizationUser[]
+  programs Program[]
+  affiliates Affiliate[]
+  customers Customer[]
+  orders Order[]
+  subscriptions Subscription[]
+  billingEvents BillingEvent[]
+  webhooks WebhookEvent[]
+  payouts Payout[]
+  fraudEvents FraudEvent[]
+  auditLogs AuditLog[]
+  ledgerEntries LedgerEntry[]
+  reconciliations Reconciliation[]
+}
+
+model User {
+  id String @id @default(cuid())
+  email String @unique
+  name String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  organizations OrganizationUser[]
+}
+
+model OrganizationUser {
+  id String @id @default(cuid())
+  organizationId String
+  userId String
+  role OrganizationRole @default(MEMBER)
+  createdAt DateTime @default(now())
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@unique([organizationId, userId])
+  @@index([organizationId, role])
+}
+
+model Program {
+  id String @id @default(cuid())
+  organizationId String
+  name String
+  slug String
+  description String?
+  defaultCommissionRate Decimal @db.Decimal(10,4)
+  cookieDays Int @default(30)
+  holdDays Int @default(30)
+  minimumPayout Decimal @default(0) @db.Decimal(20,8)
+  currency String @default("USD")
+  active Boolean @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  affiliates Affiliate[]
+  commissionRules CommissionRule[]
+  tiers CommissionTier[]
+  @@unique([organizationId, slug])
+  @@index([organizationId, active])
+}
+
+model Affiliate {
+  id String @id @default(cuid())
+  organizationId String
+  programId String
+  email String
+  name String?
+  status AffiliateStatus @default(PENDING)
+  externalId String?
+  metadata Json?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  program Program @relation(fields: [programId], references: [id], onDelete: Cascade)
+  links AffiliateLink[]
+  codes AffiliateCode[]
+  clicks AffiliateClick[]
+  attributions Attribution[]
+  commissions Commission[]
+  balance AffiliateBalance?
+  payoutAccounts PayoutAccount[]
+  payoutItems PayoutItem[]
+  payouts Payout[]
+  ledgerEntries LedgerEntry[]
+  fraudEvents FraudEvent[]
+  @@unique([organizationId, email])
+  @@index([organizationId, status])
+  @@index([programId, status])
+}
+
+model AffiliateLink {
+  id String @id @default(cuid())
+  affiliateId String
+  code String
+  destination String
+  active Boolean @default(true)
+  createdAt DateTime @default(now())
+  affiliate Affiliate @relation(fields: [affiliateId], references: [id], onDelete: Cascade)
+  clicks AffiliateClick[]
+  attributions Attribution[]
+  @@unique([affiliateId, code])
+  @@index([code])
+}
+
+model AffiliateCode {
+  id String @id @default(cuid())
+  affiliateId String
+  code String
+  active Boolean @default(true)
+  createdAt DateTime @default(now())
+  affiliate Affiliate @relation(fields: [affiliateId], references: [id], onDelete: Cascade)
+  attributions Attribution[]
+  @@unique([affiliateId, code])
+  @@index([code])
+}
+
+model AffiliateClick {
+  id String @id @default(cuid())
+  affiliateId String
+  affiliateLinkId String?
+  visitorId String?
+  sessionId String?
+  ipHash String?
+  userAgent String?
+  referrer String?
+  landingPage String?
+  createdAt DateTime @default(now())
+  affiliate Affiliate @relation(fields: [affiliateId], references: [id], onDelete: Cascade)
+  link AffiliateLink? @relation(fields: [affiliateLinkId], references: [id], onDelete: SetNull)
+  @@index([affiliateId, createdAt])
+  @@index([visitorId])
+  @@index([sessionId])
+}
+
+model Customer {
+  id String @id @default(cuid())
+  organizationId String
+  externalId String
+  email String?
+  name String?
+  metadata Json?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  orders Order[]
+  subscriptions Subscription[]
+  attributions Attribution[]
+  billingEvents BillingEvent[]
+  @@unique([organizationId, externalId])
+  @@index([organizationId, email])
+}
+
+model Order {
+  id String @id @default(cuid())
+  organizationId String
+  customerId String
+  externalId String
+  amount Decimal @db.Decimal(20,8)
+  currency String
+  status OrderStatus @default(PENDING)
+  provider String?
+  providerEventId String?
+  metadata Json?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  customer Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  billingEvents BillingEvent[]
+  commissions Commission[]
+  refunds Refund[]
+  @@unique([organizationId, externalId])
+  @@index([customerId, createdAt])
+  @@index([organizationId, status])
+}
+
+model Subscription {
+  id String @id @default(cuid())
+  organizationId String
+  customerId String
+  externalId String
+  status SubscriptionStatus
+  planId String?
+  planName String?
+  amount Decimal @db.Decimal(20,8)
+  currency String
+  interval String?
+  intervalCount Int?
+  currentPeriodStart DateTime?
+  currentPeriodEnd DateTime?
+  cancelledAt DateTime?
+  metadata Json?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  customer Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  billingEvents BillingEvent[]
+  @@unique([organizationId, externalId])
+  @@index([customerId])
+  @@index([organizationId, status])
+}
+
+model Attribution {
+  id String @id @default(cuid())
+  affiliateId String
+  customerId String
+  affiliateLinkId String?
+  affiliateCodeId String?
+  type AttributionType
+  status AttributionStatus @default(ACTIVE)
+  firstTouch Boolean @default(false)
+  lastTouch Boolean @default(true)
+  attributedAt DateTime @default(now())
+  expiresAt DateTime?
+  metadata Json?
+  affiliate Affiliate @relation(fields: [affiliateId], references: [id], onDelete: Cascade)
+  customer Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  link AffiliateLink? @relation(fields: [affiliateLinkId], references: [id], onDelete: SetNull)
+  code AffiliateCode? @relation(fields: [affiliateCodeId], references: [id], onDelete: SetNull)
+  @@index([customerId, status])
+  @@index([affiliateId, attributedAt])
+}
+
+model CommissionRule {
+  id String @id @default(cuid())
+  programId String
+  name String
+  type CommissionType
+  rate Decimal? @db.Decimal(10,4)
+  fixedAmount Decimal? @db.Decimal(20,8)
+  recurring Boolean @default(false)
+  recurringLimit Int?
+  appliesTo Json?
+  conditions Json?
+  active Boolean @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  program Program @relation(fields: [programId], references: [id], onDelete: Cascade)
+  commissions Commission[]
+  @@index([programId, active])
+}
+
+model CommissionTier {
+  id String @id @default(cuid())
+  programId String
+  name String
+  minimumRevenue Decimal @db.Decimal(20,8)
+  rate Decimal @db.Decimal(10,4)
+  createdAt DateTime @default(now())
+  program Program @relation(fields: [programId], references: [id], onDelete: Cascade)
+  @@index([programId, minimumRevenue])
+}
+
+model BillingEvent {
+  id String @id @default(cuid())
+  organizationId String
+  customerId String
+  orderId String?
+  subscriptionId String?
+  externalId String
+  provider String
+  type BillingEventType
+  status BillingEventStatus @default(RECEIVED)
+  amount Decimal @db.Decimal(20,8)
+  currency String
+  occurredAt DateTime
+  rawPayload Json?
+  processedAt DateTime?
+  errorMessage String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  customer Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  order Order? @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  subscription Subscription? @relation(fields: [subscriptionId], references: [id], onDelete: SetNull)
+  commissions Commission[]
+  refunds Refund[]
+  @@unique([provider, externalId])
+  @@index([organizationId, occurredAt])
+  @@index([customerId, occurredAt])
+  @@index([status])
+}
+
+model Commission {
+  id String @id @default(cuid())
+  organizationId String
+  affiliateId String
+  billingEventId String?
+  orderId String?
+  ruleId String?
+  type CommissionType
+  source CommissionSource
+  status CommissionStatus @default(PENDING)
+  revenueAmount Decimal @db.Decimal(20,8)
+  commissionRate Decimal? @db.Decimal(10,4)
+  amount Decimal @db.Decimal(20,8)
+  currency String
+  holdUntil DateTime?
+  approvedAt DateTime?
+  availableAt DateTime?
+  paidAt DateTime?
+  reversedAt DateTime?
+  parentId String?
+  metadata Json?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  affiliate Affiliate @relation(fields: [affiliateId], references: [id], onDelete: Cascade)
+  billingEvent BillingEvent? @relation(fields: [billingEventId], references: [id], onDelete: SetNull)
+  order Order? @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  rule CommissionRule? @relation(fields: [ruleId], references: [id], onDelete: SetNull)
+  parent Commission? @relation("CommissionReversal", fields: [parentId], references: [id], onDelete: SetNull)
+  reversals Commission[] @relation("CommissionReversal")
+  ledgerEntries LedgerEntry[]
+  payoutItems PayoutItem[]
+  @@index([affiliateId, status])
+  @@index([organizationId, status])
+  @@index([billingEventId])
+  @@index([orderId])
+  @@index([holdUntil])
+}
+
+model AffiliateBalance {
+  id String @id @default(cuid())
+  affiliateId String @unique
+  pendingAmount Decimal @default(0) @db.Decimal(20,8)
+  approvedAmount Decimal @default(0) @db.Decimal(20,8)
+  availableAmount Decimal @default(0) @db.Decimal(20,8)
+  paidAmount Decimal @default(0) @db.Decimal(20,8)
+  reversedAmount Decimal @default(0) @db.Decimal(20,8)
+  currency String @default("USD")
+  updatedAt DateTime @updatedAt
+  affiliate Affiliate @relation(fields: [affiliateId], references: [id], onDelete: Cascade)
+}
+
+model LedgerEntry {
+  id String @id @default(cuid())
+  organizationId String
+  affiliateId String?
+  commissionId String?
+  payoutId String?
+  type LedgerEntryType
+  status LedgerEntryStatus @default(POSTED)
+  amount Decimal @db.Decimal(20,8)
+  currency String
+  description String?
+  idempotencyKey String @unique
+  metadata Json?
+  createdAt DateTime @default(now())
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  affiliate Affiliate? @relation(fields: [affiliateId], references: [id], onDelete: SetNull)
+  commission Commission? @relation(fields: [commissionId], references: [id], onDelete: SetNull)
+  payout Payout? @relation(fields: [payoutId], references: [id], onDelete: SetNull)
+  @@index([affiliateId, createdAt])
+  @@index([organizationId, createdAt])
+  @@index([type, status])
+}
+
+model PayoutAccount {
+  id String @id @default(cuid())
+  affiliateId String
+  method PayoutMethod
+  status PayoutAccountStatus @default(PENDING)
+  externalAccountId String?
+  accountName String?
+  accountEmail String?
+  country String?
+  currency String?
+  last4 String?
+  metadata Json?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  affiliate Affiliate @relation(fields: [affiliateId], references: [id], onDelete: Cascade)
+  payouts Payout[]
+  @@index([affiliateId, status])
+}
+
+model Payout {
+  id String @id @default(cuid())
+  organizationId String
+  affiliateId String
+  payoutAccountId String?
+  status PayoutStatus @default(DRAFT)
+  method PayoutMethod
+  amount Decimal @db.Decimal(20,8)
+  fee Decimal @default(0) @db.Decimal(20,8)
+  netAmount Decimal @db.Decimal(20,8)
+  currency String
+  externalId String?
+  failureReason String?
+  requestedAt DateTime?
+  processedAt DateTime?
+  paidAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  affiliate Affiliate @relation(fields: [affiliateId], references: [id], onDelete: Cascade)
+  payoutAccount PayoutAccount? @relation(fields: [payoutAccountId], references: [id], onDelete: SetNull)
+  items PayoutItem[]
+  ledgerEntries LedgerEntry[]
+  @@index([affiliateId, status])
+  @@index([organizationId, status])
+}
+
+model PayoutItem {
+  id String @id @default(cuid())
+  payoutId String
+  affiliateId String
+  commissionId String?
+  amount Decimal @db.Decimal(20,8)
+  currency String
+  status PayoutItemStatus @default(PENDING)
+  createdAt DateTime @default(now())
+  payout Payout @relation(fields: [payoutId], references: [id], onDelete: Cascade)
+  affiliate Affiliate @relation(fields: [affiliateId], references: [id], onDelete: Cascade)
+  commission Commission? @relation(fields: [commissionId], references: [id], onDelete: SetNull)
+  @@index([payoutId])
+  @@index([affiliateId])
+  @@index([commissionId])
+}
+
+model Refund {
+  id String @id @default(cuid())
+  orderId String
+  billingEventId String?
+  externalId String?
+  provider String?
+  amount Decimal @db.Decimal(20,8)
+  currency String
+  reason String?
+  createdAt DateTime @default(now())
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  billingEvent BillingEvent? @relation(fields: [billingEventId], references: [id], onDelete: SetNull)
+  @@index([orderId])
+  @@index([billingEventId])
+}
+
+model FraudEvent {
+  id String @id @default(cuid())
+  organizationId String
+  affiliateId String?
+  status FraudStatus @default(OPEN)
+  severity FraudSeverity
+  type String
+  reason String?
+  score Decimal? @db.Decimal(10,4)
+  evidence Json?
+  reviewedAt DateTime?
+  resolvedAt DateTime?
+  createdAt DateTime @default(now())
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  affiliate Affiliate? @relation(fields: [affiliateId], references: [id], onDelete: SetNull)
+  @@index([organizationId, status])
+  @@index([affiliateId, status])
+}
+
+model WebhookEvent {
+  id String @id @default(cuid())
+  organizationId String
+  provider String
+  externalId String
+  eventType String
+  status WebhookStatus @default(RECEIVED)
+  payload Json?
+  receivedAt DateTime @default(now())
+  processedAt DateTime?
+  errorMessage String?
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  @@unique([provider, externalId])
+  @@index([organizationId, status])
+}
+
+model Reconciliation {
+  id String @id @default(cuid())
+  organizationId String
+  provider String
+  externalId String?
+  expectedAmount Decimal @db.Decimal(20,8)
+  actualAmount Decimal @db.Decimal(20,8)
+  currency String
+  status ReconciliationStatus @default(OPEN)
+  difference Decimal @db.Decimal(20,8)
+  notes String?
+  resolvedAt DateTime?
+  createdAt DateTime @default(now())
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  @@index([organizationId, status])
+  @@index([provider, externalId])
+}
+
+model AuditLog {
+  id String @id @default(cuid())
+  organizationId String
+  userId String?
+  action AuditAction
+  entityType String
+  entityId String
+  before Json?
+  after Json?
+  ipHash String?
+  userAgent String?
+  createdAt DateTime @default(now())
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  @@index([organizationId, createdAt])
+  @@index([entityType, entityId])
+}
