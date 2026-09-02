@@ -13,7 +13,9 @@ function organizationIdFor(object) {
 }
 
 export async function handleStripeWebhook(rawBody, signature) {
+  if (!process.env.STRIPE_SECRET_KEY) throw new Error('STRIPE_SECRET_KEY is required');
   if (!process.env.STRIPE_WEBHOOK_SECRET) throw new Error('STRIPE_WEBHOOK_SECRET is required');
+
   const event = stripe.webhooks.constructEvent(rawBody, signature, process.env.STRIPE_WEBHOOK_SECRET);
   const object = event.data.object;
   const organizationId = organizationIdFor(object);
@@ -24,7 +26,7 @@ export async function handleStripeWebhook(rawBody, signature) {
   });
   if (existing?.status === 'PROCESSED') return { duplicate: true, eventId: event.id };
 
-  await prisma.webhookEvent.upsert({
+  const webhook = await prisma.webhookEvent.upsert({
     where: { provider_externalId: { provider: 'stripe', externalId: event.id } },
     create: { organizationId, provider: 'stripe', externalId: event.id, eventType: event.type, payload: event, status: 'PROCESSING' },
     update: { status: 'PROCESSING', payload: event }
@@ -35,9 +37,9 @@ export async function handleStripeWebhook(rawBody, signature) {
     const customerExternalId = String(object.customer || object.metadata?.customerId || `stripe:${event.id}`);
     const customerEmail = object.customer_email || object.receipt_email || object.metadata?.customerEmail || null;
     const subscriptionExternalId = object.subscription ? String(object.subscription) : null;
-    const orderExternalId = object.metadata?.orderId ? String(object.metadata.orderId) : `stripe:${event.id}`;
 
     if (event.type === 'payment_intent.succeeded') {
+      const orderExternalId = object.metadata?.orderId ? String(object.metadata.orderId) : `stripe:pi:${object.id}`;
       result = await recordBillingEvent({
         organizationId,
         provider: 'stripe',
@@ -52,6 +54,7 @@ export async function handleStripeWebhook(rawBody, signature) {
         rawPayload: event
       });
     } else if (event.type === 'invoice.paid') {
+      const orderExternalId = object.metadata?.orderId ? String(object.metadata.orderId) : `stripe:invoice:${object.id}`;
       const type = object.billing_reason === 'subscription_create' ? 'SUBSCRIPTION_STARTED' : 'SUBSCRIPTION_RENEWED';
       result = await recordBillingEvent({
         organizationId,
@@ -68,20 +71,40 @@ export async function handleStripeWebhook(rawBody, signature) {
         rawPayload: event
       });
     } else if (event.type === 'charge.refunded' || event.type === 'charge.dispute.created') {
-      const order = await prisma.order.findFirst({ where: { organizationId, provider: 'stripe', externalId: orderExternalId } });
+      const paymentIntentId = object.payment_intent ? String(object.payment_intent) : null;
+      const orderExternalId = object.metadata?.orderId
+        ? String(object.metadata.orderId)
+        : paymentIntentId ? `stripe:pi:${paymentIntentId}` : null;
+
+      const order = orderExternalId
+        ? await prisma.order.findFirst({ where: { organizationId, externalId: orderExternalId } })
+        : null;
+
       if (order) {
-        const commissions = await prisma.commission.findMany({ where: { orderId: order.id, status: { in: ['PENDING', 'APPROVED', 'AVAILABLE', 'PAID'] } } });
+        const commissions = await prisma.commission.findMany({
+          where: { orderId: order.id, status: { in: ['PENDING', 'APPROVED', 'AVAILABLE', 'PAID'] } }
+        });
         for (const commission of commissions) {
-          await reverseCommission(commission.id, event.type === 'charge.refunded' ? 'Stripe refund' : 'Stripe dispute');
+          await reverseCommission(
+            commission.id,
+            event.type === 'charge.refunded' ? 'Stripe refund' : 'Stripe dispute'
+          );
         }
       }
-      result = { reversed: true };
+      result = { reversed: Boolean(order) };
     }
 
-    await prisma.webhookEvent.update({ where: { id: (await prisma.webhookEvent.findUnique({ where: { provider_externalId: { provider: 'stripe', externalId: event.id } } })).id }, data: { status: 'PROCESSED', processedAt: new Date() } });
+    await prisma.webhookEvent.update({
+      where: { id: webhook.id },
+      data: { status: 'PROCESSED', processedAt: new Date() }
+    });
+
     return { eventId: event.id, result };
   } catch (error) {
-    await prisma.webhookEvent.updateMany({ where: { provider: 'stripe', externalId: event.id }, data: { status: 'FAILED', errorMessage: error instanceof Error ? error.message : String(error) } });
+    await prisma.webhookEvent.update({
+      where: { id: webhook.id },
+      data: { status: 'FAILED', errorMessage: error instanceof Error ? error.message : String(error) }
+    });
     throw error;
   }
 }
