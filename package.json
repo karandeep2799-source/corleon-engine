@@ -3,6 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "packageManager": "pnpm@10.15.0",
+  "engines": {
+    "node": "24.x"
+  },
   "scripts": {
     "build": "turbo run build",
     "build:web": "turbo build --filter=@corleon/web",
