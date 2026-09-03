@@ -1,0 +1,12 @@
+{
+  "buildCommand": "pnpm turbo build --filter=@corleon/web",
+  "installCommand": "pnpm install",
+  "outputDirectory": "apps/web/.next",
+  "framework": "nextjs",
+  "crons": [
+    {
+      "path": "/api/cron/release-commissions",
+      "schedule": "0 0 * * *"
+    }
+  ]
+}
