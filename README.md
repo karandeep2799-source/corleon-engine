@@ -1,27 +1,56 @@
 # Corleon Engine
 
-Production-oriented AI orchestration foundation.
+Standalone production foundation for AI orchestration, integrations, data, and agent workloads.
 
-## Architecture
+## Stack
 
-- `apps/web` — Next.js application
-- `apps/api` — Fastify Node/TypeScript API
-- `packages/*` — shared domain, security, AI, integrations, and database modules
-- PostgreSQL/Prisma — planned persistence layer
-- GitHub Actions — planned CI/security/deployment automation
+- Next.js App Router + React
+- TypeScript
+- pnpm workspaces
+- Turborepo
+- Prisma/PostgreSQL integration point
+- Vercel deployment
+- Shared `@corleon/ui` package
 
-## Development
-
-Requires Node.js 22+ and pnpm 10+.
+## Local development
 
 ```bash
 pnpm install
 pnpm dev
 ```
 
-Web: `http://localhost:3000`
-API health: `http://localhost:4000/health`
+Run only the deployable web application:
 
-## Security
+```bash
+pnpm build:web
+```
 
-Never commit `.env` files, API keys, OAuth client secrets, database credentials, or signing keys. Use environment variables locally and a managed secret store in production.
+The production build is cached by Turborepo. The Next.js app is configured with `output: 'standalone'` so the web application can run independently of the rest of the repository.
+
+## Vercel
+
+The repository is configured as a monorepo with the deployable application at `apps/web`.
+
+- Install: `pnpm install`
+- Build: `pnpm turbo build --filter=@corleon/web`
+- Output: `apps/web/.next`
+- Framework: Next.js
+
+Vercel can build only the web application while Turborepo tracks workspace dependencies and reuses cached outputs between deployments.
+
+## Health
+
+After deployment, `/api/health` returns a machine-readable service health response.
+
+## Workspace layout
+
+```text
+apps/web       Deployable Next.js application
+apps/api       Optional standalone Fastify API service
+packages/ui    Shared React UI primitives
+prisma/        Database layer and migrations
+codex/         Codex skills and development tooling
+docs/          Architecture and product documentation
+```
+
+The web app is the standalone production surface. The API workspace remains available for workloads that need a dedicated long-running service.
