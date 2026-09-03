@@ -22,9 +22,13 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22
+          cache: pnpm
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile=false
 
-      - name: Typecheck
+      - name: Typecheck workspace
         run: pnpm typecheck
+
+      - name: Build standalone web
+        run: pnpm turbo build --filter=@corleon/web
