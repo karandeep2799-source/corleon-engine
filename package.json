@@ -3,6 +3,9 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
+  "engines": {
+    "node": ">=22 <25"
+  },
   "scripts": {
     "postinstall": "prisma generate",
     "prisma:generate": "prisma generate",
@@ -11,7 +14,9 @@
     "prisma:studio": "prisma studio"
   },
   "dependencies": {
+    "@openai/agents": "^0.17.0",
     "@prisma/client": "^6.16.0",
+    "openai": "^7.9.0",
     "stripe": "^18.5.0"
   },
   "devDependencies": {
