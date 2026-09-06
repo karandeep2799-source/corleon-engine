@@ -9,6 +9,17 @@
 - **Cashflow:** immutable financial records, idempotency, provider adapters and reconciliation.
 - **Persistence:** PostgreSQL through Prisma.
 
+## Financial data retention
+
+Corleon now keeps two complementary financial histories:
+
+- `FinancialRecord` stores normalized money movements from billing providers and confirmed payouts. Each record has an immutable idempotency key, provider/external reference, currency, timestamp, category/source and optional metadata.
+- `FinanceSnapshot` stores an auditable point-in-time aggregate for an organization and currency: income, expenses, fees, refunds, chargebacks, transfers, adjustments, net result and affiliate balances.
+
+Billing payments/subscription revenue, refunds and chargebacks are persisted automatically with the billing event. Affiliate payouts are persisted only after the payout provider confirms payment, preventing failed/processing payouts from being represented as completed cash outflows.
+
+Snapshots are derived from posted financial records plus affiliate balances, so operational summaries can be rebuilt rather than becoming the source of truth.
+
 ## Reliability rules
 
 1. Every externally retried mutation uses an idempotency key.
@@ -18,6 +29,7 @@
 5. High-impact tools require explicit policy approval.
 6. Logs never contain API keys, authorization headers, payment secrets or raw credentials.
 7. Readiness must fail when critical persistence dependencies are unavailable.
+8. External payout state is not posted to the ledger until the provider confirms success.
 
 ## Deployment model
 
