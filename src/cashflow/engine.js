@@ -10,8 +10,38 @@ function commissionAmount(revenue, rule) {
   return D(0);
 }
 
+function financialTypeForBillingEvent(type) {
+  if (['PAYMENT', 'SUBSCRIPTION_STARTED', 'SUBSCRIPTION_RENEWED', 'SUBSCRIPTION_UPGRADED'].includes(type)) return 'INCOME';
+  if (['REFUND', 'PARTIAL_REFUND'].includes(type)) return 'REFUND';
+  if (['CHARGEBACK', 'CHARGEBACK_LOST'].includes(type)) return 'CHARGEBACK';
+  return null;
+}
+
 async function ensureBalance(tx, affiliateId, currency) {
   return tx.affiliateBalance.upsert({ where: { affiliateId }, create: { affiliateId, currency }, update: {} });
+}
+
+async function persistBillingFinancialRecord(tx, event) {
+  const type = financialTypeForBillingEvent(event.type);
+  if (!type) return null;
+  return tx.financialRecord.upsert({
+    where: { idempotencyKey: `billing:${event.provider}:${event.externalId}` },
+    create: {
+      organizationId: event.organizationId,
+      externalId: event.externalId,
+      provider: event.provider,
+      type,
+      status: 'POSTED',
+      amount: D(event.amount),
+      currency: event.currency,
+      occurredAt: event.occurredAt,
+      description: `Billing ${event.type.toLowerCase()} ${event.externalId}`,
+      source: 'BILLING_EVENT',
+      idempotencyKey: `billing:${event.provider}:${event.externalId}`,
+      metadata: { billingEventId: event.id },
+    },
+    update: {},
+  });
 }
 
 export async function recordBillingEvent(input) {
@@ -42,6 +72,7 @@ export async function recordBillingEvent(input) {
       data: { organizationId, customerId: customer.id, orderId: order?.id, subscriptionId: subscription?.id, externalId, provider, type, amount: D(amount), currency, occurredAt, rawPayload, status: 'PROCESSING' }
     });
 
+    await persistBillingFinancialRecord(tx, event);
     if (['PAYMENT', 'SUBSCRIPTION_STARTED', 'SUBSCRIPTION_RENEWED', 'SUBSCRIPTION_UPGRADED'].includes(type)) await createCommissionForEvent(tx, event.id);
 
     return tx.billingEvent.update({ where: { id: event.id }, data: { status: 'PROCESSED', processedAt: new Date() }, include: { commissions: true } });
@@ -152,7 +183,7 @@ export async function createPayout({ organizationId, affiliateId, payoutAccountI
       await tx.commission.update({ where: { id: commission.id }, data: { status: 'PAID', paidAt: new Date() } });
     }
     await tx.affiliateBalance.update({ where: { affiliateId }, data: { approvedAmount: { decrement: amount }, availableAmount: { decrement: amount }, paidAmount: { increment: amount } } });
-    await tx.ledgerEntry.create({ data: { organizationId, affiliateId, payoutId: payout.id, type: 'PAYOUT', status: 'POSTED', amount: amount.neg(), currency, description: `Payout ${payout.id}`, idempotencyKey: `payout:${payout.id}` } });
+    // Do not post the payout ledger until the external provider confirms payment.
     return payout;
   });
 }
