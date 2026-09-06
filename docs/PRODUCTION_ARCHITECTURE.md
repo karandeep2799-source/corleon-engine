@@ -1,0 +1,47 @@
+# Corleon Engine — Production Architecture
+
+## Boundaries
+
+- **API/control plane:** authentication, request validation, agent/run APIs, webhooks, health checks.
+- **Agent runtime:** orchestration, model routing, tool execution, retries, cancellation and budgets.
+- **Learning:** feedback, evaluations, memory and prompt/version lifecycle.
+- **MCP:** server/tool registry, policy enforcement and execution audit.
+- **Cashflow:** immutable financial records, idempotency, provider adapters and reconciliation.
+- **Persistence:** PostgreSQL through Prisma.
+
+## Financial data retention
+
+Corleon now keeps two complementary financial histories:
+
+- `FinancialRecord` stores normalized money movements from billing providers and confirmed payouts. Each record has an immutable idempotency key, provider/external reference, currency, timestamp, category/source and optional metadata.
+- `FinanceSnapshot` stores an auditable point-in-time aggregate for an organization and currency: income, expenses, fees, refunds, chargebacks, transfers, adjustments, net result and affiliate balances.
+
+Billing payments/subscription revenue, refunds and chargebacks are persisted automatically with the billing event. Affiliate payouts are persisted only after the payout provider confirms payment, preventing failed/processing payouts from being represented as completed cash outflows.
+
+Snapshots are derived from posted financial records plus affiliate balances, so operational summaries can be rebuilt rather than becoming the source of truth.
+
+## Reliability rules
+
+1. Every externally retried mutation uses an idempotency key.
+2. Webhooks are authenticated before processing and deduplicated before side effects.
+3. Financial state changes are append-only/auditable; derived balances are rebuildable.
+4. Agent execution has explicit timeout, retry and cost/token limits.
+5. High-impact tools require explicit policy approval.
+6. Logs never contain API keys, authorization headers, payment secrets or raw credentials.
+7. Readiness must fail when critical persistence dependencies are unavailable.
+8. External payout state is not posted to the ledger until the provider confirms success.
+
+## Deployment model
+
+Run the HTTP API as a stateless service. Long-running agent work should execute in a worker/runtime process rather than depending on a single serverless request lifecycle. PostgreSQL remains the source of truth for durable state; queue infrastructure can be introduced independently.
+
+## Next implementation phases
+
+- typed API contracts and request validation
+- durable agent run state machine
+- model/provider registry and usage accounting
+- MCP registry + authorization middleware
+- immutable ledger/reconciliation hardening
+- integration/evaluation test suite
+- OpenTelemetry-compatible traces and metrics
+- deployment and rollback automation

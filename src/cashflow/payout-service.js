@@ -46,7 +46,6 @@ export async function executePayout(payoutId) {
 
       if (!paid) return updated;
 
-      // The payout ledger entry is created only after the provider confirms the transfer.
       await tx.ledgerEntry.upsert({
         where: { idempotencyKey: `payout:${payout.id}` },
         create: {
@@ -59,6 +58,26 @@ export async function executePayout(payoutId) {
           currency: payout.currency,
           description: `Provider payout ${result.externalId}`,
           idempotencyKey: `payout:${payout.id}`
+        },
+        update: {}
+      });
+
+      await tx.financialRecord.upsert({
+        where: { idempotencyKey: `payout:${payout.id}` },
+        create: {
+          organizationId: payout.organizationId,
+          externalId: result.externalId ?? payout.id,
+          provider: payout.method,
+          type: 'EXPENSE',
+          status: 'POSTED',
+          amount: D(payout.netAmount),
+          currency: payout.currency,
+          occurredAt: payout.paidAt ?? new Date(),
+          description: `Affiliate payout ${payout.id}`,
+          category: 'AFFILIATE_PAYOUT',
+          source: 'PAYOUT',
+          idempotencyKey: `payout:${payout.id}`,
+          metadata: { payoutId: payout.id, providerExternalId: result.externalId ?? null }
         },
         update: {}
       });
