@@ -29,6 +29,8 @@ enum WebhookStatus { RECEIVED PROCESSING PROCESSED FAILED IGNORED }
 enum PayoutItemStatus { PENDING PROCESSING PAID FAILED REVERSED }
 enum ReconciliationStatus { OPEN MATCHED MISMATCH RESOLVED }
 enum AuditAction { CREATE UPDATE DELETE APPROVE REJECT SUSPEND PAY REVERSE LOGIN EXPORT MANUAL_ADJUSTMENT }
+enum FinancialRecordType { INCOME EXPENSE TRANSFER FEE REFUND CHARGEBACK ADJUSTMENT }
+enum FinancialRecordStatus { PENDING POSTED VOIDED }
 
 model Organization {
   id String @id @default(cuid())
@@ -51,6 +53,8 @@ model Organization {
   auditLogs AuditLog[]
   ledgerEntries LedgerEntry[]
   reconciliations Reconciliation[]
+  financialRecords FinancialRecord[]
+  financeSnapshots FinanceSnapshot[]
 }
 
 model User {
@@ -539,4 +543,50 @@ model AuditLog {
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   @@index([organizationId, createdAt])
   @@index([entityType, entityId])
+}
+
+model FinancialRecord {
+  id String @id @default(cuid())
+  organizationId String
+  externalId String?
+  provider String?
+  type FinancialRecordType
+  status FinancialRecordStatus @default(POSTED)
+  amount Decimal @db.Decimal(20,8)
+  currency String
+  occurredAt DateTime
+  description String?
+  category String?
+  source String?
+  idempotencyKey String @unique
+  metadata Json?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  @@index([organizationId, occurredAt])
+  @@index([organizationId, type, status])
+  @@index([provider, externalId])
+}
+
+model FinanceSnapshot {
+  id String @id @default(cuid())
+  organizationId String
+  asOf DateTime
+  currency String
+  income Decimal @default(0) @db.Decimal(20,8)
+  expenses Decimal @default(0) @db.Decimal(20,8)
+  fees Decimal @default(0) @db.Decimal(20,8)
+  refunds Decimal @default(0) @db.Decimal(20,8)
+  chargebacks Decimal @default(0) @db.Decimal(20,8)
+  transfers Decimal @default(0) @db.Decimal(20,8)
+  adjustments Decimal @default(0) @db.Decimal(20,8)
+  net Decimal @default(0) @db.Decimal(20,8)
+  availableAffiliateBalance Decimal @default(0) @db.Decimal(20,8)
+  pendingAffiliateBalance Decimal @default(0) @db.Decimal(20,8)
+  paidAffiliateBalance Decimal @default(0) @db.Decimal(20,8)
+  recordCount Int @default(0)
+  createdAt DateTime @default(now())
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  @@unique([organizationId, asOf, currency])
+  @@index([organizationId, asOf])
 }
