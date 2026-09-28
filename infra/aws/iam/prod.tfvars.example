@@ -1,0 +1,27 @@
+aws_region  = "ap-south-1"
+project_name = "corleon"
+environment  = "prod"
+
+github_org  = "karandeep2799-source"
+github_repo = "corleon-engine"
+github_branch = "main"
+
+# Replace with the real resource ARNs created by the storage/secrets/queue modules.
+s3_bucket_arn = "arn:aws:s3:::REPLACE_WITH_PROD_BUCKET"
+
+secrets_arns = [
+  "arn:aws:secretsmanager:ap-south-1:REPLACE_ACCOUNT:secret:corleon/prod/*"
+]
+
+sqs_queue_arns = [
+  "arn:aws:sqs:ap-south-1:REPLACE_ACCOUNT:corleon-prod-jobs"
+]
+
+log_group_arns = [
+  "arn:aws:logs:ap-south-1:REPLACE_ACCOUNT:log-group:/corleon/prod/*"
+]
+
+# Restrict this to the exact model ARNs supported by the chosen Bedrock setup.
+ai_model_arns = [
+  "arn:aws:bedrock:ap-south-1::foundation-model/REPLACE_MODEL"
+]
