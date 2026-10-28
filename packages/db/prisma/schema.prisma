@@ -1,0 +1,56 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/client"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum SandboxJobStatus {
+  PENDING
+  RUNNING
+  SUCCEEDED
+  FAILED
+  TIMED_OUT
+}
+
+enum SandboxRuntime {
+  NODE
+  PYTHON
+}
+
+model SandboxJob {
+  id             String          @id @default(cuid())
+  idempotencyKey String?         @unique
+  status         SandboxJobStatus @default(PENDING)
+  runtime        SandboxRuntime
+  sourceHash     String
+  exitCode       Int?
+  stdout         String?          @db.Text
+  stderr         String?          @db.Text
+  errorCode      String?
+  durationMs     Int?
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+  finishedAt     DateTime?
+  auditEvents    SandboxAuditEvent[]
+
+  @@index([status, createdAt])
+  @@index([createdAt])
+}
+
+model SandboxAuditEvent {
+  id        String     @id @default(cuid())
+  jobId     String?
+  action    String
+  requestId String?
+  sourceHash String?
+  details   Json?
+  createdAt DateTime   @default(now())
+  job       SandboxJob? @relation(fields: [jobId], references: [id], onDelete: SetNull)
+
+  @@index([jobId, createdAt])
+  @@index([action, createdAt])
+}
