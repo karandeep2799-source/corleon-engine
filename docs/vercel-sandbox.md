@@ -34,20 +34,21 @@ The deny-all network policy is intentionally strict. Do not loosen it to allow a
 
 ## Required environment
 
-- `DATABASE_URL`: PostgreSQL connection string.
+- `DATABASE_URL`: existing Corleon application database; this integration does not modify it.
+- `SANDBOX_DATABASE_URL`: dedicated PostgreSQL database for sandbox jobs and audit events. Use a separate database so its migration history cannot conflict with the existing Corleon Prisma schema.
 - `CORLEON_SANDBOX_API_KEY`: server-only random bearer secret, minimum 32 characters.
 - Vercel Sandbox authentication: Vercel OIDC is preferred for a Vercel-hosted deployment. For local development, link the project and pull the development environment as described in the [official docs](https://vercel.com/docs/sandbox).
 
 ## Database setup
 
-Run from the repository root:
+Provision a dedicated PostgreSQL database named `corleon_sandbox` (or set `SANDBOX_DATABASE_URL` to another dedicated database). Then run from the repository root:
 
 ```bash
 pnpm --filter @corleon/db generate
-pnpm exec prisma migrate dev --schema packages/db/prisma/schema.prisma --name add_sandbox_jobs
+pnpm --filter @corleon/db migrate:dev -- --name add_sandbox_jobs
 ```
 
-For production, commit the generated migration and run `prisma migrate deploy --schema packages/db/prisma/schema.prisma` as a release step before enabling the API routes.
+For production, commit the generated migration and run `pnpm --filter @corleon/db migrate:deploy` as a release step before enabling the API routes.
 
 ## Operational notes
 
