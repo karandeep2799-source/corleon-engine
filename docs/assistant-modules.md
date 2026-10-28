@@ -10,7 +10,7 @@ The 35-module catalog is inspired by the publicly documented ONLYOFFICE AI assis
 
 Every endpoint requires `Authorization: Bearer <CORLEON_ASSISTANTS_API_KEY>`. This machine-to-machine secret is not a substitute for user identity or organization-membership authorization. Never expose it to browser code. Put these endpoints behind a trusted backend/API gateway and add user/session authorization before end-user exposure.
 
-Configure `DATABASE_URL`, `OPENAI_API_KEY`, `CORLEON_ASSISTANTS_API_KEY`, and optionally `OPENAI_BALANCED_MODEL` and `CORLEON_ASSISTANT_MAX_OUTPUT_TOKENS`. Apply the schema and run `npm run prisma:deploy`.
+Configure `DATABASE_URL`, `OPENAI_API_KEY`, `CORLEON_ASSISTANTS_API_KEY`, and optionally `OPENAI_BALANCED_MODEL` and `CORLEON_ASSISTANT_MAX_OUTPUT_TOKENS`. The SQL migration is additive and assumes the existing Corleon schema (including `Organization`) has already been deployed. Verify against a staging database before running `npm run prisma:deploy`. This repository currently has no full initial/baseline migration, so do not apply this isolated migration to an empty database; establish a baseline for fresh-database provisioning first.
 
 ## Readiness
 Text-ready profiles are enabled by default; modules needing document, image, workspace, or MCP adapters start disabled and return HTTP 501 until the actual adapter exists. Image Generator drafts prompts but does not create image files. PDF/OCR organizes extracted text but does not parse binary PDFs. Data Analyst uses only supplied data. Fact Check does not browse.
