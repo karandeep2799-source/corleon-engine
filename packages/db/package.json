@@ -7,6 +7,8 @@
   },
   "scripts": {
     "generate": "prisma generate --schema prisma/schema.prisma",
+    "migrate:dev": "prisma migrate dev --schema prisma/schema.prisma",
+    "migrate:deploy": "prisma migrate deploy --schema prisma/schema.prisma",
     "postinstall": "prisma generate --schema prisma/schema.prisma"
   },
   "dependencies": {
