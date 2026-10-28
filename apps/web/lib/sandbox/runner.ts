@@ -39,6 +39,7 @@ export async function executeSandboxCode(input: SandboxJobInput): Promise<Sandbo
   try {
     sandbox = await Sandbox.create({
       image: "vercel/sandbox/universal:latest",
+      persistent: false,
       timeout: SANDBOX_TIMEOUT_MS,
       resources: { vcpus: 1 },
       networkPolicy: "deny-all",
