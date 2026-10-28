@@ -5,7 +5,7 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
+  url      = env("SANDBOX_DATABASE_URL")
 }
 
 enum SandboxJobStatus {
@@ -22,8 +22,8 @@ enum SandboxRuntime {
 }
 
 model SandboxJob {
-  id             String          @id @default(cuid())
-  idempotencyKey String?         @unique
+  id             String           @id @default(cuid())
+  idempotencyKey String?          @unique
   status         SandboxJobStatus @default(PENDING)
   runtime        SandboxRuntime
   sourceHash     String
@@ -42,14 +42,14 @@ model SandboxJob {
 }
 
 model SandboxAuditEvent {
-  id        String     @id @default(cuid())
-  jobId     String?
-  action    String
-  requestId String?
+  id         String      @id @default(cuid())
+  jobId      String?
+  action     String
+  requestId  String?
   sourceHash String?
-  details   Json?
-  createdAt DateTime   @default(now())
-  job       SandboxJob? @relation(fields: [jobId], references: [id], onDelete: SetNull)
+  details    Json?
+  createdAt  DateTime    @default(now())
+  job        SandboxJob? @relation(fields: [jobId], references: [id], onDelete: SetNull)
 
   @@index([jobId, createdAt])
   @@index([action, createdAt])
