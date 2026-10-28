@@ -18,20 +18,24 @@ export async function syncAssistantProfiles(organizationId) {
   }
   const organization = await prisma.organization.findUnique({ where: { id: organizationId }, select: { id: true } });
   if (!organization) { const error = new Error("Organization not found."); error.statusCode = 404; throw error; }
-  for (const definition of ASSISTANT_REGISTRY) {
-    await prisma.assistantProfile.upsert({
-      where: { organizationId_key: { organizationId, key: definition.id } },
-      create: {
-        organizationId, key: definition.id, name: definition.name, category: definition.category,
-        description: definition.description, readiness: definition.readiness, outputMode: definition.outputMode,
-        enabled: definition.readiness === "ready", model: DEFAULT_MODEL, systemPrompt: definition.instructions,
-      },
-      update: {
-        name: definition.name, category: definition.category, description: definition.description,
-        readiness: definition.readiness, outputMode: definition.outputMode, systemPrompt: definition.instructions,
-      },
-    });
-  }
+  const now = new Date();
+  await prisma.assistantProfile.createMany({
+    data: ASSISTANT_REGISTRY.map((definition) => ({
+      organizationId,
+      key: definition.id,
+      name: definition.name,
+      category: definition.category,
+      description: definition.description,
+      readiness: definition.readiness,
+      outputMode: definition.outputMode,
+      enabled: definition.readiness === "ready",
+      model: DEFAULT_MODEL,
+      systemPrompt: definition.instructions,
+      createdAt: now,
+      updatedAt: now,
+    })),
+    skipDuplicates: true,
+  });
 }
 
 export async function listOrganizationAssistants(organizationId) {
