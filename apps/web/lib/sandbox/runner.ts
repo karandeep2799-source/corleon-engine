@@ -29,8 +29,8 @@ function boundedCollector(limit: number): { stream: Writable; read: () => string
 
 /**
  * Executes user code in an ephemeral Firecracker microVM.
- * No environment variables, credentials, package installation, or network access
- * are provided to the guest. The guest's only writable input is the source file.
+ * No application environment variables, credentials, package installation, or
+ * network access are provided to the guest. The guest receives only its source file.
  */
 export async function executeSandboxCode(input: SandboxJobInput): Promise<SandboxExecutionResult> {
   const startedAt = Date.now();
@@ -38,6 +38,7 @@ export async function executeSandboxCode(input: SandboxJobInput): Promise<Sandbo
 
   try {
     sandbox = await Sandbox.create({
+      image: "vercel/sandbox/universal:latest",
       timeout: SANDBOX_TIMEOUT_MS,
       resources: { vcpus: 1 },
       networkPolicy: "deny-all",
@@ -50,7 +51,7 @@ export async function executeSandboxCode(input: SandboxJobInput): Promise<Sandbo
 
     const stdout = boundedCollector(MAX_OUTPUT_BYTES);
     const stderr = boundedCollector(MAX_OUTPUT_BYTES);
-    const command = input.runtime === "node" ? "node" : "python3.13";
+    const command = input.runtime === "node" ? "node" : "python3.14";
     const args = input.runtime === "node"
       ? ["--disable-proto=throw", filename]
       : ["-I", filename];
@@ -58,7 +59,6 @@ export async function executeSandboxCode(input: SandboxJobInput): Promise<Sandbo
     const result = await sandbox.runCommand({
       cmd: command,
       args,
-      cwd: "/vercel/sandbox",
       stdout: stdout.stream,
       stderr: stderr.stream,
     });
