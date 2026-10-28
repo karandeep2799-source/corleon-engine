@@ -51,6 +51,8 @@ model Organization {
   auditLogs AuditLog[]
   ledgerEntries LedgerEntry[]
   reconciliations Reconciliation[]
+  assistantProfiles AssistantProfile[]
+  assistantRuns AssistantRun[]
 }
 
 model User {
@@ -539,4 +541,46 @@ model AuditLog {
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   @@index([organizationId, createdAt])
   @@index([entityType, entityId])
+}
+
+model AssistantProfile {
+  id String @id @default(cuid())
+  organizationId String
+  key String
+  name String
+  category String
+  description String
+  readiness String @default("ready")
+  outputMode String @default("text")
+  enabled Boolean @default(true)
+  model String
+  systemPrompt String @db.Text
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  runs AssistantRun[]
+  @@unique([organizationId, key])
+  @@index([organizationId, enabled])
+}
+
+model AssistantRun {
+  id String @id @default(cuid())
+  organizationId String
+  assistantProfileId String
+  assistantKey String
+  status String @default("RUNNING")
+  provider String
+  model String
+  input Json
+  output String? @db.Text
+  errorMessage String? @db.Text
+  providerResponseId String?
+  startedAt DateTime @default(now())
+  finishedAt DateTime?
+  createdAt DateTime @default(now())
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  assistantProfile AssistantProfile @relation(fields: [assistantProfileId], references: [id], onDelete: Cascade)
+  @@index([organizationId, createdAt])
+  @@index([assistantProfileId, createdAt])
+  @@index([status, createdAt])
 }
