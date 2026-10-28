@@ -20,7 +20,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     env:
-      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/corleon
+      SANDBOX_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/corleon_sandbox
       CORLEON_SANDBOX_API_KEY: ci-only-test-secret-with-at-least-32-characters
     steps:
       - name: Checkout
@@ -35,7 +35,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 24
-          cache: pnpm
 
       - name: Install dependencies
         run: pnpm install --no-frozen-lockfile
