@@ -6,6 +6,7 @@ The 35-module catalog is inspired by the publicly documented ONLYOFFICE AI assis
 - `GET /api/assistants?organizationId=<id>` — initialize and list 35 independent profiles for an existing organization.
 - `POST /api/assistants` — execute a text-ready assistant. JSON: `{ "organizationId": "...", "assistantId": "proofreading", "input": "..." }`.
 - `PATCH /api/assistants/configure` — enable/disable or set a model. JSON: `{ "organizationId": "...", "assistantId": "proofreading", "enabled": true }`.
+- `GET /api/assistants/runs?organizationId=<id>&limit=25` — retrieve the latest organization-scoped run records (1–100; input payloads are not returned).
 
 Every endpoint requires `Authorization: Bearer <CORLEON_ASSISTANTS_API_KEY>`. This machine-to-machine secret is not a substitute for user identity or organization-membership authorization. Never expose it to browser code. Put these endpoints behind a trusted backend/API gateway and add user/session authorization before end-user exposure.
 
