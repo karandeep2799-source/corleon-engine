@@ -95,3 +95,21 @@ export async function runAssistant({ organizationId, assistantId, input }) {
     const error = new Error("Assistant execution failed. Check the run record for details."); error.statusCode = 502; throw error;
   }
 }
+
+export async function listAssistantRuns({ organizationId, limit = 25 }) {
+  if (typeof organizationId !== "string" || !organizationId.trim() || organizationId.length > 128) {
+    const error = new Error("A valid organizationId is required."); error.statusCode = 400; throw error;
+  }
+  const safeLimit = Number.isInteger(limit) ? Math.max(1, Math.min(limit, 100)) : 25;
+  const organization = await prisma.organization.findUnique({ where: { id: organizationId }, select: { id: true } });
+  if (!organization) { const error = new Error("Organization not found."); error.statusCode = 404; throw error; }
+  return prisma.assistantRun.findMany({
+    where: { organizationId },
+    orderBy: { createdAt: "desc" },
+    take: safeLimit,
+    select: {
+      id: true, assistantKey: true, status: true, provider: true, model: true,
+      output: true, errorMessage: true, startedAt: true, finishedAt: true, createdAt: true,
+    },
+  });
+}
