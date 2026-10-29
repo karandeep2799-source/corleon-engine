@@ -195,6 +195,7 @@ model Organization {
   orders Order[]
   subscriptions Subscription[]
   billingEvents BillingEvent[]
+  commissions Commission[]
   webhooks WebhookEvent[]
   payouts Payout[]
   fraudEvents FraudEvent[]
