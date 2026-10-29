@@ -1,0 +1,42 @@
+name: Passport integration checks
+
+on:
+  pull_request:
+    paths:
+      - "src/security/**"
+      - "docs/security/vercel-passport.md"
+      - "package.json"
+      - ".github/workflows/passport-checks.yml"
+  push:
+    branches:
+      - main
+      - "feat/vercel-passport-integration"
+    paths:
+      - "src/security/**"
+      - "docs/security/vercel-passport.md"
+      - "package.json"
+      - ".github/workflows/passport-checks.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: passport-checks-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Node.js tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+      - name: Run tests
+        run: npm test
