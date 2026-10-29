@@ -51,7 +51,17 @@ export async function POST(request: NextRequest) {
       await tx.order.updateMany({ where: { organizationId: attempt.organizationId, externalId: attempt.orderReference, status: "PENDING" }, data: { status: "PAID", provider: "razorpay", providerEventId: payment.id } });
     });
   } else if (attempt && event.event === "payment.failed" && payment?.id) {
-    await prisma.paymentAttempt.updateMany({ where: { id: attempt.id, status: { not: "SUCCEEDED" } }, data: { status: "FAILED", failureCode: "RAZORPAY_PAYMENT_FAILED", events: { create: { eventType: "RAZORPAY_WEBHOOK_PAYMENT_FAILED", provider: "razorpay", requestId: eventId, details: { paymentId: payment.id } } } } });
+    await prisma.$transaction(async tx => {
+      const updated = await tx.paymentAttempt.updateMany({
+        where: { id: attempt.id, status: { not: "SUCCEEDED" } },
+        data: { status: "FAILED", failureCode: "RAZORPAY_PAYMENT_FAILED" },
+      });
+      if (updated.count > 0) {
+        await tx.paymentAttemptEvent.create({
+          data: { paymentAttemptId: attempt.id, eventType: "RAZORPAY_WEBHOOK_PAYMENT_FAILED", provider: "razorpay", requestId: eventId, details: { paymentId: payment.id } },
+        });
+      }
+    });
   }
   await prisma.razorpayWebhookEvent.update({ where: { eventId }, data: { processedAt: new Date() } });
   return NextResponse.json({ received: true }, { headers });
