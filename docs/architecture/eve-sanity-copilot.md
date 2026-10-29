@@ -23,7 +23,7 @@ The active Corleon branch uses Next.js 16 and React 19, which meet the eve/next 
 
 The HTTP eve channel accepts only Vercel OIDC requests from the corleon-engine project in preview or production, plus trusted local development requests. It is not open to browser users. A browser chat surface must wait until Corleon's application authentication is wired to a user-principal AuthFn.
 
-The agent disables default tools. Only the explicit Sanity and Notion connections are exposed. The approval policy allows a conservative list of read-operation prefixes without approval; every unknown operation is treated as a mutation and requires user approval. Publishing, deleting, schema deployment, dataset changes, release operations, and Notion edits cannot run silently.
+The root agent disables default tools. Only the explicit Sanity and Notion connections, web-only research subagent, and isolated draft-review subagent are exposed. The approval policy allows a conservative list of read-operation prefixes without approval; every unknown operation is treated as a mutation and requires user approval. Publishing, deleting, schema deployment, dataset changes, release operations, and Notion edits cannot run silently.
 
 The model instructions are defense in depth. The framework approval gate is the actual control. If an approval prompt is not available, the agent must not execute a mutation.
 
