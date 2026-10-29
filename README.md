@@ -45,6 +45,8 @@ Channels and capabilities:
 - Slack channel using Vercel Connect credentials
 - Sanity MCP connection for schema inspection, GROQ queries, and content review
 - Notion MCP connection for search, reading, and draft preparation
+- Researcher subagent with web-search/fetch tools and structured, cited findings
+- Fresh-context reviewer subagent with a structured ready/revise verdict
 - Skills for Sanity, content modeling, writing quality, and SEO/AEO
 - Human approval required for all mutations and unknown tool operations
 
