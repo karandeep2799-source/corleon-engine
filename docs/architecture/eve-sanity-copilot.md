@@ -29,7 +29,7 @@ The model instructions are defense in depth. The framework approval gate is the 
 
 ## Prisma boundary
 
-No agent conversation tables, Prisma models, migrations, or payment models are added. eve manages its own durable workflow sessions. The existing Prisma schema receives only a syntax-preserving enum formatting repair required to unblock Prisma generation; no model or database semantics change.
+No agent conversation tables, migrations, or payment models are added. eve manages its own durable workflow sessions. The Prisma schema receives the enum syntax repair needed for Prisma generation and the missing Organization.commissions reverse relation field. The relation field changes the generated Prisma Client graph but does not add a database column or require a migration.
 
 ## Vercel Connect setup (not performed by this change)
 
@@ -73,6 +73,10 @@ Before production rollout, validate:
 10. Unknown tool names are approval-gated.
 11. Session interruption, continuation, and approval resumption behave correctly.
 12. Production rollout remains blocked until staging checks, connector scopes, and approval behavior are signed off.
+
+## Security release gate
+
+The installed dependency graph currently reports 12 npm audit findings (8 high, 2 moderate, 2 critical); the production-dependency audit reports 9 findings (8 high, 1 moderate). The affected dependency chain includes Prisma, eve, and Vercel Connect. Do not promote this branch to production until the advisories are reviewed and the required compatible fixes are applied or formally risk-accepted. Do not run npm audit fix --force: the available automatic fixes include major-version changes to Prisma and Vercel packages.
 
 ## Deferred capabilities
 
