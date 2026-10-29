@@ -51,6 +51,7 @@ model Organization {
   auditLogs AuditLog[]
   ledgerEntries LedgerEntry[]
   reconciliations Reconciliation[]
+  paymentAttempts PaymentAttempt[]
 }
 
 model User {
