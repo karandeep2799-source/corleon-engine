@@ -52,6 +52,7 @@ model Organization {
   ledgerEntries LedgerEntry[]
   reconciliations Reconciliation[]
   paymentAttempts PaymentAttempt[]
+  razorpayWebhookEvents RazorpayWebhookEvent[]
 }
 
 model User {
@@ -560,8 +561,10 @@ model PaymentAttempt {
   amountMinor       Int
   currency          String               @db.VarChar(3)
   status            PaymentAttemptStatus @default(CREATED)
-  provider          String               @default("google_pay")
+  provider          String               @default("razorpay")
   providerReference String?
+  razorpayOrderId   String?              @unique
+  razorpayPaymentId String?              @unique
   failureCode       String?
   createdAt         DateTime             @default(now())
   updatedAt         DateTime             @updatedAt
@@ -586,4 +589,19 @@ model PaymentAttemptEvent {
 
   @@index([paymentAttemptId, createdAt])
   @@index([eventType, createdAt])
+}
+
+
+model RazorpayWebhookEvent {
+  id             String   @id @default(cuid())
+  eventId        String   @unique
+  eventType      String
+  organizationId String?
+  payload        Json
+  receivedAt     DateTime @default(now())
+  processedAt    DateTime?
+  organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+
+  @@index([eventType, receivedAt])
+  @@index([processedAt, receivedAt])
 }
