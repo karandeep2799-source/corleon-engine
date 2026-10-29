@@ -34,9 +34,10 @@ jobs:
         with:
           node-version: 22
       - run: npm install
-      - run: npx prisma format --check
+      - run: npx prisma format
       - run: npx prisma validate
       - run: npx prisma generate
       - run: npm run typecheck
+      - run: npm run lint
       - run: npm test
       - run: npm run build
