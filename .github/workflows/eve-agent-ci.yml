@@ -8,7 +8,7 @@ on:
       - "docs/architecture/eve-agent-integration.md"
       - ".github/workflows/eve-agent-ci.yml"
   push:
-    branches: [main]
+    branches: [main, feat/eve-agent-copilot]
     paths:
       - "agents/sanity-copilot/**"
       - "docs/architecture/eve-agent-integration.md"
