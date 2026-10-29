@@ -36,3 +36,24 @@ CREATE INDEX "PaymentAttemptEvent_eventType_createdAt_idx" ON "PaymentAttemptEve
 
 ALTER TABLE "PaymentAttempt" ADD CONSTRAINT "PaymentAttempt_organizationId_fkey" FOREIGN KEY ("organizationId") REFERENCES "Organization"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 ALTER TABLE "PaymentAttemptEvent" ADD CONSTRAINT "PaymentAttemptEvent_paymentAttemptId_fkey" FOREIGN KEY ("paymentAttemptId") REFERENCES "PaymentAttempt"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+ALTER TABLE "PaymentAttempt" ALTER COLUMN "provider" SET DEFAULT 'razorpay';
+ALTER TABLE "PaymentAttempt" ADD COLUMN "razorpayOrderId" TEXT;
+ALTER TABLE "PaymentAttempt" ADD COLUMN "razorpayPaymentId" TEXT;
+CREATE UNIQUE INDEX "PaymentAttempt_razorpayOrderId_key" ON "PaymentAttempt"("razorpayOrderId");
+CREATE UNIQUE INDEX "PaymentAttempt_razorpayPaymentId_key" ON "PaymentAttempt"("razorpayPaymentId");
+
+CREATE TABLE "RazorpayWebhookEvent" (
+  "id" TEXT NOT NULL,
+  "eventId" TEXT NOT NULL,
+  "eventType" TEXT NOT NULL,
+  "organizationId" TEXT,
+  "payload" JSONB NOT NULL,
+  "receivedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "processedAt" TIMESTAMP(3),
+  CONSTRAINT "RazorpayWebhookEvent_pkey" PRIMARY KEY ("id")
+);
+CREATE UNIQUE INDEX "RazorpayWebhookEvent_eventId_key" ON "RazorpayWebhookEvent"("eventId");
+CREATE INDEX "RazorpayWebhookEvent_eventType_receivedAt_idx" ON "RazorpayWebhookEvent"("eventType", "receivedAt");
+CREATE INDEX "RazorpayWebhookEvent_processedAt_receivedAt_idx" ON "RazorpayWebhookEvent"("processedAt", "receivedAt");
+ALTER TABLE "RazorpayWebhookEvent" ADD CONSTRAINT "RazorpayWebhookEvent_organizationId_fkey" FOREIGN KEY ("organizationId") REFERENCES "Organization"("id") ON DELETE SET NULL ON UPDATE CASCADE;
