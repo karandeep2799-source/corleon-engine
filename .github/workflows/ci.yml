@@ -26,6 +26,12 @@ jobs:
       - name: Install dependencies
         run: pnpm install --no-frozen-lockfile
 
+      - name: Typecheck eve agent
+        run: pnpm typecheck:agent
+
+      - name: Build eve agent
+        run: pnpm build:agent
+
       - name: Typecheck workspace
         run: pnpm typecheck
 
