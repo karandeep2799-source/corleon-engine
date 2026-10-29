@@ -1,6 +1,6 @@
 # Google Pay & Wallet Developer MCP + Web Checkout
 
-**Status:** integration foundation; live charging is intentionally disabled. Repository inspection found no established Next.js authentication/session layer and no selected Google Pay-compatible processor. Do not enable production checkout until those are implemented and tested.
+**Status:** Razorpay Standard Checkout foundation; live charging remains disabled until application authentication is wired and sandbox validation passes. Repository inspection found no established Next.js authentication/session layer or customer-to-user mapping.
 
 ## ChatGPT connector
 1. In Google Cloud Console, create/select a project and enable the Pay & Wallet Developer API.
@@ -20,12 +20,14 @@ The remote MCP service is pre-GA. It manages developer integration data and is n
 - `GOOGLE_PAY_ENVIRONMENT=TEST` until merchant approval and sandbox verification.
 - `GOOGLE_PAY_MERCHANT_ID` (production merchant ID).
 - `GOOGLE_PAY_MERCHANT_NAME`.
-- `GOOGLE_PAY_GATEWAY` and `GOOGLE_PAY_GATEWAY_MERCHANT_ID` from the selected processor's official instructions.
-- `GOOGLE_PAY_COUNTRY_CODE=IN`, `GOOGLE_PAY_CURRENCY_CODE=INR`.
+- `RAZORPAY_KEY_ID` (public key ID, only returned by the config endpoint when enabled).
+- `RAZORPAY_KEY_SECRET` (server-only API secret).
+- `RAZORPAY_WEBHOOK_SECRET` (separate webhook HMAC secret).
+- `PAYMENTS_ENABLED=false` and `RAZORPAY_CHECKOUT_ENABLED=false` until launch approval.
 - `DATABASE_URL` (pooled PostgreSQL URL); configure `DIRECT_URL` if required by the database provider.
 
-## Checkout security
-The browser may request a token through Google's official JavaScript library. The server must derive amount and currency from an authenticated server-owned order and send the token directly to the selected PSP's documented Google Pay integration. Never store tokens or write them to logs. Tokens are processor-specific; Stripe, Adyen, Checkout.com, Razorpay, and other gateways are not interchangeable. The charge route therefore returns 503 until application authentication and a reviewed processor adapter are wired.
+## Razorpay checkout security
+For India, use Razorpay Standard Checkout and let Razorpay surface Google Pay as a UPI payment option when enabled on the merchant account. This is not Google Pay Web API CARD tokenization. The server creates the Razorpay order from a pending order owned by the authenticated customer, then verifies the callback signature and fetches the payment server-side. Webhooks verify HMAC against the exact raw body and deduplicate with `x-razorpay-event-id`. Never trust client-supplied amount, organization, customer ID, or payment status. The auth adapter currently fails closed because the repository does not yet have a verified session integration.
 
 ## Prisma
 Schema adds organization-scoped `PaymentAttempt` idempotency and `PaymentAttemptEvent` audit records. Review a generated migration before production:
