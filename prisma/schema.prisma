@@ -51,6 +51,8 @@ model Organization {
   auditLogs AuditLog[]
   ledgerEntries LedgerEntry[]
   reconciliations Reconciliation[]
+  paymentAttempts PaymentAttempt[]
+  razorpayWebhookEvents RazorpayWebhookEvent[]
 }
 
 model User {
@@ -539,4 +541,67 @@ model AuditLog {
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   @@index([organizationId, createdAt])
   @@index([entityType, entityId])
+}
+
+
+enum PaymentAttemptStatus {
+  CREATED
+  TOKEN_RECEIVED
+  PROCESSING
+  SUCCEEDED
+  FAILED
+  CANCELLED
+}
+
+model PaymentAttempt {
+  id                String               @id @default(cuid())
+  organizationId    String
+  orderReference    String
+  idempotencyKey    String
+  amountMinor       Int
+  currency          String               @db.VarChar(3)
+  status            PaymentAttemptStatus @default(CREATED)
+  provider          String               @default("razorpay")
+  providerReference String?
+  razorpayOrderId   String?              @unique
+  razorpayPaymentId String?              @unique
+  failureCode       String?
+  createdAt         DateTime             @default(now())
+  updatedAt         DateTime             @updatedAt
+  organization      Organization         @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  events            PaymentAttemptEvent[]
+
+  @@unique([organizationId, idempotencyKey])
+  @@index([organizationId, createdAt])
+  @@index([orderReference])
+  @@index([status, updatedAt])
+}
+
+model PaymentAttemptEvent {
+  id               String         @id @default(cuid())
+  paymentAttemptId String
+  eventType        String
+  provider         String         @default("google_pay")
+  requestId        String?
+  details          Json?
+  createdAt        DateTime       @default(now())
+  paymentAttempt   PaymentAttempt @relation(fields: [paymentAttemptId], references: [id], onDelete: Cascade)
+
+  @@index([paymentAttemptId, createdAt])
+  @@index([eventType, createdAt])
+}
+
+
+model RazorpayWebhookEvent {
+  id             String   @id @default(cuid())
+  eventId        String   @unique
+  eventType      String
+  organizationId String?
+  payload        Json
+  receivedAt     DateTime @default(now())
+  processedAt    DateTime?
+  organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+
+  @@index([eventType, receivedAt])
+  @@index([processedAt, receivedAt])
 }
