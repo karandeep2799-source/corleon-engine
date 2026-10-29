@@ -1,8 +1,9 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-export async function POST(_request: NextRequest) {
-  // Fail closed: the repository currently has no verified session/auth adapter
-  // or selected PSP-specific Google Pay token processor.
-  return NextResponse.json({ error: "Checkout is disabled until authenticated order ownership and a processor-specific Google Pay adapter are configured." }, { status: 503, headers: { "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff" } });
+export async function POST() {
+  return NextResponse.json({
+    error: "Direct Google Pay token charging is not supported by this Razorpay integration. Create a Razorpay order and use Razorpay Standard Checkout.",
+    checkoutEndpoint: "/api/payments/razorpay/orders",
+  }, { status: 410, headers: { "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff" } });
 }
