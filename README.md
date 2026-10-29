@@ -10,7 +10,8 @@ Standalone production foundation for AI orchestration, integrations, data, and a
 - Turborepo
 - Prisma/PostgreSQL integration point
 - Vercel deployment
-- Shared `@corleon/ui` package
+- Shared @corleon/ui package
+- eve agent runtime for governed content workflows
 
 ## Local development
 
@@ -25,22 +26,37 @@ Run only the deployable web application:
 pnpm build:web
 ```
 
-The production build is cached by Turborepo. The Next.js app is configured with `output: 'standalone'` so the web application can run independently of the rest of the repository.
+Run the eve content copilot in the local terminal UI:
+
+```bash
+pnpm dev:agent
+```
+
+Build the eve agent:
+
+```bash
+pnpm build:agent
+```
+
+The production build is cached by Turborepo. The Next.js app is configured with output: standalone so the web application can run independently of the rest of the repository.
 
 ## Vercel
 
-The repository is configured as a monorepo with the deployable application at `apps/web`.
+The repository is configured as a monorepo with the deployable application at apps/web. The root vercel.ts composes the Next.js web service and the eve agent in the same Vercel project. The web app remains the primary application surface; the agent is served through the private, authenticated /eve/v1/* API and the configured Slack channel.
 
-- Install: `pnpm install`
-- Build: `pnpm turbo build --filter=@corleon/web`
-- Output: `apps/web/.next`
-- Framework: Next.js
+- Web service root: apps/web
+- Web build: pnpm exec next build
+- Agent source: agent/
+- Agent build: eve build
+- Existing release-commission cron is preserved in vercel.ts
 
-Vercel can build only the web application while Turborepo tracks workspace dependencies and reuses cached outputs between deployments.
+The eve HTTP channel is restricted to Vercel OIDC requests from the Corleon project and trusted local development. Browser access is intentionally disabled until application authentication is integrated. Sanity and Notion mutations require framework-level human approval.
+
+See docs/architecture/eve-sanity-copilot.md for connector setup, security controls, and production validation.
 
 ## Health
 
-After deployment, `/api/health` returns a machine-readable service health response.
+After deployment, /api/health returns a machine-readable service health response.
 
 ## Workspace layout
 
@@ -48,9 +64,9 @@ After deployment, `/api/health` returns a machine-readable service health respon
 apps/web       Deployable Next.js application
 apps/api       Optional standalone Fastify API service
 packages/ui    Shared React UI primitives
-prisma/        Database layer and migrations
-codex/         Codex skills and development tooling
+agent/         eve content copilot, skills, channels, and connections
 docs/          Architecture and product documentation
+codex/         Codex skills and development tooling
 ```
 
-The web app is the standalone production surface. The API workspace remains available for workloads that need a dedicated long-running service.
+The web app is the standalone production surface. The API workspace remains available for workloads that need a dedicated long-running service. The eve agent is composed as a peer Vercel service and does not replace either application.
