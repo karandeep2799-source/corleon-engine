@@ -540,3 +540,49 @@ model AuditLog {
   @@index([organizationId, createdAt])
   @@index([entityType, entityId])
 }
+
+
+enum PaymentAttemptStatus {
+  CREATED
+  TOKEN_RECEIVED
+  PROCESSING
+  SUCCEEDED
+  FAILED
+  CANCELLED
+}
+
+model PaymentAttempt {
+  id                String               @id @default(cuid())
+  organizationId    String
+  orderReference    String
+  idempotencyKey    String
+  amountMinor       Int
+  currency          String               @db.VarChar(3)
+  status            PaymentAttemptStatus @default(CREATED)
+  provider          String               @default("google_pay")
+  providerReference String?
+  failureCode       String?
+  createdAt         DateTime             @default(now())
+  updatedAt         DateTime             @updatedAt
+  organization      Organization         @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  events            PaymentAttemptEvent[]
+
+  @@unique([organizationId, idempotencyKey])
+  @@index([organizationId, createdAt])
+  @@index([orderReference])
+  @@index([status, updatedAt])
+}
+
+model PaymentAttemptEvent {
+  id               String         @id @default(cuid())
+  paymentAttemptId String
+  eventType        String
+  provider         String         @default("google_pay")
+  requestId        String?
+  details          Json?
+  createdAt        DateTime       @default(now())
+  paymentAttempt   PaymentAttempt @relation(fields: [paymentAttemptId], references: [id], onDelete: Cascade)
+
+  @@index([paymentAttemptId, createdAt])
+  @@index([eventType, createdAt])
+}
