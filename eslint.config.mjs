@@ -15,5 +15,10 @@ export default defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    "LEARNING_API_GUIDE.js",
+    "aiLearning.js",
+    "learningRoutes.js",
+    "multiModelLearner.js",
+    "standaloneAI.js",
   ]),
 ]);
