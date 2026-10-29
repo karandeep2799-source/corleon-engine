@@ -38,8 +38,11 @@ export async function POST(request: NextRequest) {
   try {
     await prisma.razorpayWebhookEvent.create({ data: { eventId, eventType: event.event, organizationId: attempt?.organizationId ?? null, payload: sanitizedPayload } });
   } catch (error) {
-    if (typeof error === "object" && error !== null && "code" in error && error.code === "P2002") return NextResponse.json({ received: true, duplicate: true }, { headers });
-    throw error;
+    if (!(typeof error === "object" && error !== null && "code" in error && error.code === "P2002")) throw error;
+    // A duplicate already processed event is acknowledged. If a previous run
+    // crashed after persistence but before processing, retry the work.
+    const prior = await prisma.razorpayWebhookEvent.findUnique({ where: { eventId } });
+    if (prior?.processedAt) return NextResponse.json({ received: true, duplicate: true }, { headers });
   }
 
   if (attempt && event.event === "payment.captured" && payment?.id && payment.amount === attempt.amountMinor && payment.currency === attempt.currency) {
