@@ -32,11 +32,12 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 24
       - run: npm install
       - run: npx prisma format
       - run: npx prisma validate
       - run: npx prisma generate
+      - run: npm run typecheck:agent
       - run: npm run typecheck
       - run: npm run lint
       - run: npm test
