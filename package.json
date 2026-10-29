@@ -20,7 +20,8 @@
     "test": "vitest run",
     "eve:dev": "eve dev",
     "eve:build": "eve build",
-    "eve:info": "eve info"
+    "eve:info": "eve info",
+    "typecheck:agent": "tsc -p agent/tsconfig.json"
   },
   "dependencies": {
     "@openai/agents": "^0.17.0",
