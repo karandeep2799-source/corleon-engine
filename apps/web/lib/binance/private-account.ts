@@ -91,6 +91,10 @@ export async function getBinanceAccountSnapshot(): Promise<BinanceAccountSnapsho
     throw new BinancePrivateApiError("Binance returned an unexpected account response.", 502);
   }
 
+  if (payload.canTrade || payload.canWithdraw) {
+    throw new BinancePrivateApiError("This API key is not read-only. Disable trading and withdrawal permissions before connecting it.", 403);
+  }
+
   return {
     ...payload,
     // Exclude zero-balance assets to reduce unnecessary account-data exposure.
