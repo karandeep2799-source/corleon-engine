@@ -12,7 +12,7 @@ All endpoints except public share resolution require `Authorization: Bearer $IMA
 
 ## Endpoints
 - POST /api/images/generations — text-to-image; accepts prompt, optional templateId, variables, size, quality and Idempotency-Key.
-- POST /api/images/edits — {sourceAssetId,prompt}.
+- POST /api/images/uploads — multipart image upload (PNG/JPEG/WebP, up to 4 MiB) to create a source asset.\n- POST /api/images/edits — {sourceAssetId,prompt}.
 - POST /api/images/sketch — {sourceAssetId,prompt?}; converts sketch reference to a finished image.
 - GET /api/images/history?limit=20&cursor=... — newest-first cursor history.
 - GET /api/images/jobs/:jobId — job status and completed asset URL.
