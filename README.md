@@ -54,3 +54,12 @@ docs/          Architecture and product documentation
 ```
 
 The web app is the standalone production surface. The API workspace remains available for workloads that need a dedicated long-running service.
+
+
+## Architecture and engineering knowledge
+
+- [Governed MCP platform architecture](docs/architecture/custom-mcp-platform.md)
+- [Knowledge ingestion standard](docs/knowledge/knowledge-ingestion-standard.md)
+- [Agent and engineering rules](AGENTS.md)
+
+New external documentation and repository references should be ingested using the knowledge standard, linked to architecture decisions, and translated into tested implementation work where adopted.
