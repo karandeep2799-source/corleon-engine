@@ -1,3 +1,9 @@
+CREATE TABLE "ImageStudioWorkspace" ("id" TEXT NOT NULL,"name" TEXT NOT NULL,"slug" TEXT NOT NULL,"createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,CONSTRAINT "ImageStudioWorkspace_pkey" PRIMARY KEY ("id"));
+CREATE TABLE "ImageStudioUser" ("id" TEXT NOT NULL,"email" TEXT NOT NULL,"workspaceId" TEXT NOT NULL,"createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,CONSTRAINT "ImageStudioUser_pkey" PRIMARY KEY ("id"));
+CREATE UNIQUE INDEX "ImageStudioWorkspace_slug_key" ON "ImageStudioWorkspace"("slug");
+CREATE UNIQUE INDEX "ImageStudioUser_email_key" ON "ImageStudioUser"("email");
+CREATE INDEX "ImageStudioUser_workspaceId_idx" ON "ImageStudioUser"("workspaceId");
+ALTER TABLE "ImageStudioUser" ADD CONSTRAINT "ImageStudioUser_workspaceId_fkey" FOREIGN KEY ("workspaceId") REFERENCES "ImageStudioWorkspace"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 CREATE TYPE "ImageJobStatus" AS ENUM ('QUEUED','RUNNING','COMPLETED','FAILED');
 CREATE TABLE "ImageAsset" ("id" TEXT NOT NULL,"organizationId" TEXT NOT NULL,"userId" TEXT NOT NULL,"storageKey" TEXT NOT NULL,"mimeType" TEXT NOT NULL,"sizeBytes" INTEGER NOT NULL,"prompt" TEXT,"model" TEXT,"source" TEXT NOT NULL DEFAULT 'GENERATED',"templateKey" TEXT,"createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,CONSTRAINT "ImageAsset_pkey" PRIMARY KEY ("id"));
 CREATE TABLE "ImageGenerationJob" ("id" TEXT NOT NULL,"organizationId" TEXT NOT NULL,"userId" TEXT NOT NULL,"operation" TEXT NOT NULL,"status" "ImageJobStatus" NOT NULL DEFAULT 'QUEUED',"prompt" TEXT NOT NULL,"model" TEXT NOT NULL,"quality" TEXT NOT NULL,"size" TEXT NOT NULL,"templateKey" TEXT,"idempotencyKey" TEXT,"inputAssetId" TEXT,"outputAssetId" TEXT,"errorCode" TEXT,"createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,"completedAt" TIMESTAMP(3),CONSTRAINT "ImageGenerationJob_pkey" PRIMARY KEY ("id"));
@@ -8,8 +14,8 @@ CREATE UNIQUE INDEX "ImageGenerationJob_idempotencyKey_key" ON "ImageGenerationJ
 CREATE UNIQUE INDEX "ImageGenerationJob_outputAssetId_key" ON "ImageGenerationJob"("outputAssetId");
 CREATE INDEX "ImageGenerationJob_organizationId_userId_createdAt_idx" ON "ImageGenerationJob"("organizationId","userId","createdAt");
 CREATE INDEX "ImageGenerationJob_userId_status_createdAt_idx" ON "ImageGenerationJob"("userId","status","createdAt");
-ALTER TABLE "ImageAsset" ADD CONSTRAINT "ImageAsset_organizationId_fkey" FOREIGN KEY ("organizationId") REFERENCES "Organization"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-ALTER TABLE "ImageAsset" ADD CONSTRAINT "ImageAsset_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "ImageAsset" ADD CONSTRAINT "ImageAsset_organizationId_fkey" FOREIGN KEY ("organizationId") REFERENCES "ImageStudioWorkspace"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "ImageAsset" ADD CONSTRAINT "ImageAsset_userId_fkey" FOREIGN KEY ("userId") REFERENCES "ImageStudioUser"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 ALTER TABLE "ImageGenerationJob" ADD CONSTRAINT "ImageGenerationJob_organizationId_fkey" FOREIGN KEY ("organizationId") REFERENCES "Organization"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 ALTER TABLE "ImageGenerationJob" ADD CONSTRAINT "ImageGenerationJob_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 ALTER TABLE "ImageGenerationJob" ADD CONSTRAINT "ImageGenerationJob_inputAssetId_fkey" FOREIGN KEY ("inputAssetId") REFERENCES "ImageAsset"("id") ON DELETE SET NULL ON UPDATE CASCADE;
