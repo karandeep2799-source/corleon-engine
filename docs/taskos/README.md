@@ -29,7 +29,9 @@ Private TaskOS endpoints require `Authorization: Bearer $TASKOS_API_TOKEN`. This
 - `POST /api/integrations/google-tasks/sync` (requires an established connection)
 - `GET /api/cron/taskos-sync`
 - `GET /api/cron/taskos-worker`
-- `POST /api/integrations/stripe/checkout`
+- `POST /api/integrations/stripe/checkout` (subscription)
+- `POST /api/integrations/stripe/payments/checkout` (one-time payment)
+- `POST /api/integrations/stripe/portal` (customer billing portal)
 - `POST /api/integrations/stripe/webhook`
 
 ## Explicit release blockers
@@ -47,7 +49,7 @@ Sync is one-way and idempotent on `(tenantId, source, externalId)`. The importer
 The worker claims rows using PostgreSQL `FOR UPDATE SKIP LOCKED`, applies bounded exponential backoff and marks exhausted jobs DEAD. Configure alerting for dead jobs and stale RUNNING leases; add a lease-reaper before multi-instance high-volume operation.
 
 ## Stripe billing
-Checkout accepts only allowlisted recurring Price IDs. Webhooks verify signatures using the raw request body and deduplicate event IDs. Never treat the success redirect as proof of payment; entitlements must depend on webhook-backed subscription state. Add invoice/payment-intent reconciliation, billing portal, tax configuration and a dedicated billing event outbox before financial automation.
+Subscription Checkout and one-time Payment Checkout accept separate allowlisted Stripe Price IDs and same-origin redirect URLs. The Billing Portal is tenant-scoped. Webhooks verify signatures using the raw request body and deduplicate event IDs; the payment ledger records checkout completion, PaymentIntent success/failure and refunds. Never treat the success redirect as proof of payment; entitlements must depend on webhook-backed subscription state. Add invoice-level reconciliation, tax configuration and a dedicated billing event outbox before financial automation.
 
 ## Security / operations
 Keep encryption keys, API tokens, Stripe secrets and Google OAuth secrets in Vercel encrypted environment variables or a secret manager. Rotate encryption keys through a re-encryption migration. Enforce HTTPS, rate limits, restrictive origins, backups and restore tests. External agent writes, shell access and deployment actions remain disabled until isolated execution and explicit authorization policies are installed.
