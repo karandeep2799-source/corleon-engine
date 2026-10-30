@@ -60,6 +60,7 @@ export async function POST(req:Request){
   const parsed=schema.safeParse(await req.json().catch(()=>null));if(!parsed.success)return fail(parsed.error.issues[0]?.message||"Invalid request.");
   const idempotencyKey=req.headers.get("idempotency-key")?.slice(0,128)||randomUUID();
   const existing=await prisma.imageGenerationJob.findUnique({where:{idempotencyKey},include:{outputAsset:true}});
+  if(existing&&existing.userId!==user.id)return fail("Idempotency key conflict.",409);
   if(existing?.outputAsset)return NextResponse.json({jobId:existing.id,asset:existing.outputAsset,reused:true});
   if(existing)return fail("This request is already processing.",409);
   const input=parsed.data,job=await prisma.imageGenerationJob.create({data:{organizationId:organization.id,userId:user.id,operation:"GENERATE",status:"RUNNING",prompt:input.prompt,model:input.model,quality:input.quality,size:input.size,templateKey:input.templateKey,idempotencyKey}});
