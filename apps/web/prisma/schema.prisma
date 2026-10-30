@@ -53,6 +53,13 @@ enum BillingStatus {
   UNPAID
 }
 
+enum PaymentStatus {
+  PENDING
+  SUCCEEDED
+  FAILED
+  REFUNDED
+}
+
 model TaskUser {
   id        String   @id @default(cuid())
   tenantId  String
@@ -172,6 +179,7 @@ model StripeCustomer {
   createdAt        DateTime           @default(now())
   updatedAt        DateTime           @updatedAt
   subscription     StripeSubscription?
+  payments         StripePayment[]
 }
 
 model StripeSubscription {
@@ -186,6 +194,24 @@ model StripeSubscription {
   cancelAtPeriodEnd    Boolean        @default(false)
   updatedAt            DateTime       @updatedAt
   createdAt            DateTime       @default(now())
+}
+
+model StripePayment {
+  id                       String         @id @default(cuid())
+  tenantId                 String
+  customerId               String
+  customer                 StripeCustomer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  stripeCheckoutSessionId  String         @unique
+  stripePaymentIntentId    String?        @unique
+  amount                   Int?
+  currency                 String?
+  status                   PaymentStatus  @default(PENDING)
+  metadata                 Json?
+  createdAt                DateTime       @default(now())
+  updatedAt                DateTime       @updatedAt
+
+  @@index([tenantId, createdAt])
+  @@index([tenantId, status])
 }
 
 model StripeWebhookEvent {
