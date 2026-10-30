@@ -18,11 +18,11 @@ const DEFAULT_ALLOWED_SYMBOLS = ["BTCUSDT", "ETHUSDT", "BNBUSDT"];
 export function assessSpotOrderRisk(order: ProposedSpotOrder): RiskAssessment {
   const reasons: string[] = [];
   const symbol = order.symbol.trim().toUpperCase();
-  const allowedSymbols = (process.env.BINANCE_RISK_ALLOWED_SYMBOLS ?? DEFAULT_ALLOWED_SYMBOLS.join(","))
+  const allowedSymbols = (process.env.BINANCE_PAPER_ALLOWED_SYMBOLS ?? DEFAULT_ALLOWED_SYMBOLS.join(","))
     .split(",")
     .map((item) => item.trim().toUpperCase())
     .filter(Boolean);
-  const maxNotional = Number(process.env.BINANCE_RISK_MAX_ORDER_NOTIONAL_USDT ?? "25");
+  const maxNotional = Number(process.env.BINANCE_PAPER_MAX_NOTIONAL_USDT ?? "100");
   const notional = order.quantity * order.referencePrice;
 
   if (!/^[A-Z0-9]{5,20}$/.test(symbol)) reasons.push("Invalid symbol.");
