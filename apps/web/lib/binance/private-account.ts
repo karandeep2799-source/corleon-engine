@@ -41,7 +41,16 @@ function isAccountSnapshot(value: unknown): value is BinanceAccountSnapshot {
     typeof data.canWithdraw === "boolean" &&
     typeof data.canDeposit === "boolean" &&
     typeof data.accountType === "string" &&
-    Array.isArray(data.balances)
+    Array.isArray(data.balances) &&
+    data.balances.every((item) => {
+      if (!item || typeof item !== "object") return false;
+      const balance = item as Record<string, unknown>;
+      return (
+        typeof balance.asset === "string" &&
+        typeof balance.free === "string" &&
+        typeof balance.locked === "string"
+      );
+    })
   );
 }
 
