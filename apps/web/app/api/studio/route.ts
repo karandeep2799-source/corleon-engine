@@ -4,7 +4,7 @@ import OpenAI from "openai";
 import { toFile } from "openai/uploads";
 import { fileTypeFromBuffer } from "file-type";
 import { z } from "zod";
-import { getImage,putImage,readSession,removeImage,templates,workspace } from "../../../lib/image-studio";
+import { getImage,putImage,readSession,removeImage,sameOrigin,templates,workspace } from "../../../lib/image-studio";
 import { prisma } from "../../../lib/prisma";
 
 export const runtime="nodejs",dynamic="force-dynamic",maxDuration=300;
@@ -32,6 +32,7 @@ export async function GET(req:Request){
 }
 export async function POST(req:Request){
  const session=readSession(req);if(!session)return fail("Unauthorized.",401);
+ if(!sameOrigin(req))return fail("Cross-origin request rejected.",403);
  if(!process.env.OPENAI_API_KEY)return fail("OPENAI_API_KEY is not configured.",503);
  const {user,organization}=await workspace(session.email);
  if(!await dailyAllowed(user.id))return fail("Daily image generation limit reached.",429);
@@ -41,7 +42,7 @@ export async function POST(req:Request){
   if(req.headers.get("content-type")?.includes("multipart/form-data")){
    const form=await req.formData(),prompt=z.string().trim().min(8).max(8000).safeParse(form.get("prompt")),file=form.get("image");
    if(!prompt.success||!(file instanceof File))return fail("An image and editing prompt are required.");
-   if(file.size<1||file.size>15*1024*1024)return fail("Upload must be smaller than 15 MB.",413);
+   if(file.size<1||file.size>4*1024*1024)return fail("Upload must be smaller than 4 MB on Vercel.",413);
    const bytes=Buffer.from(await file.arrayBuffer()),detected=await fileTypeFromBuffer(bytes);
    if(!detected||!["image/png","image/jpeg","image/webp"].includes(detected.mime))return fail("Only valid PNG, JPEG and WebP images are supported.",415);
    const originalId=randomUUID(),sourceKey=organization.id+"/"+user.id+"/"+originalId+"-source."+detected.ext;
@@ -80,6 +81,7 @@ export async function POST(req:Request){
 }
 export async function DELETE(req:Request){
  const session=readSession(req);if(!session)return fail("Unauthorized.",401);
+ if(!sameOrigin(req))return fail("Cross-origin request rejected.",403);
  const id=new URL(req.url).searchParams.get("id");if(!id)return fail("Image id required.");
  try{const {user,organization}=await workspace(session.email);const asset=await prisma.imageAsset.findFirst({where:{id,userId:user.id,organizationId:organization.id}});if(!asset)return fail("Image not found.",404);await removeImage(asset.storageKey);await prisma.imageAsset.delete({where:{id}});return NextResponse.json({deleted:true});}
  catch{return fail("Unable to delete image.",503);}
