@@ -4,7 +4,6 @@ on:
   push:
     branches: [main]
   pull_request:
-    branches: [main]
 
 jobs:
   validate:
@@ -21,13 +20,17 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 24
+          cache: pnpm
 
       - name: Install dependencies
         run: pnpm install --no-frozen-lockfile
 
       - name: Typecheck workspace
         run: pnpm typecheck
+
+      - name: Test web workspace
+        run: pnpm --filter @corleon/web test
 
       - name: Build standalone web
         run: pnpm turbo build --filter=@corleon/web
