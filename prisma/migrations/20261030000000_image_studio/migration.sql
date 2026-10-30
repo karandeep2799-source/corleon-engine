@@ -16,7 +16,7 @@ CREATE INDEX "ImageGenerationJob_organizationId_userId_createdAt_idx" ON "ImageG
 CREATE INDEX "ImageGenerationJob_userId_status_createdAt_idx" ON "ImageGenerationJob"("userId","status","createdAt");
 ALTER TABLE "ImageAsset" ADD CONSTRAINT "ImageAsset_organizationId_fkey" FOREIGN KEY ("organizationId") REFERENCES "ImageStudioWorkspace"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 ALTER TABLE "ImageAsset" ADD CONSTRAINT "ImageAsset_userId_fkey" FOREIGN KEY ("userId") REFERENCES "ImageStudioUser"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-ALTER TABLE "ImageGenerationJob" ADD CONSTRAINT "ImageGenerationJob_organizationId_fkey" FOREIGN KEY ("organizationId") REFERENCES "Organization"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-ALTER TABLE "ImageGenerationJob" ADD CONSTRAINT "ImageGenerationJob_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "ImageGenerationJob" ADD CONSTRAINT "ImageGenerationJob_organizationId_fkey" FOREIGN KEY ("organizationId") REFERENCES "ImageStudioWorkspace"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "ImageGenerationJob" ADD CONSTRAINT "ImageGenerationJob_userId_fkey" FOREIGN KEY ("userId") REFERENCES "ImageStudioUser"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 ALTER TABLE "ImageGenerationJob" ADD CONSTRAINT "ImageGenerationJob_inputAssetId_fkey" FOREIGN KEY ("inputAssetId") REFERENCES "ImageAsset"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 ALTER TABLE "ImageGenerationJob" ADD CONSTRAINT "ImageGenerationJob_outputAssetId_fkey" FOREIGN KEY ("outputAssetId") REFERENCES "ImageAsset"("id") ON DELETE SET NULL ON UPDATE CASCADE;
