@@ -31,6 +31,7 @@ export function assessSpotOrderRisk(order: ProposedSpotOrder): RiskAssessment {
   if (!Number.isFinite(order.quantity) || order.quantity <= 0) reasons.push("Quantity must be a positive finite number.");
   if (!Number.isFinite(order.referencePrice) || order.referencePrice <= 0) reasons.push("Reference price must be a positive finite number.");
   if (!Number.isFinite(maxNotional) || maxNotional <= 0) reasons.push("A valid maximum order notional must be configured.");
+  if (!Number.isFinite(notional)) reasons.push("Estimated order notional must be finite.");
   if (Number.isFinite(notional) && Number.isFinite(maxNotional) && notional > maxNotional) {
     reasons.push("Estimated order notional exceeds the configured per-order limit.");
   }
