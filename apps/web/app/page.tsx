@@ -12,7 +12,10 @@ export default function Home() {
     <main className="shell">
       <nav className="nav">
         <strong>Corleon Engine</strong>
-        <a href="/api/health">API health</a>
+        <div className="actions">
+          <a href="/research">Research workspace</a>
+          <a href="/api/health">API health</a>
+        </div>
       </nav>
 
       <section className="hero">
@@ -23,7 +26,7 @@ export default function Home() {
           deployment foundation in one independently deployable Next.js application.
         </p>
         <div className="actions">
-          <a href="/api/health"><Button>Check health</Button></a>
+          <a href="/research"><Button>Open grounded research</Button></a>
           <a className="secondary" href="#architecture">View architecture</a>
         </div>
       </section>
