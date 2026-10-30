@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import type { FormEvent } from "react";
+import type { CSSProperties, FormEvent } from "react";
 
 type ResearchResult = {
   provider: string;
@@ -14,7 +14,7 @@ type ResearchResult = {
   retrievedAt: string;
 };
 
-const styles: Record<string, React.CSSProperties> = {
+const styles: Record<string, CSSProperties> = {
   shell: { maxWidth: 920, margin: "0 auto", padding: "28px 20px 64px", fontFamily: "system-ui, sans-serif", color: "#111827" },
   nav: { display: "flex", justifyContent: "space-between", gap: 16, color: "#64748b", fontSize: 13, paddingBottom: 42 },
   brand: { color: "#111827", fontWeight: 800, textDecoration: "none" },
@@ -25,7 +25,7 @@ const styles: Record<string, React.CSSProperties> = {
   panel: { padding: 24, border: "1px solid #e5e7eb", borderRadius: 18, background: "#fff", display: "grid", gap: 12 },
   label: { fontSize: 13, fontWeight: 700, marginTop: 5 },
   field: { width: "100%", boxSizing: "border-box", border: "1px solid #d1d5db", borderRadius: 10, padding: 13, font: "inherit", background: "#fff", color: "#111827" },
-  footer: { display: "flex", justifyContent: "space-between", alignItems: "center", gap: 16, color: "#64748b", fontSize: 12, flexWrap: "wrap" as const },
+  footer: { display: "flex", justifyContent: "space-between", alignItems: "center", gap: 16, color: "#64748b", fontSize: 12, flexWrap: "wrap" },
   button: { border: 0, borderRadius: 999, background: "#111827", color: "#fff", padding: "12px 20px", fontWeight: 700, cursor: "pointer" },
   result: { marginTop: 22, padding: 24, border: "1px solid #e5e7eb", borderRadius: 18, background: "#fff", lineHeight: 1.75 },
   error: { marginTop: 18, padding: 14, borderRadius: 12, border: "1px solid #fecaca", background: "#fef2f2", color: "#991b1b" },
@@ -68,7 +68,7 @@ export default function ResearchPage() {
       <header style={styles.hero}>
         <p style={styles.kicker}>CORLEON RESEARCH</p>
         <h1 style={styles.heading}>Search deeper.<br />Know why.</h1>
-        <p style={styles.lede}>Run web research through Google's supported Search grounding, with source links and query transparency.</p>
+        <p style={styles.lede}>Run web research through Google&apos;s supported Search grounding, with source links and query transparency.</p>
       </header>
       <form onSubmit={submit} style={styles.panel}>
         <label htmlFor="research-input" style={styles.label}>Search query or Google Search URL</label>
