@@ -1,66 +1,80 @@
-generator client { provider = "prisma-client-js" }
-datasource db { provider = "postgresql" url = env("DATABASE_URL") }
-enum ImageJobStatus { QUEUED PROCESSING COMPLETED FAILED }
-enum ImageJobType { GENERATION EDIT SKETCH }
+generator client {
+  provider = "prisma-client-js"
+}
+datasource db {
+  provider = "postgresql"
+  url = env("DATABASE_URL")
+}
+enum ImageJobStatus {
+  QUEUED
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+enum ImageJobType {
+  GENERATION
+  EDIT
+  SKETCH
+}
 model ImageJob {
- id String @id @default(cuid())
- ownerId String
- type ImageJobType
- status ImageJobStatus @default(QUEUED)
- prompt String @db.Text
- model String
- idempotencyKey String?
- sourceAssetId String?
- templateId String?
- errorCode String?
- errorMessage String? @db.Text
- metadata Json?
- createdAt DateTime @default(now())
- updatedAt DateTime @updatedAt
- completedAt DateTime?
- asset ImageAsset?
- @@unique([ownerId, idempotencyKey])
- @@index([ownerId, createdAt])
- @@index([status, createdAt])
+  id String @id @default(cuid())
+  ownerId String
+  type ImageJobType
+  status ImageJobStatus @default(QUEUED)
+  prompt String @db.Text
+  model String
+  idempotencyKey String?
+  sourceAssetId String?
+  templateId String?
+  errorCode String?
+  errorMessage String? @db.Text
+  metadata Json?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  completedAt DateTime?
+  asset ImageAsset?
+  @@unique([ownerId, idempotencyKey])
+  @@index([ownerId, createdAt])
+  @@index([status, createdAt])
 }
 model ImageAsset {
- id String @id @default(cuid())
- ownerId String
- jobId String @unique
- job ImageJob @relation(fields: [jobId], references: [id], onDelete: Cascade)
- objectKey String @unique
- mimeType String
- sizeBytes Int
- width Int?
- height Int?
- prompt String @db.Text
- model String
- createdAt DateTime @default(now())
- shares ImageShare[]
- @@index([ownerId, createdAt])
+  id String @id @default(cuid())
+  ownerId String
+  jobId String @unique
+  job ImageJob @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  objectKey String @unique
+  mimeType String
+  sizeBytes Int
+  width Int?
+  height Int?
+  prompt String @db.Text
+  model String
+  createdAt DateTime @default(now())
+  shares ImageShare[]
+  @@index([ownerId, createdAt])
 }
 model ImageTemplate {
- id String @id @default(cuid())
- ownerId String
- slug String
- name String
- description String @db.Text
- prompt String @db.Text
- category String
- fields Json?
- createdAt DateTime @default(now())
- updatedAt DateTime @updatedAt
- @@unique([ownerId, slug])
- @@index([ownerId, category])
+  id String @id @default(cuid())
+  ownerId String
+  slug String
+  name String
+  description String @db.Text
+  prompt String @db.Text
+  category String
+  fields Json?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@unique([ownerId, slug])
+  @@index([ownerId, category])
 }
 model ImageShare {
- id String @id @default(cuid())
- assetId String
- asset ImageAsset @relation(fields: [assetId], references: [id], onDelete: Cascade)
- tokenHash String @unique
- expiresAt DateTime?
- revokedAt DateTime?
- createdAt DateTime @default(now())
- @@index([assetId, createdAt])
- @@index([expiresAt])
+  id String @id @default(cuid())
+  assetId String
+  asset ImageAsset @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  tokenHash String @unique
+  expiresAt DateTime?
+  revokedAt DateTime?
+  createdAt DateTime @default(now())
+  @@index([assetId, createdAt])
+  @@index([expiresAt])
 }
