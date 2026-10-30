@@ -105,3 +105,8 @@ export async function getBinanceAccountSnapshot(): Promise<BinanceAccountSnapsho
     }),
   };
 }
+
+/** Backward-compatible name used by the portfolio route. */
+export async function getBinanceSpotAccount(): Promise<BinanceAccountSnapshot> {
+  return getBinanceAccountSnapshot();
+}
