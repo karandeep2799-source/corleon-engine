@@ -1,4 +1,4 @@
-import { createHash, randomUUID } from "node:crypto";
+import { createHash } from "node:crypto";
 import { DomainError, type TranscriptAnalyzer } from "./types.js";
 import { analyzeTranscript } from "./analysis.js";
 import { sha256, splitTranscriptSections, validateTranscriptInput } from "./transcript.js";
@@ -69,7 +69,7 @@ export async function ingestAndAnalyzeTranscript(input: {
   });
 
   const inputSha256 = createHash("sha256").update(contentSha256 + input.analyzer.promptVersion).digest("hex");
-  const idempotencyKey = randomUUID();
+  const idempotencyKey = createHash("sha256").update([data.tenantId, data.eventId, contentSha256, input.analyzer.promptVersion].join(":")).digest("hex");
   const run = await input.repository.createAnalysisRun({
     tenantId: data.tenantId,
     eventId: data.eventId,
