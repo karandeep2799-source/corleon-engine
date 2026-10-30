@@ -7,12 +7,51 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-enum TaskStatus { INBOX TODO IN_PROGRESS BLOCKED DONE CANCELLED }
-enum TaskPriority { LOW NORMAL HIGH URGENT }
-enum TaskSource { CORLEON GOOGLE_TASKS }
-enum TaskJobStatus { PENDING RUNNING SUCCEEDED FAILED DEAD }
-enum TaskAgentRunStatus { QUEUED RUNNING SUCCEEDED FAILED CANCELLED }
-enum BillingStatus { INCOMPLETE TRIALING ACTIVE PAST_DUE CANCELED UNPAID }
+enum TaskStatus {
+  INBOX
+  TODO
+  IN_PROGRESS
+  BLOCKED
+  DONE
+  CANCELLED
+}
+
+enum TaskPriority {
+  LOW
+  NORMAL
+  HIGH
+  URGENT
+}
+
+enum TaskSource {
+  CORLEON
+  GOOGLE_TASKS
+}
+
+enum TaskJobStatus {
+  PENDING
+  RUNNING
+  SUCCEEDED
+  FAILED
+  DEAD
+}
+
+enum TaskAgentRunStatus {
+  QUEUED
+  RUNNING
+  SUCCEEDED
+  FAILED
+  CANCELLED
+}
+
+enum BillingStatus {
+  INCOMPLETE
+  TRIALING
+  ACTIVE
+  PAST_DUE
+  CANCELED
+  UNPAID
+}
 
 model TaskUser {
   id        String   @id @default(cuid())
@@ -24,30 +63,32 @@ model TaskUser {
   runs      TaskAgentRun[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
   @@unique([tenantId, id])
   @@index([tenantId])
 }
 
 model Task {
-  id              String       @id @default(cuid())
-  tenantId        String
-  ownerId         String
-  owner           TaskUser     @relation(fields: [tenantId, ownerId], references: [tenantId, id], onDelete: Cascade)
-  title           String
-  notes           String?      @db.Text
-  status          TaskStatus   @default(INBOX)
-  priority        TaskPriority @default(NORMAL)
-  source          TaskSource   @default(CORLEON)
-  externalId      String?
-  externalListId  String?
-  dueAt           DateTime?
-  completedAt     DateTime?
-  position        Int          @default(0)
-  labels          String[]     @default([])
-  metadata        Json?
-  lastSyncedAt    DateTime?
-  createdAt       DateTime     @default(now())
-  updatedAt       DateTime     @updatedAt
+  id             String       @id @default(cuid())
+  tenantId       String
+  ownerId        String
+  owner          TaskUser     @relation(fields: [tenantId, ownerId], references: [tenantId, id], onDelete: Cascade)
+  title          String
+  notes          String?      @db.Text
+  status         TaskStatus   @default(INBOX)
+  priority       TaskPriority @default(NORMAL)
+  source         TaskSource   @default(CORLEON)
+  externalId     String?
+  externalListId String?
+  dueAt          DateTime?
+  completedAt    DateTime?
+  position       Int          @default(0)
+  labels         String[]     @default([])
+  metadata       Json?
+  lastSyncedAt   DateTime?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
   @@unique([tenantId, source, externalId])
   @@index([tenantId, ownerId, status, dueAt])
   @@index([tenantId, updatedAt])
@@ -68,86 +109,90 @@ model GoogleTasksConnection {
   lastError          String?
   connectedAt        DateTime @default(now())
   updatedAt          DateTime @updatedAt
+
   @@index([tenantId])
 }
 
 model TaskJob {
-  id          String         @id @default(cuid())
-  tenantId    String
-  kind        String
-  payload     Json
-  status      TaskJobStatus  @default(PENDING)
-  attempts    Int            @default(0)
-  maxAttempts Int            @default(8)
-  runAt       DateTime       @default(now())
-  lockedAt    DateTime?
-  lockedBy    String?
-  lastError   String?        @db.Text
-  idempotencyKey String      @unique
-  createdAt   DateTime       @default(now())
-  updatedAt   DateTime       @updatedAt
+  id             String        @id @default(cuid())
+  tenantId       String
+  kind           String
+  payload        Json
+  status         TaskJobStatus @default(PENDING)
+  attempts       Int           @default(0)
+  maxAttempts    Int           @default(8)
+  runAt          DateTime      @default(now())
+  lockedAt       DateTime?
+  lockedBy       String?
+  lastError      String?       @db.Text
+  idempotencyKey String        @unique
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
   @@index([status, runAt])
   @@index([tenantId, createdAt])
 }
 
 model TaskAgentRun {
-  id          String             @id @default(cuid())
-  tenantId    String
-  userId      String
-  user        TaskUser           @relation(fields: [tenantId, userId], references: [tenantId, id], onDelete: Cascade)
-  agent       String
-  status      TaskAgentRunStatus @default(QUEUED)
-  input       Json
-  output      Json?
-  error       String?            @db.Text
-  startedAt   DateTime?
-  finishedAt  DateTime?
-  createdAt   DateTime           @default(now())
+  id        String             @id @default(cuid())
+  tenantId  String
+  userId    String
+  user      TaskUser           @relation(fields: [tenantId, userId], references: [tenantId, id], onDelete: Cascade)
+  agent     String
+  status    TaskAgentRunStatus @default(QUEUED)
+  input     Json
+  output    Json?
+  error     String?            @db.Text
+  startedAt DateTime?
+  finishedAt DateTime?
+  createdAt DateTime           @default(now())
+
   @@index([tenantId, userId, createdAt])
 }
 
 model TaskAuditEvent {
-  id        String   @id @default(cuid())
-  tenantId  String
-  actorId   String?
-  action    String
-  resource  String
+  id         String   @id @default(cuid())
+  tenantId   String
+  actorId    String?
+  action     String
+  resource   String
   resourceId String?
-  metadata  Json?
-  requestId String?
-  createdAt DateTime @default(now())
+  metadata   Json?
+  requestId  String?
+  createdAt  DateTime @default(now())
+
   @@index([tenantId, createdAt])
 }
 
 model StripeCustomer {
-  id                 String   @id @default(cuid())
-  tenantId           String   @unique
-  stripeCustomerId   String   @unique
-  email              String?
-  createdAt          DateTime @default(now())
-  updatedAt          DateTime @updatedAt
-  subscription       StripeSubscription?
+  id               String             @id @default(cuid())
+  tenantId         String             @unique
+  stripeCustomerId String             @unique
+  email            String?
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+  subscription     StripeSubscription?
 }
 
 model StripeSubscription {
-  id                   String        @id @default(cuid())
-  tenantId             String        @unique
-  customerId           String        @unique
-  customer              StripeCustomer @relation(fields: [customerId], references: [id], onDelete: Cascade)
-  stripeSubscriptionId String        @unique
+  id                   String         @id @default(cuid())
+  tenantId             String         @unique
+  customerId           String         @unique
+  customer             StripeCustomer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  stripeSubscriptionId String         @unique
   stripePriceId        String
   status               BillingStatus
   currentPeriodEnd     DateTime?
-  cancelAtPeriodEnd    Boolean       @default(false)
-  updatedAt            DateTime      @updatedAt
-  createdAt            DateTime      @default(now())
+  cancelAtPeriodEnd    Boolean        @default(false)
+  updatedAt            DateTime       @updatedAt
+  createdAt            DateTime       @default(now())
 }
 
 model StripeWebhookEvent {
-  id          String   @id @default(cuid())
-  stripeEventId String @unique
-  type        String
-  processedAt DateTime?
-  payload     Json
-  createdAt   DateTime @default(now())
+  id            String    @id @default(cuid())
+  stripeEventId String    @unique
+  type          String
+  processedAt   DateTime?
+  payload       Json
+  createdAt     DateTime  @default(now())
 }
