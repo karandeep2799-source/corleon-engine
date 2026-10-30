@@ -10,14 +10,21 @@
     "build": "turbo run build",
     "build:web": "turbo build --filter=@corleon/web",
     "dev": "turbo run dev",
-    "lint": "turbo run lint",
+    "lint": "eslint .",
     "test": "turbo run test",
     "typecheck": "turbo run typecheck",
-    "format": "prettier --write ."
+    "format": "prettier --write .",
+    "prisma:generate": "prisma generate",
+    "prisma:deploy": "prisma migrate deploy"
   },
   "devDependencies": {
     "prettier": "^3.6.2",
     "turbo": "^2.5.6",
-    "typescript": "^5.9.2"
+    "typescript": "^5.9.2",
+    "prisma": "^6.16.0",
+    "eslint": "^9.35.0"
+  },
+  "dependencies": {
+    "@prisma/client": "^6.16.0"
   }
 }
