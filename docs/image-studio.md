@@ -33,7 +33,7 @@ Generate a password hash with: node scripts/hash-image-studio-password.mjs '<lon
 
 ## Security and operations
 - Keep the object bucket private; browser requests are proxied through authenticated routes.
-- Uploads are signature-checked PNG/JPEG/WebP and limited to 15 MiB.
+- Uploads are signature-checked PNG/JPEG/WebP and limited to 4 MiB to stay within Vercel function request-body limits.
 - API limits each user to 20 image tasks per rolling 24 hours by default. Configure WAF/edge rate limiting for auth and API routes.
 - Generation/edit functions request a 300-second maximum and have a 270-second provider timeout. Actual duration is constrained by the Vercel plan. Move provider calls to a durable queue/worker for sustained volume or when plan function duration is insufficient.
 - The initial login adapter is single-admin, not multi-user RBAC/SSO/MFA. Replace it with Corleon's shared identity provider before customer-facing multi-user use.
