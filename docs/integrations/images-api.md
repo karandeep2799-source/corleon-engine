@@ -2,7 +2,7 @@
 Private, workspace-scoped image generation and asset APIs for Corleon Engine.
 
 ## Environment
-Set server-only secrets in Vercel: DATABASE_URL, OPENAI_API_KEY, IMAGES_API_TOKEN (32+ random chars), IMAGES_STORAGE_BUCKET, IMAGES_STORAGE_REGION, IMAGES_STORAGE_ACCESS_KEY_ID, IMAGES_STORAGE_SECRET_ACCESS_KEY, and NEXT_PUBLIC_APP_URL. Optional: IMAGES_STORAGE_ENDPOINT and IMAGES_MODEL (defaults to gpt-image-2.5-sunburst). Keep the S3/R2 bucket private with server-side encryption.
+Set server-only secrets in Vercel: DATABASE_URL, OPENAI_API_KEY, IMAGES_API_TOKEN (32+ random chars), IMAGES_STORAGE_BUCKET, IMAGES_STORAGE_REGION, IMAGES_STORAGE_ACCESS_KEY_ID, IMAGES_STORAGE_SECRET_ACCESS_KEY, and NEXT_PUBLIC_APP_URL. Optional: IMAGES_STORAGE_ENDPOINT and IMAGES_MODEL (defaults to gpt-image-2.5-sunburst). Keep the S3/R2 bucket private and enable default at-rest encryption at the bucket/provider level. Cloudflare R2 manages encryption automatically; avoid sending unsupported SSE headers.
 
 ## Deploy
 Provision PostgreSQL and private S3-compatible storage. Run `pnpm --filter @corleon/web db:generate`, then `pnpm --filter @corleon/web db:migrate` as a release step. Routes use Node.js runtime and allow 60 seconds for provider requests.
