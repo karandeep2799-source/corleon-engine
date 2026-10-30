@@ -1,16 +1,16 @@
 import { NextResponse } from "next/server";
 import { assessSpotOrderRisk } from "../../../../../../lib/binance/risk-policy";
-import { hasBinanceServiceAuthorization } from "../../../../../../lib/binance/service-auth";
+import { isAuthorizedPortfolioRequest } from "../../../../../lib/binance/portfolio-access";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function POST(request: Request) {
-  if (!hasBinanceServiceAuthorization(request)) {
+  if (!isAuthorizedPortfolioRequest(request)) {
     return NextResponse.json({ error: "Unauthorized." }, { status: 401, headers: { "Cache-Control": "no-store" } });
   }
 
-  if (process.env.BINANCE_RISK_ENGINE_ENABLED !== "true") {
+  if (process.env.BINANCE_PAPER_TRADING_ENABLED !== "true") {
     return NextResponse.json({ error: "Binance risk evaluation is disabled." }, { status: 503, headers: { "Cache-Control": "no-store" } });
   }
 
