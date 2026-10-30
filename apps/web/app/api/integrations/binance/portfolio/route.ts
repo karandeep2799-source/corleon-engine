@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { BinancePrivateApiError, getBinanceSpotAccount } from "../../../../../lib/binance/private-account";
+import { BinancePrivateApiError, getBinanceAccountSnapshot } from "../../../../../lib/binance/private-account";
 import { getBinance24HourTicker } from "../../../../../lib/binance/market-data";
 import { isAuthorizedPortfolioRequest } from "../../../../../lib/binance/portfolio-access";
 
