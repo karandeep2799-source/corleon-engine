@@ -4,13 +4,8 @@
   "outputDirectory": "apps/web/.next",
   "framework": "nextjs",
   "crons": [
-    {
-      "path": "/api/cron/release-commissions",
-      "schedule": "0 0 * * *"
-    },
-    {
-      "path": "/api/cron/taskos-sync",
-      "schedule": "*/15 * * * *"
-    }
+    { "path": "/api/cron/release-commissions", "schedule": "0 0 * * *" },
+    { "path": "/api/cron/taskos-sync", "schedule": "*/15 * * * *" },
+    { "path": "/api/cron/taskos-worker", "schedule": "*/15 * * * *" }
   ]
 }
