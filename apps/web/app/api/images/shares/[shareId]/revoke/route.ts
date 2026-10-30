@@ -1,0 +1,3 @@
+import {NextResponse} from 'next/server';import {authorizeImageRequest,jsonError} from '@/lib/images/auth';import {IMAGE_OWNER_ID} from '@/lib/images/config';import {prisma} from '@/lib/images/db';
+export const runtime='nodejs';
+export async function POST(req:Request,ctx:{params:Promise<{shareId:string}>}){const d=authorizeImageRequest(req);if(d)return d;const {shareId}=await ctx.params;const s=await prisma.imageShare.findFirst({where:{id:shareId,asset:{ownerId:IMAGE_OWNER_ID}}});if(!s)return jsonError('SHARE_NOT_FOUND','Share link was not found.',404);await prisma.imageShare.update({where:{id:shareId},data:{revokedAt:new Date()}});return NextResponse.json({success:true});}
