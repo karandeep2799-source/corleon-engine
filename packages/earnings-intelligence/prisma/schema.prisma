@@ -1,0 +1,276 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/client"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum EarningsEventStatus {
+  SCHEDULED
+  REPORTED
+  TRANSCRIPT_PENDING
+  TRANSCRIPT_AVAILABLE
+  ANALYZED
+  CANCELLED
+}
+
+enum TranscriptSourceStatus {
+  PENDING
+  VERIFIED
+  RESTRICTED
+  REJECTED
+}
+
+enum TranscriptSectionType {
+  PREPARED_REMARKS
+  QUESTION_AND_ANSWER
+  OPERATOR
+  OTHER
+}
+
+enum InsightCategory {
+  PERFORMANCE
+  GUIDANCE
+  MANAGEMENT
+  ANALYST_SENTIMENT
+  COMPETITIVE_POSITION
+  CAPITAL_ALLOCATION
+  RISK
+  CATALYST
+  THESIS_CHANGE
+}
+
+enum InsightPolarity {
+  POSITIVE
+  NEGATIVE
+  NEUTRAL
+  MIXED
+}
+
+enum AnalysisRunStatus {
+  QUEUED
+  RUNNING
+  SUCCEEDED
+  FAILED
+  CANCELLED
+}
+
+model EICompany {
+  id             String         @id @default(cuid())
+  tenantId       String
+  ticker         String
+  exchange       String
+  legalName      String
+  currency       String         @default("USD")
+  country        String?
+  sector         String?
+  industry       String?
+  active         Boolean        @default(true)
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  events         EIEarningsEvent[]
+  promises       EIManagementPromise[]
+  thesisUpdates  EIThesisUpdate[]
+
+  @@unique([tenantId, exchange, ticker])
+  @@index([tenantId, active])
+  @@index([ticker, exchange])
+}
+
+model EIEarningsEvent {
+  id               String              @id @default(cuid())
+  tenantId         String
+  companyId        String
+  fiscalYear       Int
+  fiscalQuarter    Int
+  callAt           DateTime?
+  reportedAt       DateTime?
+  status           EarningsEventStatus @default(SCHEDULED)
+  revenueActual    Decimal?            @db.Decimal(24, 6)
+  revenueEstimate  Decimal?            @db.Decimal(24, 6)
+  epsActual        Decimal?            @db.Decimal(18, 6)
+  epsEstimate      Decimal?            @db.Decimal(18, 6)
+  currency         String               @default("USD")
+  createdAt        DateTime             @default(now())
+  updatedAt        DateTime             @updatedAt
+  company          EICompany            @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  transcript       EITranscript?
+  insights         EIEarningsInsight[]
+  analysisRuns     EIAnalysisRun[]
+  questions        EIAnalystQuestion[]
+
+  @@unique([tenantId, companyId, fiscalYear, fiscalQuarter])
+  @@index([tenantId, callAt])
+  @@index([companyId, fiscalYear, fiscalQuarter])
+}
+
+model EITranscript {
+  id                String                @id @default(cuid())
+  tenantId          String
+  eventId           String                @unique
+  sourceName        String
+  sourceUrl         String?
+  sourceDocumentId  String?
+  sourceStatus      TranscriptSourceStatus @default(PENDING)
+  sourcePublishedAt DateTime?
+  fetchedAt         DateTime              @default(now())
+  content           String
+  contentSha256     String
+  language          String                @default("en")
+  wordCount         Int
+  version           Int                   @default(1)
+  isCurrent         Boolean               @default(true)
+  licenseReference  String?
+  metadata          Json?
+  event             EIEarningsEvent       @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  sections          EITranscriptSection[]
+
+  @@unique([tenantId, contentSha256])
+  @@index([tenantId, sourceStatus, fetchedAt])
+  @@index([eventId, isCurrent])
+}
+
+model EITranscriptSection {
+  id           String               @id @default(cuid())
+  tenantId     String
+  transcriptId String
+  sectionType  TranscriptSectionType
+  ordinal      Int
+  heading      String?
+  content      String
+  speaker      String?
+  speakerRole  String?
+  startOffset  Int
+  endOffset    Int
+  transcript   EITranscript         @relation(fields: [transcriptId], references: [id], onDelete: Cascade)
+
+  @@unique([transcriptId, ordinal])
+  @@index([tenantId, sectionType])
+}
+
+model EIAnalystQuestion {
+  id              String          @id @default(cuid())
+  tenantId        String
+  eventId         String
+  analystName     String?
+  analystFirm     String?
+  question        String
+  answer          String?
+  topic           String?
+  isDeflection    Boolean         @default(false)
+  evidenceStart   Int?
+  evidenceEnd     Int?
+  event           EIEarningsEvent @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, eventId])
+  @@index([tenantId, analystFirm])
+}
+
+model EIEarningsInsight {
+  id            String          @id @default(cuid())
+  tenantId      String
+  eventId       String
+  category      InsightCategory
+  polarity      InsightPolarity @default(NEUTRAL)
+  title         String
+  summary       String
+  confidence    Decimal         @db.Decimal(5, 4)
+  evidence      Json
+  model         String
+  promptVersion String
+  createdAt     DateTime        @default(now())
+  event         EIEarningsEvent @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, eventId, category])
+  @@index([tenantId, createdAt])
+}
+
+model EIManagementPromise {
+  id              String      @id @default(cuid())
+  tenantId        String
+  companyId       String
+  statement       String
+  normalizedClaim String
+  firstEventId    String
+  dueAt           DateTime?
+  status           String      @default("OPEN")
+  outcome         String?
+  evidence        Json?
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+  company         EICompany   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, companyId, status])
+  @@index([tenantId, dueAt])
+}
+
+model EIThesisUpdate {
+  id          String    @id @default(cuid())
+  tenantId    String
+  companyId   String
+  eventId     String?
+  thesis      String
+  change      String
+  rationale   String
+  evidence    Json
+  createdAt   DateTime  @default(now())
+  company     EICompany @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, companyId, createdAt])
+  @@index([tenantId, eventId])
+}
+
+model EIAnalysisRun {
+  id             String           @id @default(cuid())
+  tenantId       String
+  eventId        String
+  status         AnalysisRunStatus @default(QUEUED)
+  model          String
+  promptVersion  String
+  idempotencyKey String
+  inputSha256    String
+  output         Json?
+  errorCode      String?
+  errorMessage   String?
+  startedAt      DateTime?
+  completedAt    DateTime?
+  createdAt      DateTime         @default(now())
+  event          EIEarningsEvent  @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, idempotencyKey])
+  @@index([tenantId, eventId, createdAt])
+  @@index([tenantId, status, createdAt])
+}
+
+model EIIngestionReceipt {
+  id             String   @id @default(cuid())
+  tenantId       String
+  provider       String
+  externalId     String
+  payloadSha256  String
+  receivedAt     DateTime @default(now())
+  processedAt    DateTime?
+  status         String   @default("RECEIVED")
+  errorMessage   String?
+
+  @@unique([tenantId, provider, externalId])
+  @@index([tenantId, receivedAt])
+}
+
+model EIAuditRecord {
+  id          String   @id @default(cuid())
+  tenantId    String
+  actorId     String?
+  action      String
+  entityType  String
+  entityId    String
+  requestId   String?
+  metadata    Json?
+  createdAt   DateTime @default(now())
+
+  @@index([tenantId, createdAt])
+  @@index([tenantId, entityType, entityId])
+}
