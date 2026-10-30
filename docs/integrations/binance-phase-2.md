@@ -1,31 +1,34 @@
-# Binance Phase 2: private portfolio monitoring and risk evaluation
+# Binance Phase 2: portfolio monitoring and deterministic risk assessment
 
-## Scope delivered
+## Existing integration surface
 
-- Private Spot account snapshot through signed `GET /api/v3/account`.
-- Server-only HMAC-SHA256 request signing with a 5,000 ms `recvWindow`.
-- Non-zero balance filtering and `Cache-Control: no-store`.
-- Service-to-service bearer authorization for private monitoring and risk routes.
-- Deterministic Spot order proposal assessment with a symbol allowlist and per-order USDT notional ceiling.
-- Live execution remains hard-disabled. A positive risk result is explicitly simulation-only.
-
-## Endpoints
+This phase extends the existing Corleon Binance integration. It deliberately reuses the established portfolio bearer-token gate and paper-trading settings rather than introducing parallel credentials or flags.
 
 ### Public market data
 
 `GET /api/integrations/binance/market?symbol=BTCUSDT`
 
-### Private portfolio snapshot
+Public 24-hour Spot ticker data. No credentials are used.
 
-`GET /api/integrations/binance/account`
+### Private portfolio
 
-Requires `Authorization: Bearer <BINANCE_MONITORING_ACCESS_TOKEN>`.
+`GET /api/integrations/binance/portfolio`
+
+Requires `Authorization: Bearer <BINANCE_PORTFOLIO_ACCESS_TOKEN>` and `BINANCE_PRIVATE_API_ENABLED=true`.
+
+The route uses signed `GET /api/v3/account` with server-side HMAC-SHA256 signing, a 5,000 ms `recvWindow`, and `Cache-Control: private, no-store`. It returns non-zero Spot balances and indicative USDT pricing for at most 20 assets with a direct `ASSETUSDT` market. This is not full account NAV and excludes unsupported pairs and other Binance products.
+
+### Paper-trade preview
+
+`POST /api/integrations/binance/paper-trades`
+
+Requires the same bearer token and `BINANCE_PAPER_TRADING_ENABLED=true`. It fetches a current public ticker, applies the shared deterministic risk policy, and returns a simulation preview. No exchange order is submitted.
 
 ### Risk assessment
 
 `POST /api/integrations/binance/risk/evaluate`
 
-Requires the same service bearer token and JSON:
+Requires the same bearer token and paper-trading feature flag. JSON body:
 
 ```json
 {
@@ -36,42 +39,42 @@ Requires the same service bearer token and JSON:
 }
 ```
 
-A successful assessment returns `APPROVED_FOR_SIMULATION_ONLY`, never live execution authorization.
+A passing result is `APPROVED_FOR_SIMULATION_ONLY`. It is not a live execution authorization.
 
 ## Server environment
 
-Configure these as encrypted server-side environment variables in Vercel for the web application:
+The root `.env.example` already defines the integration settings:
 
 ```dotenv
-BINANCE_MARKET_DATA_ENABLED=true
-BINANCE_ACCOUNT_MONITORING_ENABLED=false
-BINANCE_RISK_ENGINE_ENABLED=false
+BINANCE_MARKET_DATA_ENABLED=false
+BINANCE_PRIVATE_API_ENABLED=false
 BINANCE_API_KEY=
 BINANCE_API_SECRET=
-BINANCE_MONITORING_ACCESS_TOKEN=
-BINANCE_RISK_ALLOWED_SYMBOLS=BTCUSDT,ETHUSDT,BNBUSDT
-BINANCE_RISK_MAX_ORDER_NOTIONAL_USDT=25
+BINANCE_PORTFOLIO_ACCESS_TOKEN=
+BINANCE_PAPER_TRADING_ENABLED=false
+BINANCE_PAPER_ALLOWED_SYMBOLS=BTCUSDT,ETHUSDT,BNBUSDT
+BINANCE_PAPER_MAX_NOTIONAL_USDT=100
 ```
 
-Do not place secrets in `NEXT_PUBLIC_*` variables, source files, GitHub Actions logs, browser code, or chat. Create an HMAC API key for this implementation (the current signer uses HMAC-SHA256) with only Spot `USER_DATA` permission for this monitoring phase. Do not use an Ed25519 or RSA key with this HMAC signer. Disable withdrawals, transfers, margin and futures permissions. Apply IP restrictions where supported; serverless egress must be stable/allowlisted before relying on IP restrictions.
+For the current signer, create a Binance HMAC API key with Spot `USER_DATA` permission only. Do not use an Ed25519 or RSA key with this HMAC signer. Disable trading, withdrawals, transfers, margin and futures permissions. Apply IP restrictions where supported; Vercel serverless egress is not inherently static.
 
-The service bearer token is a separate Corleon-to-service credential. Generate a high-entropy random value and store it only in the caller's server-side secret store and Vercel environment. Do not expose it to browser JavaScript.
+Store the API key, secret, and high-entropy portfolio bearer token only in server-side Vercel environment variables or a managed secret store. Never use `NEXT_PUBLIC_*`, commit populated values, send them from browser JavaScript, or paste them into chat. The bearer token is a deployment-level service gate, not a substitute for per-user/org authentication and tenant authorization.
 
-## Important execution boundary
+## Live execution boundary
 
-This phase does **not** place orders. The current repository has no confirmed authenticated user/org authorization layer, durable order-intent/idempotency store, daily P&L ledger, exposure aggregation, exchange filter validation, or order reconciliation workflow. A stateless Next.js route must not pretend to enforce daily loss or portfolio-wide risk limits without durable state.
+The user's desired policy is automated execution after deterministic risk approval. Live exchange execution is **not enabled in this phase**. The current implementation only supports portfolio reads, risk evaluation, and paper-trade previews.
 
-Before enabling live automated execution, implement:
-1. Authenticated user and organization RBAC, with a dedicated trading service identity.
-2. PostgreSQL/Prisma persistence for order intents, idempotency keys, fills, balances, daily realized/unrealized P&L, and risk decisions.
-3. Atomic daily-loss, per-symbol, aggregate exposure, and order-count controls.
-4. Exchange `exchangeInfo` filter validation (PRICE_FILTER, LOT_SIZE, MIN_NOTIONAL/NOTIONAL, and applicable filters).
-5. Explicit allowlisted Spot symbols and order types; no margin, futures, leverage, withdrawals, or transfers.
-6. A dedicated worker with controlled static egress, durable queue, retry classification, and reconciliation against order/user-data events.
-7. Testnet and fault-injection tests; fail closed on stale market data, unknown order state, missing balance snapshot, database outage, or clock drift.
-8. Kill switch, per-account caps, alerting, immutable audit trail, and an operational rollback/revocation runbook.
+Before enabling a live `TRADE` key or submitting orders, implement and verify:
+1. Authenticated user/org RBAC and tenant-scoped credential management.
+2. PostgreSQL/Prisma persistence for order intents, idempotency keys, fills, balance snapshots, risk decisions, and daily P&L.
+3. Atomic per-order, per-symbol, aggregate-exposure, order-count, and daily-loss controls.
+4. Binance `exchangeInfo` filter validation (PRICE_FILTER, LOT_SIZE, MIN_NOTIONAL/NOTIONAL and all applicable filters).
+5. A durable execution worker with controlled static egress, retry classification, and order-state reconciliation.
+6. Fail-closed behavior for stale quotes, unknown order state, missing account snapshots, clock drift, and database/queue failures.
+7. Testnet and fault-injection coverage, a kill switch, alerting, immutable audit trail, and key-revocation runbook.
+8. Legal/product review for the exact Indian account, product and business use.
 
-Do not toggle a live trading flag until all of the above are implemented and reviewed. The user's requested policy is automated execution **after** risk approval; the implementation must make that approval deterministic, durable, and account-aware before it can safely be connected to a live TRADE key.
+Do not add or enable live order submission until these requirements are implemented and reviewed. Risk-agent/model output must never independently authorize an order.
 
 ## Binance references
 
