@@ -5,18 +5,42 @@ datasource db {
   provider = "postgresql"
   url = env("DATABASE_URL")
 }
-enum CreativeProjectStatus { ACTIVE ARCHIVED }
-enum CreativeJobStatus { QUEUED RUNNING SUCCEEDED FAILED CANCELLED }
-enum CreativeJobMode { GENERATE EDIT }
-enum CreativeProvider { OPENAI }
-enum CreativeAssetStatus { READY DELETED }
-enum CreativeAgentStatus { QUEUED RUNNING SUCCEEDED FAILED }
+enum CreativeProjectStatus {
+  ACTIVE
+  ARCHIVED
+}
+enum CreativeJobStatus {
+  QUEUED
+  RUNNING
+  SUCCEEDED
+  FAILED
+  CANCELLED
+}
+enum CreativeJobMode {
+  GENERATE
+  EDIT
+}
+enum CreativeProvider {
+  OPENAI
+}
+enum CreativeAssetStatus {
+  READY
+  DELETED
+}
+enum CreativeAgentStatus {
+  QUEUED
+  RUNNING
+  SUCCEEDED
+  FAILED
+}
 model CreativeTenant {
   id String @id @default(cuid())
   name String
   slug String @unique
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  billingAccount CreativeBillingAccount?
+  stripeEvents CreativeStripeEvent[]
   apiKeys CreativeApiKey[]
   projects CreativeProject[]
   jobs GenerationJob[]
@@ -195,4 +219,29 @@ model AuditEvent {
   tenant CreativeTenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   @@index([tenantId, createdAt])
   @@index([entityType, entityId])
+}
+
+model CreativeBillingAccount {
+  id String @id @default(cuid())
+  tenantId String @unique
+  stripeCustomerId String @unique
+  stripeSubscriptionId String? @unique
+  stripePriceId String?
+  status String @default("incomplete")
+  currentPeriodEnd DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  tenant CreativeTenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+}
+
+model CreativeStripeEvent {
+  id String @id
+  tenantId String?
+  type String
+  processedAt DateTime?
+  receivedAt DateTime @default(now())
+  payload Json
+  tenant CreativeTenant? @relation(fields: [tenantId], references: [id], onDelete: SetNull)
+  @@index([tenantId, receivedAt])
+  @@index([type, receivedAt])
 }

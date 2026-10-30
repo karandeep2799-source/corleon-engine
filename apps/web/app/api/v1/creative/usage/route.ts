@@ -1,0 +1,5 @@
+import {NextRequest} from "next/server";
+import {prisma} from "@/lib/creative/db";
+import {requireCreativeTenant,authErrorResponse} from "@/lib/creative/auth";
+export const runtime="nodejs";
+export async function GET(req:NextRequest){try{const {tenantId}=await requireCreativeTenant(req);const start=new Date();start.setUTCDate(1);start.setUTCHours(0,0,0,0);const [usage,billing]=await Promise.all([prisma.generationUsage.aggregate({where:{tenantId,createdAt:{gte:start}},_count:{_all:true},_sum:{outputBytes:true,outputCount:true}}),prisma.creativeBillingAccount.findUnique({where:{tenantId},select:{status:true,stripePriceId:true,currentPeriodEnd:true}})]);return Response.json({data:{periodStart:start,generatedImages:usage._sum.outputCount??0,jobCount:usage._count._all,outputBytes:usage._sum.outputBytes??0n,billing}});}catch(e){return authErrorResponse(e)??Response.json({error:"internal_error"},{status:500});}}
