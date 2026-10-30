@@ -1,8 +1,8 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { assessSpotOrderRisk } from "./risk-policy";
 
-const originalAllowed = process.env.BINANCE_RISK_ALLOWED_SYMBOLS;
-const originalLimit = process.env.BINANCE_RISK_MAX_ORDER_NOTIONAL_USDT;
+const originalAllowed = process.env.BINANCE_PAPER_ALLOWED_SYMBOLS;
+const originalLimit = process.env.BINANCE_PAPER_MAX_NOTIONAL_USDT;
 
 afterEach(() => {
   if (originalAllowed === undefined) delete process.env.BINANCE_RISK_ALLOWED_SYMBOLS;
