@@ -53,7 +53,7 @@ BINANCE_RISK_ALLOWED_SYMBOLS=BTCUSDT,ETHUSDT,BNBUSDT
 BINANCE_RISK_MAX_ORDER_NOTIONAL_USDT=25
 ```
 
-Do not place secrets in `NEXT_PUBLIC_*` variables, source files, GitHub Actions logs, browser code, or chat. Use a Binance API key with only Spot `USER_DATA` permission for this monitoring phase. Disable withdrawals, transfers, margin and futures permissions. Apply IP restrictions where supported; serverless egress must be stable/allowlisted before relying on IP restrictions.
+Do not place secrets in `NEXT_PUBLIC_*` variables, source files, GitHub Actions logs, browser code, or chat. Create an HMAC API key for this implementation (the current signer uses HMAC-SHA256) with only Spot `USER_DATA` permission for this monitoring phase. Do not use an Ed25519 or RSA key with this HMAC signer. Disable withdrawals, transfers, margin and futures permissions. Apply IP restrictions where supported; serverless egress must be stable/allowlisted before relying on IP restrictions.
 
 The service bearer token is a separate Corleon-to-service credential. Generate a high-entropy random value and store it only in the caller's server-side secret store and Vercel environment. Do not expose it to browser JavaScript.
 
