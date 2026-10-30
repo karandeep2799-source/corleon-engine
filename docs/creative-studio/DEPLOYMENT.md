@@ -1,0 +1,13 @@
+# Deployment checklist
+- Provision PostgreSQL and configure DATABASE_URL.
+- Provision Redis with TLS and authentication; configure REDIS_URL.
+- Provision a private S3/R2 bucket with encryption and public access blocked.
+- Configure OPENAI_API_KEY and OPENAI_IMAGE_MODEL; verify model access and organization verification requirements.
+- Generate CREATIVE_API_KEY_PEPPER from at least 32 cryptographically random bytes.
+- Run Prisma migrations before web and worker rollout.
+- Deploy apps/web to Vercel.
+- Run pnpm creative:worker as a separate Node 24 service.
+- Configure alerts for queue depth, failed jobs, provider errors, worker restarts and storage growth.
+- Configure object lifecycle, backups, retention and tenant erasure.
+- Rotate API keys; never log bearer tokens.
+- Integrate shared session identity and billing entitlements before exposing a browser studio.
