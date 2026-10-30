@@ -1,7 +1,7 @@
 name: CI
 on:
   push:
-    branches: [main]
+    branches: [main, feat/images-api]
   pull_request:
     branches: [main, feat/production-foundation]
 jobs:
