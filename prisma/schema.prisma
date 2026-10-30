@@ -577,8 +577,8 @@ model ImageAsset {
   source String @default("GENERATED")
   templateKey String?
   createdAt DateTime @default(now())
-  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  workspace ImageStudioWorkspace @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  studioUser ImageStudioUser @relation(fields: [userId], references: [id], onDelete: Cascade)
   inputFor ImageGenerationJob[] @relation("ImageJobInput")
   outputFor ImageGenerationJob[] @relation("ImageJobOutput")
   @@index([organizationId, userId, createdAt])
@@ -602,8 +602,8 @@ model ImageGenerationJob {
   errorCode String?
   createdAt DateTime @default(now())
   completedAt DateTime?
-  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  workspace ImageStudioWorkspace @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  studioUser ImageStudioUser @relation(fields: [userId], references: [id], onDelete: Cascade)
   inputAsset ImageAsset? @relation("ImageJobInput", fields: [inputAssetId], references: [id], onDelete: SetNull)
   outputAsset ImageAsset? @relation("ImageJobOutput", fields: [outputAssetId], references: [id], onDelete: SetNull)
   @@index([organizationId, userId, createdAt])
