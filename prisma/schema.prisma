@@ -51,8 +51,6 @@ model Organization {
   auditLogs AuditLog[]
   ledgerEntries LedgerEntry[]
   reconciliations Reconciliation[]
-  imageAssets ImageAsset[]
-  imageJobs ImageGenerationJob[]
 }
 
 model User {
@@ -62,8 +60,6 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   organizations OrganizationUser[]
-  imageAssets ImageAsset[]
-  imageJobs ImageGenerationJob[]
 }
 
 model OrganizationUser {
@@ -72,8 +68,8 @@ model OrganizationUser {
   userId String
   role OrganizationRole @default(MEMBER)
   createdAt DateTime @default(now())
-  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  workspace ImageStudioWorkspace @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  studioUser ImageStudioUser @relation(fields: [userId], references: [id], onDelete: Cascade)
   @@unique([organizationId, userId])
   @@index([organizationId, role])
 }
@@ -547,6 +543,27 @@ model AuditLog {
 
 
 enum ImageJobStatus { QUEUED RUNNING COMPLETED FAILED }
+
+model ImageStudioWorkspace {
+  id String @id @default(cuid())
+  name String
+  slug String @unique
+  createdAt DateTime @default(now())
+  users ImageStudioUser[]
+  assets ImageAsset[]
+  jobs ImageGenerationJob[]
+}
+
+model ImageStudioUser {
+  id String @id @default(cuid())
+  email String @unique
+  workspaceId String
+  createdAt DateTime @default(now())
+  workspace ImageStudioWorkspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  assets ImageAsset[]
+  jobs ImageGenerationJob[]
+  @@index([workspaceId])
+}
 
 model ImageAsset {
   id String @id @default(cuid())
