@@ -1,6 +1,6 @@
 import { timingSafeEqual } from "node:crypto";
 import { NextResponse } from "next/server";
-import { normalizeGoogleSearchInput } from "../../../../../lib/google-search";
+import { normalizeGoogleSearchInput } from "../../../../lib/google-search";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -12,13 +12,10 @@ type GeminiResponse = {
     content?: { parts?: GeminiPart[] };
     groundingMetadata?: {
       webSearchQueries?: string[];
-      groundingChunks?: Array<{
-        web?: { uri?: string; title?: string };
-      }>;
+      groundingChunks?: Array<{ web?: { uri?: string; title?: string } }>;
     };
     finishReason?: string;
   }>;
-  error?: { message?: string; status?: string };
 };
 
 function authorized(request: Request): boolean {
@@ -57,6 +54,11 @@ export async function POST(request: Request) {
   const apiKey = process.env.GOOGLE_GEMINI_API_KEY;
   if (!apiKey) {
     return NextResponse.json({ error: "Google Gemini is not configured on this deployment." }, { status: 503 });
+  }
+
+  const contentLength = Number(request.headers.get("content-length") ?? "0");
+  if (contentLength > 16_384) {
+    return NextResponse.json({ error: "Request body is too large." }, { status: 413 });
   }
 
   let input: unknown;
@@ -104,10 +106,7 @@ export async function POST(request: Request) {
       `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`,
       {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-goog-api-key": apiKey,
-        },
+        headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
         body: JSON.stringify({
           contents: [{ role: "user", parts: [{ text: prompt }] }],
           tools: [{ google_search: {} }],
@@ -134,7 +133,7 @@ export async function POST(request: Request) {
     return NextResponse.json(
       { error: status === 429 ? "Google AI rate limit reached. Try again shortly." : "Google AI could not complete this research request." },
       { status },
-      );
+    );
   }
 
   let data: GeminiResponse;
