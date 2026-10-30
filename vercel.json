@@ -7,6 +7,10 @@
     {
       "path": "/api/cron/release-commissions",
       "schedule": "0 0 * * *"
+    },
+    {
+      "path": "/api/cron/taskos-sync",
+      "schedule": "*/15 * * * *"
     }
   ]
 }
