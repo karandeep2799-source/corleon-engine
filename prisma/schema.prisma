@@ -191,6 +191,7 @@ model Organization {
   users OrganizationUser[]
   programs Program[]
   affiliates Affiliate[]
+  commissions Commission[]
   customers Customer[]
   orders Order[]
   subscriptions Subscription[]
@@ -218,8 +219,8 @@ model OrganizationUser {
   userId String
   role OrganizationRole @default(MEMBER)
   createdAt DateTime @default(now())
-  workspace ImageStudioWorkspace @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  studioUser ImageStudioUser @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
   @@unique([organizationId, userId])
   @@index([organizationId, role])
 }
