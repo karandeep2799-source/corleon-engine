@@ -1,0 +1,8 @@
+import {S3Client,PutObjectCommand,GetObjectCommand} from "@aws-sdk/client-s3";
+import {getSignedUrl} from "@aws-sdk/s3-request-presigner";
+let s3:S3Client|undefined;
+function store(){const bucket=process.env.S3_BUCKET;if(!bucket||!process.env.S3_ACCESS_KEY_ID||!process.env.S3_SECRET_ACCESS_KEY)throw new Error("S3 storage is not configured");s3??=new S3Client({region:process.env.S3_REGION??"auto",endpoint:process.env.S3_ENDPOINT,forcePathStyle:!!process.env.S3_ENDPOINT,credentials:{accessKeyId:process.env.S3_ACCESS_KEY_ID,secretAccessKey:process.env.S3_SECRET_ACCESS_KEY}});return {s3,bucket};}
+export async function putAsset(key:string,body:Buffer,type:string){const x=store();await x.s3.send(new PutObjectCommand({Bucket:x.bucket,Key:key,Body:body,ContentType:type,ServerSideEncryption:"AES256"}));}
+export async function getAsset(key:string){const x=store();const r=await x.s3.send(new GetObjectCommand({Bucket:x.bucket,Key:key}));if(!r.Body)throw new Error("Missing object body");return Buffer.from(await r.Body.transformToByteArray());}
+export async function uploadUrl(key:string,type:string){const x=store();return getSignedUrl(x.s3,new PutObjectCommand({Bucket:x.bucket,Key:key,ContentType:type,ServerSideEncryption:"AES256"}),{expiresIn:300});}
+export async function downloadUrl(key:string){const x=store();return getSignedUrl(x.s3,new GetObjectCommand({Bucket:x.bucket,Key:key}),{expiresIn:300});}

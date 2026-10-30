@@ -1,0 +1,7 @@
+import {createHash} from "node:crypto";
+import type {NextRequest} from "next/server";
+import {prisma} from "./db";
+export class AuthError extends Error{}
+function digest(token:string){const pepper=process.env.CREATIVE_API_KEY_PEPPER;if(!pepper||pepper.length<32)throw new Error("CREATIVE_API_KEY_PEPPER must be 32+ chars");return createHash("sha256").update(pepper).update(":").update(token).digest("hex");}
+export async function requireCreativeTenant(req:NextRequest){const h=req.headers.get("authorization")??"";const token=h.startsWith("Bearer ")?h.slice(7).trim():"";if(!token.startsWith("crl_live_"))throw new AuthError("Valid Corleon API key required");const key=await prisma.creativeApiKey.findUnique({where:{keyHash:digest(token)},select:{id:true,tenantId:true,revokedAt:true,expiresAt:true}});if(!key||key.revokedAt||(key.expiresAt&&key.expiresAt<=new Date()))throw new AuthError("API key invalid, expired or revoked");void prisma.creativeApiKey.update({where:{id:key.id},data:{lastUsedAt:new Date()}}).catch(()=>{});return {tenantId:key.tenantId,apiKeyId:key.id};}
+export function authErrorResponse(e:unknown){return e instanceof AuthError?Response.json({error:"unauthorized",message:e.message},{status:401}):null;}

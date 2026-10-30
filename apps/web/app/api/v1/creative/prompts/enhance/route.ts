@@ -1,0 +1,7 @@
+import {NextRequest} from "next/server";
+import OpenAI from "openai";
+import {z} from "zod";
+import {requireCreativeTenant,authErrorResponse} from "@/lib/creative/auth";
+export const runtime="nodejs";
+const schema=z.object({prompt:z.string().min(10).max(12000),intent:z.string().max(500).optional(),brandRules:z.string().max(4000).optional()});
+export async function POST(req:NextRequest){try{await requireCreativeTenant(req);const v=schema.parse(await req.json());const ai=new OpenAI({apiKey:process.env.OPENAI_API_KEY});const r=await ai.responses.create({model:process.env.OPENAI_PROMPT_MODEL||"gpt-6-mini",instructions:"You are Corleon Creative Director. Rewrite the user's image prompt as a precise production-ready visual brief. Preserve facts; do not invent claims or exact text. Specify subject, composition, lighting, materials and constraints. Return only the improved prompt.",input:[`Intent: ${v.intent??"Create a high-quality image"}`,`Brand rules: ${v.brandRules??"None supplied"}`,`Original: ${v.prompt}`].join("\n\n")});return Response.json({data:{enhancedPrompt:r.output_text}});}catch(e){return authErrorResponse(e)??Response.json({error:"invalid_request",message:e instanceof Error?e.message:"Invalid request"},{status:400});}}
