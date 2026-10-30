@@ -1,0 +1,152 @@
+name: Corleon autonomous engineering agent
+
+on:
+  workflow_dispatch:
+    inputs:
+      target_branch:
+        description: Branch to improve (PR #1 defaults to feat/production-foundation)
+        required: true
+        default: feat/production-foundation
+        type: string
+      task:
+        description: Focus for this run
+        required: true
+        default: Continue production hardening of PR #1. Inspect the repository, run checks, fix the highest-priority safe issue, and report what remains.
+        type: string
+  schedule:
+    - cron: "17 2 * * *"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: corleon-agent-${{ github.event.inputs.target_branch || 'feat/production-foundation' }}
+  cancel-in-progress: false
+
+jobs:
+  agent:
+    name: Analyze and implement on VPS runner
+    runs-on: [self-hosted, linux, x64, corleon-agent]
+    timeout-minutes: 90
+    permissions:
+      contents: read
+    outputs:
+      patch_exists: ${{ steps.patch.outputs.exists }}
+    steps:
+      - name: Checkout target branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.target_branch || 'feat/production-foundation' }}
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.15.0
+
+      - name: Install dependencies
+        run: pnpm install --no-frozen-lockfile
+
+      - name: Baseline typecheck
+        id: typecheck
+        continue-on-error: true
+        run: pnpm typecheck
+
+      - name: Baseline web build
+        id: build
+        continue-on-error: true
+        run: pnpm turbo build --filter=@corleon/web
+
+      - name: Run Codex
+        id: codex
+        uses: openai/codex-action@v1
+        with:
+          openai-api-key: ${{ secrets.OPENAI_API_KEY }}
+          permission-profile: ":workspace"
+          safety-strategy: unprivileged-user
+          codex-user: corleon-agent
+          output-file: agent-result.md
+          effort: high
+          prompt: |
+            You are the autonomous engineering agent for Corleon Engine.
+            Work only on the checked-out target feature branch. The focus is:
+            ${{ github.event.inputs.task || 'Continue production hardening of PR #1. Inspect the repository, run checks, fix the highest-priority safe issue, and report what remains.' }}
+
+            Start by reading AGENTS.md, the PR context in docs, package manifests,
+            and the current git diff/status. Work in small, reviewable increments.
+            Prioritize correctness, security, tests, observability, and operational
+            readiness. Run relevant tests, typecheck, and the standalone web build.
+            Fix the highest-priority issue you can prove and verify in this run.
+            Do not modify secrets or populated environment files. Do not add live
+            financial execution, exchange trading permissions, production deploys,
+            database destructive operations, or merge behavior. Never claim a
+            check passed unless you ran it and observed success.
+            Do not push or commit. Leave all changes in the working tree and write
+            a concise result to agent-result.md with changes, commands/results,
+            unresolved risks, and the next recommended task.
+
+      - name: Create patch artifact
+        id: patch
+        shell: bash
+        run: |
+          set -euo pipefail
+          git status --short
+          git diff --binary > corleon-agent.patch
+          if [ -s corleon-agent.patch ]; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Upload agent patch and report
+        if: steps.patch.outputs.exists == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: corleon-agent-${{ github.run_id }}
+          path: |
+            corleon-agent.patch
+            agent-result.md
+          if-no-files-found: error
+          retention-days: 7
+
+  publish:
+    name: Publish reviewed agent changes to feature branch
+    needs: agent
+    if: needs.agent.outputs.patch_exists == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout target branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.target_branch || 'feat/production-foundation' }}
+          fetch-depth: 0
+
+      - name: Download agent patch
+        uses: actions/download-artifact@v4
+        with:
+          name: corleon-agent-${{ github.run_id }}
+
+      - name: Apply and publish patch
+        env:
+          TARGET_BRANCH: ${{ github.event.inputs.target_branch || 'feat/production-foundation' }}
+        run: |
+          set -euo pipefail
+          git apply --check corleon-agent.patch
+          git apply corleon-agent.patch
+          if git diff --quiet; then
+            echo "No changes to publish."
+            exit 0
+          fi
+          git config user.name "corleon-agent[bot]"
+          git config user.email "corleon-agent[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "chore(agent): autonomous engineering improvements"
+          git push origin "HEAD:${TARGET_BRANCH}"
