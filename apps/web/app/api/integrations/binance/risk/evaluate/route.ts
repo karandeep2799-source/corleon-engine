@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { assessSpotOrderRisk } from "../../../../../../lib/binance/risk-policy";
-import { isAuthorizedPortfolioRequest } from "../../../../../lib/binance/portfolio-access";
+import { isAuthorizedPortfolioRequest } from "../../../../../../lib/binance/portfolio-access";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";

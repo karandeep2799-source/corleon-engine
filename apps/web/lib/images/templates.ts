@@ -1,0 +1,7 @@
+export const builtinTemplates=[
+{slug:'product-hero',name:'Product hero',category:'commerce',description:'Premium product photography',prompt:'Create premium commercial product photography. Product: {{subject}}. Background: {{background}}. Lighting: {{lighting}}. Keep the product crisp and central.'},
+{slug:'editorial-poster',name:'Editorial poster',category:'design',description:'High-impact editorial poster',prompt:'Design an editorial poster about {{subject}}. Style: {{style}}. Palette: {{palette}}. Use strong visual hierarchy and legible typography.'},
+{slug:'social-campaign',name:'Social campaign',category:'marketing',description:'Social campaign creative',prompt:'Create a social campaign visual for {{subject}}. Audience: {{audience}}. Brand tone: {{tone}}. Bold focal point and clean negative space.'},
+{slug:'concept-art',name:'Concept art',category:'creative',description:'Detailed concept art',prompt:'Create concept art of {{subject}}. World: {{world}}. Mood: {{mood}}. Distinctive silhouette and atmospheric depth.'}
+] as const;
+export function applyTemplate(template:string,vars:Record<string,string>){return template.replace(/\{\{([a-zA-Z0-9_]+)\}\}/g,(_,k:string)=>vars[k]??'');}
