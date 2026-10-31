@@ -1,6 +1,8 @@
 import type { BrokerAdapter, Market, OrderRequest } from './types';
 
 class NotConfiguredAdapter implements BrokerAdapter {
+  readonly isConfigured = false;
+
   constructor(
     readonly provider: string,
     readonly supportedMarkets: readonly Market[],
@@ -15,8 +17,8 @@ class NotConfiguredAdapter implements BrokerAdapter {
   }
 }
 
-// Provider integrations are intentionally fail-closed until credentials, scopes,
-// compliance approval, and provider-specific contract tests are configured.
+// Provider integrations remain disabled until credentials, market entitlements,
+// compliance approval, sandbox certification and contract tests are complete.
 const adapters: Record<string, BrokerAdapter> = {
   alpaca: new NotConfiguredAdapter('alpaca', ['US_STOCKS']),
   interactive_brokers: new NotConfiguredAdapter('interactive_brokers', ['US_STOCKS', 'FOREX', 'COMMODITIES']),
