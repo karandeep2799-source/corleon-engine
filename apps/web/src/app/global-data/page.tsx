@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, type FormEvent } from "react";
 
 type Dataset = Record<string, unknown>;
 
@@ -55,7 +55,7 @@ export default function GlobalDataPage() {
     void load();
   }, [load]);
 
-  async function submit(event: React.FormEvent<HTMLFormElement>) {
+  async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const term = query.trim();
     if (term.length < 2) {
