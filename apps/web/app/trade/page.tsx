@@ -7,6 +7,7 @@ import './trade.css';
 
 type User = { id: string; email: string; name: string | null; image: string | null };
 type Market = { id: string; label: string; currency: string; connected: boolean; marketData: string; liveExecution: string };
+type OrderRow = { id: string; market: string; symbol: string; side: string; orderType: string; quantity: string; limitPrice: string | null; status: string; createdAt: string };
 
 const marketOptions = [
   { id: 'US_STOCKS', label: 'US stocks', code: 'US' },
@@ -57,6 +58,7 @@ function LoginGate({ onLogin }: { onLogin: (user: User) => void }) {
 function Terminal({ user, onLogout }: { user: User; onLogout: () => void }) {
   const [activeMarket, setActiveMarket] = useState<string>('US_STOCKS');
   const [markets, setMarkets] = useState<Market[]>([]);
+  const [orders, setOrders] = useState<OrderRow[]>([]);
   const [loadingMarkets, setLoadingMarkets] = useState(true);
   const [symbol, setSymbol] = useState('COIN');
   const [side, setSide] = useState<'BUY' | 'SELL'>('BUY');
@@ -71,6 +73,11 @@ function Terminal({ user, onLogout }: { user: User; onLogout: () => void }) {
       if (response.ok) {
         const data = await response.json();
         setMarkets(data.markets ?? []);
+      }
+      const historyResponse = await fetch('/api/trading/history', { cache: 'no-store' });
+      if (historyResponse.ok) {
+        const history = await historyResponse.json();
+        setOrders(history.orders ?? []);
       }
     } finally {
       setLoadingMarkets(false);
@@ -175,6 +182,17 @@ function Terminal({ user, onLogout }: { user: User; onLogout: () => void }) {
               </form>
               <p className="trade-panel-disclaimer">Order preview only. No funds are accessed and no orders are transmitted.</p>
             </article>
+          </section>
+
+          <section className="trade-panel trade-history-panel" id="orders">
+            <div className="trade-panel-heading"><div><p className="trade-kicker">ACTIVITY</p><h2>Recent orders</h2></div><span className="trade-card-icon">⇄</span></div>
+            {orders.length === 0 ? (
+              <div className="trade-history-empty">No orders yet. Broker order history will appear here after a supported account is connected and synchronized.</div>
+            ) : (
+              <div className="trade-history-scroll"><table className="trade-history-table"><thead><tr><th>Instrument</th><th>Market</th><th>Side</th><th>Type</th><th>Quantity</th><th>Status</th><th>Created</th></tr></thead><tbody>
+                {orders.map((order) => <tr key={order.id}><td><strong>{order.symbol}</strong></td><td>{order.market.replaceAll('_', ' ')}</td><td className={order.side === 'BUY' ? 'positive' : 'negative'}>{order.side}</td><td>{order.orderType}</td><td>{order.quantity}</td><td><span className="trade-order-status">{order.status}</span></td><td>{new Date(order.createdAt).toLocaleString()}</td></tr>)}
+              </tbody></table></div>
+            )}
           </section>
 
           <section className="trade-bottom-grid">
