@@ -3,7 +3,7 @@ export const MIN_AMOUNT_PAISE = 100;
 export const MAX_AMOUNT_PAISE = 500_000_00;
 
 export type PaymentActor = { userId: string };
-export type PaymentStatus = 'CREATED' | 'AUTHORIZED' | 'CAPTURED' | 'FAILED' | 'REFUNDED';
+export type PaymentStatus = 'PROCESSING' | 'CREATED' | 'AUTHORIZED' | 'CAPTURED' | 'FAILED' | 'REFUNDED';
 
 export function validateAmount(amount: unknown): number {
   if (!Number.isSafeInteger(amount) || (amount as number) < MIN_AMOUNT_PAISE || (amount as number) > MAX_AMOUNT_PAISE) {
