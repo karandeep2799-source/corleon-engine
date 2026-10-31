@@ -12,6 +12,10 @@ const client = new OAuth2Client();
 
 export async function POST(request: Request) {
   try {
+    const origin = request.headers.get('origin');
+    if (!origin || new URL(origin).origin !== new URL(request.url).origin) {
+      return NextResponse.json({ error: 'Cross-origin request rejected' }, { status: 403 });
+    }
     const parsed = bodySchema.safeParse(await request.json());
     if (!parsed.success) return NextResponse.json({ error: 'Invalid credential payload' }, { status: 400 });
     const clientId = process.env.GOOGLE_CLIENT_ID;
