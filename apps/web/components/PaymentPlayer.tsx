@@ -73,7 +73,7 @@ export function PaymentPlayer({ amount, description, customer, onSuccess, onErro
             const result = await verified.json() as { error?: string; status?: string; paymentId?: string };
             if (!verified.ok) throw new Error(result.error || 'Payment verification failed.');
             if (result.status === 'CAPTURED') { setMessage('Payment successful.'); onSuccess?.(result.paymentId || order.paymentId!); }
-            else setMessage('Payment received by gateway; final confirmation is pending.');
+            else {\n              setMessage('Payment received by gateway; final confirmation is pending.');\n              for (let attempt = 0; attempt < 5; attempt += 1) {\n                await new Promise((resolve) => setTimeout(resolve, 1500));\n                const statusResponse = await fetch(\`/api/payments/\${encodeURIComponent(order.paymentId!)}\`, { credentials: 'same-origin', cache: 'no-store' });\n                if (!statusResponse.ok) break;\n                const latest = await statusResponse.json() as { status?: string };\n                if (latest.status === 'CAPTURED') { setMessage('Payment successful.'); onSuccess?.(order.paymentId!); break; }\n                if (latest.status === 'FAILED') { setMessage('Payment failed.'); break; }\n              }\n            }
           } catch (error) {
             const text = error instanceof Error ? error.message : 'Payment verification failed.';
             setMessage(text); onError?.(text);
