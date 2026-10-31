@@ -169,7 +169,7 @@ function Terminal({ user, onLogout }: { user: User; onLogout: () => void }) {
               <div className="trade-panel-foot"><span>{active?.currency ?? '—'} base currency</span><span>{loadingMarkets ? 'Checking providers…' : 'No quote source connected'}</span></div>
             </article>
 
-            <article className="trade-panel order-panel" id="orders">
+            <article className="trade-panel order-panel" id="order-ticket">
               <div className="trade-panel-heading"><div><p className="trade-kicker">ORDER TICKET</p><h2>Place an order</h2></div><span className="trade-lock-icon">▣</span></div>
               <div className="trade-order-warning"><strong>Live trading is locked</strong><span>No order can be routed until your broker is connected, validated and approved.</span></div>
               <form onSubmit={submitOrder}>
@@ -227,10 +227,15 @@ export default function TradePage() {
   const [checking, setChecking] = useState(true);
 
   const loadSession = useCallback(async () => {
-    const response = await fetch('/api/auth/session', { cache: 'no-store' });
-    const data = await response.json();
-    setUser(data.user ?? null);
-    setChecking(false);
+    try {
+      const response = await fetch('/api/auth/session', { cache: 'no-store' });
+      const data = await response.json();
+      setUser(data.user ?? null);
+    } catch {
+      setUser(null);
+    } finally {
+      setChecking(false);
+    }
   }, []);
 
   useEffect(() => { void loadSession(); }, [loadSession]);
