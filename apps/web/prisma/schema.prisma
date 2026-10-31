@@ -12,6 +12,7 @@ enum PaymentProvider {
 }
 
 enum PaymentStatus {
+  PROCESSING
   CREATED
   AUTHORIZED
   CAPTURED
@@ -23,7 +24,7 @@ model Payment {
   id                String          @id @default(uuid()) @db.Uuid
   userId            String
   provider          PaymentProvider
-  providerOrderId   String          @unique
+  providerOrderId   String?         @unique
   providerPaymentId String?         @unique
   amount            Int
   currency          String          @default("INR") @db.VarChar(3)
