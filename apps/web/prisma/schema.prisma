@@ -151,3 +151,107 @@ model IdempotencyRecord {
   @@unique([userId, key])
   @@index([expiresAt])
 }
+
+
+model WorldBankDataset {
+  id           String   @id @default(cuid())
+  uniqueId     String   @unique
+  title        String
+  description  String?
+  version      String?
+  sourceUrl    String?
+  metadata     Json
+  syncedAt     DateTime @default(now())
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  versions     WorldBankDatasetVersion[]
+  resources    WorldBankResource[]
+  indicators   WorldBankIndicator[]
+  citations    WorldBankCitation[]
+
+  @@index([title])
+  @@index([syncedAt])
+}
+
+model WorldBankDatasetVersion {
+  id              String   @id @default(cuid())
+  datasetId       String
+  sourceVersionId String
+  metadata        Json
+  capturedAt      DateTime @default(now())
+  dataset         WorldBankDataset @relation(fields: [datasetId], references: [id], onDelete: Cascade)
+
+  @@unique([datasetId, sourceVersionId])
+  @@index([datasetId, capturedAt])
+}
+
+model WorldBankResource {
+  id          String   @id @default(cuid())
+  uniqueId    String   @unique
+  datasetId   String
+  title       String
+  description String?
+  fileFormat  String?
+  downloadUrl String?
+  metadata    Json
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  dataset     WorldBankDataset @relation(fields: [datasetId], references: [id], onDelete: Cascade)
+
+  @@index([datasetId])
+}
+
+model WorldBankIndicator {
+  id          String   @id @default(cuid())
+  uniqueId    String   @unique
+  datasetId   String
+  name        String
+  description String?
+  metadata    Json
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  dataset     WorldBankDataset @relation(fields: [datasetId], references: [id], onDelete: Cascade)
+
+  @@index([datasetId])
+  @@index([name])
+}
+
+model WorldBankCitation {
+  id        String   @id @default(cuid())
+  uniqueId  String   @unique
+  datasetId String
+  title     String
+  url       String?
+  year      String?
+  metadata  Json
+  createdAt DateTime @default(now())
+  dataset   WorldBankDataset @relation(fields: [datasetId], references: [id], onDelete: Cascade)
+
+  @@index([datasetId])
+}
+
+model WorldBankSyncJob {
+  id              String   @id @default(cuid())
+  status          String   @default("PENDING")
+  recordsSeen     Int      @default(0)
+  recordsUpserted Int      @default(0)
+  errorMessage    String?
+  startedAt       DateTime?
+  completedAt     DateTime?
+  createdAt       DateTime @default(now())
+  logs            WorldBankSyncLog[]
+
+  @@index([status, createdAt])
+}
+
+model WorldBankSyncLog {
+  id        String   @id @default(cuid())
+  jobId     String
+  level     String   @default("INFO")
+  message   String
+  metadata  Json?
+  createdAt DateTime @default(now())
+  job       WorldBankSyncJob @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  @@index([jobId, createdAt])
+}

@@ -2,13 +2,22 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches:
+      - main
+      - "feat/**"
   pull_request:
-    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-\${{ github.workflow }}-\${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   validate:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -21,13 +30,22 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 24
 
       - name: Install dependencies
         run: pnpm install --no-frozen-lockfile
 
-      - name: Typecheck workspace
+      - name: Generate Prisma Client
+        run: pnpm --filter @corleon/web prisma:generate
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Typecheck
         run: pnpm typecheck
+
+      - name: Test
+        run: pnpm test
 
       - name: Build standalone web
         run: pnpm turbo build --filter=@corleon/web
