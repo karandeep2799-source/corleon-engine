@@ -1,0 +1,153 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id          String             @id @default(cuid())
+  email       String             @unique
+  name        String?
+  image       String?
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+  accounts    TradingAccount[]
+  brokers     BrokerConnection[]
+  orders      Order[]
+  positions   Position[]
+  riskLimits  RiskLimit[]
+  auditEvents AuditEvent[]
+
+  @@index([createdAt])
+}
+
+model TradingAccount {
+  id           String             @id @default(cuid())
+  userId       String
+  name         String
+  baseCurrency String             @default("USD")
+  status       String             @default("ACTIVE")
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
+  user         User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  orders       Order[]
+  positions    Position[]
+
+  @@index([userId, status])
+}
+
+model BrokerConnection {
+  id             String   @id @default(cuid())
+  userId         String
+  provider       String
+  market         String
+  externalUserId String?
+  status         String   @default("PENDING")
+  scopes         String[] @default([])
+  secretRef      String?
+  connectedAt    DateTime?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, provider, market])
+  @@index([status, market])
+}
+
+model Order {
+  id                String   @id @default(cuid())
+  userId            String
+  accountId         String
+  brokerConnectionId String?
+  provider          String
+  market            String
+  symbol            String
+  side              String
+  orderType         String
+  timeInForce       String   @default("DAY")
+  quantity          Decimal  @db.Decimal(28, 10)
+  limitPrice        Decimal? @db.Decimal(28, 10)
+  stopPrice         Decimal? @db.Decimal(28, 10)
+  status            String   @default("PENDING")
+  externalOrderId   String?
+  idempotencyKey    String
+  rejectionReason   String?
+  submittedAt       DateTime?
+  filledAt          DateTime?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  account           TradingAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, idempotencyKey])
+  @@index([userId, createdAt])
+  @@index([accountId, status])
+  @@index([provider, externalOrderId])
+}
+
+model Position {
+  id             String   @id @default(cuid())
+  userId         String
+  accountId      String
+  market         String
+  symbol         String
+  quantity       Decimal  @db.Decimal(28, 10)
+  averagePrice   Decimal  @db.Decimal(28, 10)
+  currency       String
+  updatedAt      DateTime @updatedAt
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  account        TradingAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  @@unique([accountId, market, symbol])
+  @@index([userId, market])
+}
+
+model RiskLimit {
+  id                   String   @id @default(cuid())
+  userId               String
+  market               String
+  maxOrderNotional     Decimal? @db.Decimal(28, 10)
+  maxDailyNotional     Decimal? @db.Decimal(28, 10)
+  maxOpenOrders        Int      @default(10)
+  tradingEnabled       Boolean  @default(false)
+  requireLimitOrders   Boolean  @default(true)
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+  user                 User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, market])
+}
+
+model AuditEvent {
+  id          String   @id @default(cuid())
+  userId      String?
+  actorType   String
+  action      String
+  resource    String
+  resourceId  String?
+  outcome     String
+  metadata    Json?
+  ipHash      String?
+  createdAt   DateTime @default(now())
+  user        User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId, createdAt])
+  @@index([action, createdAt])
+}
+
+model IdempotencyRecord {
+  id          String   @id @default(cuid())
+  userId      String
+  key         String
+  requestHash String
+  response    Json?
+  status      String   @default("IN_PROGRESS")
+  createdAt   DateTime @default(now())
+  expiresAt   DateTime
+
+  @@unique([userId, key])
+  @@index([expiresAt])
+}
