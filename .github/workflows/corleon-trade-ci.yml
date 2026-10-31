@@ -1,0 +1,58 @@
+name: Corleon Trade CI
+
+on:
+  pull_request:
+    paths:
+      - "apps/web/**"
+      - ".github/workflows/corleon-trade-ci.yml"
+      - "pnpm-workspace.yaml"
+      - "turbo.json"
+  push:
+    branches: [main, "feat/corleon-trade"]
+    paths:
+      - "apps/web/**"
+      - ".github/workflows/corleon-trade-ci.yml"
+      - "pnpm-workspace.yaml"
+      - "turbo.json"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: corleon-trade-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.15.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --no-frozen-lockfile
+      - name: Generate Prisma client
+        run: pnpm --filter @corleon/web prisma:generate
+        env:
+          DATABASE_URL: postgresql://ci:ci@localhost:5432/corleon
+      - name: Lint
+        run: pnpm --filter @corleon/web lint
+      - name: Typecheck
+        run: pnpm --filter @corleon/web typecheck
+        env:
+          DATABASE_URL: postgresql://ci:ci@localhost:5432/corleon
+      - name: Unit tests
+        run: pnpm --filter @corleon/web test
+      - name: Production build
+        run: pnpm --filter @corleon/web build
+        env:
+          DATABASE_URL: postgresql://ci:ci@localhost:5432/corleon
+          SESSION_SECRET: ci-only-session-secret-not-for-production
+          GOOGLE_CLIENT_ID: ci-placeholder.apps.googleusercontent.com
+          NEXT_PUBLIC_GOOGLE_CLIENT_ID: ci-placeholder.apps.googleusercontent.com
+          LIVE_TRADING_ENABLED: "false"
