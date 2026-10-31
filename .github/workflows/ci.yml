@@ -2,9 +2,9 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches: [main, feat/production-foundation]
   pull_request:
-    branches: [main]
+    branches: [main, feat/production-foundation]
 
 jobs:
   validate:
@@ -21,7 +21,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 24
 
       - name: Install dependencies
         run: pnpm install --no-frozen-lockfile
