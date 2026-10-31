@@ -11,15 +11,30 @@ export async function GET(_request: Request, context: RouteContext) {
   }
 
   try {
-    const [dataset, resources, indicators, citations] = await Promise.all([
-      worldBankGet<unknown>(\`/datasets/\${encodeURIComponent(datasetId)}\`),
-      worldBankGet<unknown>("/resources", { dataset_unique_id: datasetId, top: 100, skip: 0 }),
-      worldBankGet<unknown>("/indicators", { dataset_unique_id: datasetId, top: 100, skip: 0 }),
-      worldBankGet<unknown>("/citations", { dataset_unique_id: datasetId, top: 100, skip: 0 }),
-    ]);
+    const [datasetResult, resourcesResult, indicatorsResult, citationsResult] =
+      await Promise.allSettled([
+        worldBankGet<unknown>(\`/datasets/\${encodeURIComponent(datasetId)}\`),
+        worldBankGet<unknown>("/resources", { dataset_unique_id: datasetId, top: 100, skip: 0 }),
+        worldBankGet<unknown>("/indicators", { dataset_unique_id: datasetId, top: 100, skip: 0 }),
+        worldBankGet<unknown>("/citations", { dataset_unique_id: datasetId, top: 100, skip: 0 }),
+      ]);
+
+    if (datasetResult.status === "rejected") throw datasetResult.reason;
+
+    const optional = (result: PromiseSettledResult<unknown>) =>
+      result.status === "fulfilled" ? result.value : [];
 
     return Response.json(
-      { dataset, resources, indicators, citations, source: "World Bank Data Catalog" },
+      {
+        dataset: datasetResult.value,
+        resources: optional(resourcesResult),
+        indicators: optional(indicatorsResult),
+        citations: optional(citationsResult),
+        partial: [resourcesResult, indicatorsResult, citationsResult].some(
+          (result) => result.status === "rejected",
+        ),
+        source: "World Bank Data Catalog",
+      },
       { headers: { "Cache-Control": "public, s-maxage=300, stale-while-revalidate=600" } },
     );
   } catch (error) {
