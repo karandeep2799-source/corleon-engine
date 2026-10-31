@@ -10,7 +10,7 @@ CREATE TABLE "Payment" (
   "amount" INTEGER NOT NULL,
   "currency" VARCHAR(3) NOT NULL DEFAULT 'INR',
   "idempotencyKey" TEXT NOT NULL,
-  "status" "PaymentStatus" NOT NULL DEFAULT 'PROCESSING',
+  "status" "PaymentStatus" NOT NULL DEFAULT 'CREATED',
   "description" VARCHAR(120) NOT NULL,
   "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
   "updatedAt" TIMESTAMP(3) NOT NULL,
