@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { randomUUID } from 'node:crypto';
 import { Prisma } from '@prisma/client';
 import { assertSameOrigin, getPaymentActor } from '@/lib/payments/auth';
-import { validateAmount, safeIdempotencyKey } from '@/lib/payments/domain';
+import { safeIdempotencyKey } from '@/lib/payments/domain';
 import { prisma } from '@/lib/payments/prisma';
 import { createRazorpayOrder } from '@/lib/payments/razorpay';
 
@@ -16,14 +16,14 @@ export async function POST(request: NextRequest) {
 
   let paymentId: string | undefined;
   try {
-    const body = await request.json() as { amount?: unknown; description?: unknown; idempotencyKey?: unknown };
-    const amount = validateAmount(body.amount);
+    const body = await request.json() as { quoteId?: unknown; idempotencyKey?: unknown };
+    if (typeof body.quoteId !== 'string' || !/^[0-9a-f-]{36}$/i.test(body.quoteId)) {
+      return NextResponse.json({ error: 'A valid server-issued quoteId is required.' }, { status: 400 });
+    }
     const idempotencyKey = safeIdempotencyKey(body.idempotencyKey);
-    const description = typeof body.description === 'string' ? body.description.trim().slice(0, 120) : 'Corleon checkout';
-
     const existing = await prisma.payment.findUnique({ where: { idempotencyKey } });
     if (existing) {
-      if (existing.userId !== actor.userId || existing.amount !== amount) {
+      if (existing.userId !== actor.userId || existing.quoteId !== body.quoteId) {
         return NextResponse.json({ error: 'Idempotency key conflict.' }, { status: 409 });
       }
       if (!existing.providerOrderId) return NextResponse.json({ error: 'This checkout request is already being processed or failed. Start a new checkout.' }, { status: 409 });
@@ -34,23 +34,32 @@ export async function POST(request: NextRequest) {
       });
     }
 
+    const quote = await prisma.paymentQuote.findFirst({
+      where: { id: body.quoteId, userId: actor.userId, consumedAt: null, expiresAt: { gt: new Date() } },
+    });
+    if (!quote) return NextResponse.json({ error: 'Checkout quote is invalid, expired, or already used.' }, { status: 409 });
+
     paymentId = randomUUID();
     const reservation = await prisma.payment.create({
       data: {
-        id: paymentId, userId: actor.userId, provider: 'RAZORPAY',
-        providerOrderId: null, amount, currency: 'INR',
-        idempotencyKey, status: 'PROCESSING', description,
+        id: paymentId, userId: actor.userId, quoteId: quote.id, provider: 'RAZORPAY',
+        providerOrderId: null, amount: quote.amount, currency: quote.currency,
+        idempotencyKey, status: 'PROCESSING', description: quote.description,
       },
     });
 
     const order = await createRazorpayOrder({
-      amount, currency: 'INR', receipt: paymentId.replaceAll('-', '').slice(0, 40),
-      notes: { corleonPaymentId: paymentId, userId: actor.userId, description },
+      amount: quote.amount, currency: 'INR', receipt: paymentId.replaceAll('-', '').slice(0, 40),
+      notes: { corleonPaymentId: paymentId, quoteId: quote.id, userId: actor.userId, description: quote.description },
     });
 
-    const payment = await prisma.payment.update({
-      where: { id: reservation.id },
-      data: { providerOrderId: order.id, status: 'CREATED' },
+    const payment = await prisma.$transaction(async (tx) => {
+      const updated = await tx.payment.update({
+        where: { id: reservation.id },
+        data: { providerOrderId: order.id, status: 'CREATED' },
+      });
+      await tx.paymentQuote.update({ where: { id: quote.id }, data: { consumedAt: new Date() } });
+      return updated;
     });
 
     return NextResponse.json({
@@ -62,10 +71,9 @@ export async function POST(request: NextRequest) {
       await prisma.payment.updateMany({ where: { id: paymentId, status: 'PROCESSING' }, data: { status: 'FAILED' } }).catch(() => undefined);
     }
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
-      return NextResponse.json({ error: 'This checkout request is already being processed. Retry shortly.' }, { status: 409 });
+      return NextResponse.json({ error: 'This checkout request or quote is already being processed.' }, { status: 409 });
     }
     const message = error instanceof Error ? error.message : 'Unable to create payment.';
-    const status = message.startsWith('Amount') || message.startsWith('A valid') ? 400 : 502;
-    return NextResponse.json({ error: message }, { status });
+    return NextResponse.json({ error: message.startsWith('A valid idempotencyKey') ? message : 'Unable to create payment.' }, { status: message.startsWith('A valid idempotencyKey') ? 400 : 502 });
   }
 }
