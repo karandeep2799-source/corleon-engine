@@ -22,7 +22,19 @@ export async function GET(
   const { jobId } = await context.params;
   const job = await db.sandboxJob.findFirst({
     where: { id: jobId, tenantId: auth.tenantId },
-    include: {
+    select: {
+      id: true,
+      status: true,
+      runtime: true,
+      sourceHash: true,
+      exitCode: true,
+      stdout: true,
+      stderr: true,
+      durationMs: true,
+      timeoutMs: true,
+      createdAt: true,
+      finishedAt: true,
+      errorCode: true,
       auditEvents: {
         orderBy: { createdAt: "asc" },
         select: { action: true, requestId: true, details: true, createdAt: true },
