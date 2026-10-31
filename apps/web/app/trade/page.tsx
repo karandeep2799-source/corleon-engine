@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import type { FormEvent } from 'react';
 import { GoogleLogin, GoogleOAuthProvider } from '@react-oauth/google';
 import './trade.css';
 
@@ -81,7 +82,7 @@ function Terminal({ user, onLogout }: { user: User; onLogout: () => void }) {
   const active = useMemo(() => markets.find((m) => m.id === activeMarket), [markets, activeMarket]);
   const marketLabel = marketOptions.find((m) => m.id === activeMarket)?.label ?? 'Market';
 
-  async function submitOrder(event: React.FormEvent<HTMLFormElement>) {
+  async function submitOrder(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setNotice('Live order submission is locked until a certified broker adapter, account, and risk policy are configured.');
   }
