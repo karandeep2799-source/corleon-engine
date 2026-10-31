@@ -25,6 +25,7 @@ export type BrokerOrderResult = {
 
 export interface BrokerAdapter {
   readonly provider: string;
+  readonly isConfigured: boolean;
   readonly supportedMarkets: readonly Market[];
   submitOrder(order: OrderRequest, credentialsRef: string): Promise<BrokerOrderResult>;
   cancelOrder(externalOrderId: string, credentialsRef: string): Promise<void>;
