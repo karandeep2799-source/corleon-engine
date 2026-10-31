@@ -130,6 +130,9 @@ export async function POST(request: NextRequest) {
       },
     });
     if (existing) {
+      if (existing.sourceHash !== sourceHash || existing.runtime !== (input.runtime === "node" ? "NODE" : "PYTHON")) {
+        return errorResponse("Idempotency key was already used for a different request", 409, auth.requestId);
+      }
       return NextResponse.json(
         { job: publicJob(existing), idempotentReplay: true, requestId: auth.requestId },
         { headers: { "Cache-Control": "no-store", "X-Request-Id": auth.requestId } },
@@ -170,6 +173,9 @@ export async function POST(request: NextRequest) {
         },
       });
       if (existing) {
+        if (existing.sourceHash !== sourceHash || existing.runtime !== (input.runtime === "node" ? "NODE" : "PYTHON")) {
+          return errorResponse("Idempotency key was already used for a different request", 409, auth.requestId);
+        }
         return NextResponse.json(
           { job: publicJob(existing), idempotentReplay: true, requestId: auth.requestId },
           { headers: { "Cache-Control": "no-store", "X-Request-Id": auth.requestId } },
