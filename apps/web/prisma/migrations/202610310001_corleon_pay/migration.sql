@@ -1,16 +1,16 @@
 CREATE TYPE "PaymentProvider" AS ENUM ('RAZORPAY');
-CREATE TYPE "PaymentStatus" AS ENUM ('CREATED', 'AUTHORIZED', 'CAPTURED', 'FAILED', 'REFUNDED');
+CREATE TYPE "PaymentStatus" AS ENUM ('PROCESSING', 'CREATED', 'AUTHORIZED', 'CAPTURED', 'FAILED', 'REFUNDED');
 
 CREATE TABLE "Payment" (
   "id" UUID NOT NULL,
   "userId" TEXT NOT NULL,
   "provider" "PaymentProvider" NOT NULL,
-  "providerOrderId" TEXT NOT NULL,
+  "providerOrderId" TEXT,
   "providerPaymentId" TEXT,
   "amount" INTEGER NOT NULL,
   "currency" VARCHAR(3) NOT NULL DEFAULT 'INR',
   "idempotencyKey" TEXT NOT NULL,
-  "status" "PaymentStatus" NOT NULL DEFAULT 'CREATED',
+  "status" "PaymentStatus" NOT NULL DEFAULT 'PROCESSING',
   "description" VARCHAR(120) NOT NULL,
   "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
   "updatedAt" TIMESTAMP(3) NOT NULL,
