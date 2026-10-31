@@ -30,7 +30,7 @@ export async function POST(request: NextRequest) {
       await tx.paymentWebhookEvent.create({ data: { providerEventId: eventId, eventType: event.event || 'unknown' } });
       const payment = await tx.payment.findUnique({ where: { providerOrderId: orderId } });
       if (!payment) return;
-      if (event.event === 'payment.captured' || event.event === 'order.paid') {
+      if (event.event === 'payment.captured' && paymentEntity) {
         if (paymentEntity && (paymentEntity.amount !== payment.amount || paymentEntity.currency !== payment.currency)) {
           throw new Error('Webhook amount or currency mismatch.');
         }
@@ -48,7 +48,7 @@ export async function POST(request: NextRequest) {
     });
     return NextResponse.json({ received: true });
   } catch (error) {
-    if (error instanceof Error && error.message.includes('Unique constraint')) return NextResponse.json({ received: true, duplicate: true });
+    if (typeof error === 'object' && error !== null && 'code' in error && error.code === 'P2002') return NextResponse.json({ received: true, duplicate: true });
     return NextResponse.json({ error: 'Webhook processing failed.' }, { status: 500 });
   }
 }
