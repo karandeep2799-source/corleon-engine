@@ -20,6 +20,20 @@ enum PaymentStatus {
   REFUNDED
 }
 
+model PaymentQuote {
+  id          String    @id @default(uuid()) @db.Uuid
+  userId      String
+  amount      Int
+  currency    String    @default("INR") @db.VarChar(3)
+  description String    @db.VarChar(120)
+  expiresAt   DateTime
+  consumedAt  DateTime?
+  createdAt   DateTime  @default(now())
+  payment     Payment?
+
+  @@index([userId, expiresAt])
+}
+
 model Payment {
   id                String          @id @default(uuid()) @db.Uuid
   userId            String
