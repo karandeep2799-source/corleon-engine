@@ -8,7 +8,7 @@ export const MAX_REQUEST_BYTES = 16 * 1024;
 
 export const sandboxJobInputSchema = z.object({
   runtime: z.enum(["node", "python"]),
-  code: z.string().min(1).max(MAX_SOURCE_BYTES),
+  code: z.string().min(1).max(MAX_SOURCE_BYTES).refine((value) => Buffer.byteLength(value, "utf8") <= MAX_SOURCE_BYTES, "Source code exceeds the UTF-8 byte limit"),
   timeoutMs: z.number().int().min(1_000).max(MAX_TIMEOUT_MS).default(DEFAULT_TIMEOUT_MS),
 }).strict();
 
