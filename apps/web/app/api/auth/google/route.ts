@@ -4,6 +4,7 @@ import { SignJWT } from 'jose';
 import { z } from 'zod';
 import { db } from '@/lib/db';
 import { COOKIE_NAME, sessionKey } from '@/lib/auth';
+import { MARKETS } from '@/lib/trading/types';
 
 export const runtime = 'nodejs';
 const bodySchema = z.object({ credential: z.string().min(20).max(10000) });
@@ -27,6 +28,16 @@ export async function POST(request: Request) {
       update: { name: claims.name ?? undefined, image: claims.picture ?? undefined },
       create: { email: claims.email.toLowerCase(), name: claims.name, image: claims.picture },
       select: { id: true, email: true, name: true },
+    });
+
+    await db.$transaction(async (tx) => {
+      const account = await tx.tradingAccount.findFirst({ where: { userId: user.id } });
+      if (!account) await tx.tradingAccount.create({ data: { userId: user.id, name: 'Primary account', baseCurrency: 'USD' } });
+      await Promise.all(MARKETS.map((market) => tx.riskLimit.upsert({
+        where: { userId_market: { userId: user.id, market } },
+        update: {},
+        create: { userId: user.id, market, tradingEnabled: false, requireLimitOrders: true, maxOpenOrders: 10 },
+      })));
     });
 
     const token = await new SignJWT({ email: user.email })
