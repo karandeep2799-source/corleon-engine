@@ -222,3 +222,54 @@ model StripeWebhookEvent {
   payload       Json
   createdAt     DateTime  @default(now())
 }
+
+enum SandboxJobStatus {
+  RUNNING
+  SUCCEEDED
+  FAILED
+  TIMED_OUT
+}
+
+enum SandboxRuntime {
+  NODE
+  PYTHON
+}
+
+model SandboxJob {
+  id             String           @id @default(cuid())
+  tenantId       String
+  idempotencyKey String?
+  status         SandboxJobStatus @default(RUNNING)
+  runtime        SandboxRuntime
+  sourceHash     String
+  exitCode       Int?
+  stdout         String?          @db.Text
+  stderr         String?          @db.Text
+  errorCode      String?
+  durationMs     Int?
+  timeoutMs      Int
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+  finishedAt     DateTime?
+  auditEvents    SandboxAuditEvent[]
+
+  @@unique([tenantId, idempotencyKey])
+  @@index([tenantId, createdAt])
+  @@index([tenantId, status, createdAt])
+}
+
+model SandboxAuditEvent {
+  id         String      @id @default(cuid())
+  tenantId   String
+  jobId      String?
+  action     String
+  requestId  String?
+  sourceHash String?
+  details    Json?
+  createdAt  DateTime    @default(now())
+  job        SandboxJob? @relation(fields: [jobId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId, createdAt])
+  @@index([jobId, createdAt])
+  @@index([action, createdAt])
+}
