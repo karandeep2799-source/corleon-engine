@@ -103,6 +103,7 @@ function Terminal({ user, onLogout }: { user: User; onLogout: () => void }) {
         <a className="trade-side-link" href="#markets"><span>⌁</span> Markets</a>
         <a className="trade-side-link" href="#portfolio"><span>▤</span> Portfolio</a>
         <a className="trade-side-link" href="#orders"><span>⇄</span> Orders</a>
+        <a className="trade-side-link" href="/currency"><span>◉</span> Corleon Currency</a>
         <a className="trade-side-link" href="#risk"><span>◇</span> Risk controls</a>
         <div className="trade-sidebar-label">MARKETS</div>
         {marketOptions.map((market) => (
