@@ -21,7 +21,7 @@ export async function createRazorpayOrder(input: {
       Authorization: authHeader(keyId, keySecret),
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ ...input, payment_capture: 1 }),
+    body: JSON.stringify(input),
     signal: AbortSignal.timeout(12_000),
     cache: 'no-store',
   });
