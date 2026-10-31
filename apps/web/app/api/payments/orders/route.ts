@@ -17,7 +17,7 @@ export async function POST(request: NextRequest) {
   let paymentId: string | undefined;
   try {
     const body = await request.json() as { quoteId?: unknown; idempotencyKey?: unknown };
-    if (typeof body.quoteId !== 'string' || !/^[0-9a-f-]{36}$/i.test(body.quoteId)) {
+    if (typeof body.quoteId !== 'string' || !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(body.quoteId)) {
       return NextResponse.json({ error: 'A valid server-issued quoteId is required.' }, { status: 400 });
     }
     const idempotencyKey = safeIdempotencyKey(body.idempotencyKey);
