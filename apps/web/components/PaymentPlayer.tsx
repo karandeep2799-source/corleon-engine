@@ -59,7 +59,7 @@ export function PaymentPlayer({ amount, description, customer, onSuccess, onErro
       const order = await orderResponse.json() as { error?: string; paymentId?: string; orderId?: string; keyId?: string; amount?: number; currency?: string };
       if (!orderResponse.ok || !order.orderId || !order.paymentId || !order.keyId) throw new Error(order.error || 'Unable to start checkout.');
 
-      const checkout = new window.Razorpay!({
+      const RazorpayCheckout = window.Razorpay;\n      if (!RazorpayCheckout) throw new Error('Secure checkout is unavailable.');\n      const checkout = new RazorpayCheckout({
         key: order.keyId, amount: order.amount, currency: order.currency,
         name: 'Corleon Engine', description, order_id: order.orderId,
         prefill: customer,
