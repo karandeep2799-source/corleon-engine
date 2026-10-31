@@ -53,3 +53,13 @@ ALTER TABLE "CurrencyLedgerEntry" ADD CONSTRAINT "CurrencyLedgerEntry_walletId_f
   FOREIGN KEY ("walletId") REFERENCES "CurrencyWallet"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 ALTER TABLE "CurrencyLedgerEntry" ADD CONSTRAINT "CurrencyLedgerEntry_storeId_fkey"
   FOREIGN KEY ("storeId") REFERENCES "CurrencyStore"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- Enforce append-only ledger semantics at the database boundary.
+CREATE FUNCTION "reject_currency_ledger_mutation"() RETURNS trigger AS $$
+BEGIN
+  RAISE EXCEPTION 'Corleon currency ledger entries are immutable; create a compensating entry';
+END;
+$$ LANGUAGE plpgsql;
+CREATE TRIGGER "CurrencyLedgerEntry_immutable"
+  BEFORE UPDATE OR DELETE ON "CurrencyLedgerEntry"
+  FOR EACH ROW EXECUTE FUNCTION "reject_currency_ledger_mutation"();
