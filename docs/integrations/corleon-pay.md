@@ -86,8 +86,10 @@ Import the shared component into any authenticated checkout surface:
 ```tsx
 import { PaymentPlayer } from '@/components/PaymentPlayer';
 
+// quote is created by a trusted server-side checkout action.
 <PaymentPlayer
-  amount={49900}
+  quoteId={quote.id}
+  amount={quote.amount}
   description="Corleon subscription"
   customer={{ name: 'Customer name', email: 'customer@example.com' }}
   onSuccess={(paymentId) => {
