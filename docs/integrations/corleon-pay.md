@@ -77,3 +77,24 @@ Do not send an ordinary Razorpay checkout URL as though it were a native WhatsAp
 ## Rollback
 
 Disable checkout at the application feature flag / remove the payment component from entry points. Keep the ledger and webhook route available for delayed provider events. Do not delete payment records or replay webhook events manually without an audited runbook.
+
+
+## Frontend usage
+
+Import the shared component into any authenticated checkout surface:
+
+```tsx
+import { PaymentPlayer } from '@/components/PaymentPlayer';
+
+<PaymentPlayer
+  amount={49900}
+  description="Corleon subscription"
+  customer={{ name: 'Customer name', email: 'customer@example.com' }}
+  onSuccess={(paymentId) => {
+    // Refresh the order from your own backend; do not grant access from UI state alone.
+    console.info('Verified payment:', paymentId);
+  }}
+/>
+```
+
+The `amount` prop is paise (49900 = ₹499). Do not pass a rupee decimal. The component is reusable across pages; all checkout, verification, and webhook logic remains in the shared backend routes.
