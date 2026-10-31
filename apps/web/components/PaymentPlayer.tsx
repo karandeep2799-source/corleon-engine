@@ -39,7 +39,7 @@ function idempotencyKey() {
   return `web:${crypto.randomUUID()}`;
 }
 
-export function PaymentPlayer({ amount, description, customer, onSuccess, onError, disabled, className }: Props) {
+export function PaymentPlayer({ quoteId, amount, description, customer, onSuccess, onError, disabled, className }: Props) {
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
   const [ready, setReady] = useState(false);
@@ -54,7 +54,7 @@ export function PaymentPlayer({ amount, description, customer, onSuccess, onErro
       const orderResponse = await fetch('/api/payments/orders', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         credentials: 'same-origin',
-        body: JSON.stringify({ amount, description, idempotencyKey: idempotencyKey() }),
+        body: JSON.stringify({ quoteId, idempotencyKey: idempotencyKey() }),
       });
       const order = await orderResponse.json() as { error?: string; paymentId?: string; orderId?: string; keyId?: string; amount?: number; currency?: string };
       if (!orderResponse.ok || !order.orderId || !order.paymentId || !order.keyId) throw new Error(order.error || 'Unable to start checkout.');
