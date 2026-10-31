@@ -13,8 +13,33 @@ type RazorpayWebhook = {
   };
 };
 
+async function readRawBody(request: NextRequest, maxBytes = 1_048_576): Promise<string | null> {
+  const declaredLength = Number(request.headers.get('content-length') || 0);
+  if (declaredLength > maxBytes) return null;
+  if (!request.body) return null;
+  const reader = request.body.getReader();
+  const chunks: Uint8Array[] = [];
+  let total = 0;
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      total += value.byteLength;
+      if (total > maxBytes) {
+        await reader.cancel();
+        return null;
+      }
+      chunks.push(value);
+    }
+  } finally {
+    reader.releaseLock();
+  }
+  return Buffer.concat(chunks).toString('utf8');
+}
+
 export async function POST(request: NextRequest) {
-  const rawBody = await request.text();
+  const rawBody = await readRawBody(request);
+  if (rawBody === null) return NextResponse.json({ error: 'Webhook body is missing or too large.' }, { status: 413 });
   const signature = request.headers.get('x-razorpay-signature') || '';
   const eventId = request.headers.get('x-razorpay-event-id');
   if (!signature || !eventId || eventId.length > 255) return NextResponse.json({ error: 'Invalid webhook headers.' }, { status: 400 });
@@ -31,14 +56,14 @@ export async function POST(request: NextRequest) {
       const payment = await tx.payment.findUnique({ where: { providerOrderId: orderId } });
       if (!payment) return;
       if (event.event === 'payment.captured' && paymentEntity) {
-        if (paymentEntity && (paymentEntity.amount !== payment.amount || paymentEntity.currency !== payment.currency)) {
+        if (paymentEntity.amount !== payment.amount || paymentEntity.currency !== payment.currency) {
           throw new Error('Webhook amount or currency mismatch.');
         }
         await tx.payment.update({
           where: { id: payment.id },
           data: {
             status: 'CAPTURED',
-            providerPaymentId: paymentEntity?.id || payment.providerPaymentId,
+            providerPaymentId: paymentEntity.id || payment.providerPaymentId,
             capturedAt: new Date(),
           },
         });
@@ -48,7 +73,9 @@ export async function POST(request: NextRequest) {
     });
     return NextResponse.json({ received: true });
   } catch (error) {
-    if (typeof error === 'object' && error !== null && 'code' in error && error.code === 'P2002') return NextResponse.json({ received: true, duplicate: true });
+    if (typeof error === 'object' && error !== null && 'code' in error && error.code === 'P2002') {
+      return NextResponse.json({ received: true, duplicate: true });
+    }
     return NextResponse.json({ error: 'Webhook processing failed.' }, { status: 500 });
   }
 }
