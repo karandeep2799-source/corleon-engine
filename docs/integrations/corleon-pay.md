@@ -12,9 +12,9 @@ Corleon Pay is a provider-neutral payment boundary with Razorpay as the first ad
 - Webhook: `POST /api/payments/webhook`
 - Provider adapter: `apps/web/lib/payments/razorpay.ts`
 - Persistence: Prisma + PostgreSQL
-- Amounts: integer paise; currency fixed to INR in this initial adapter.
+- Amounts: server-issued, user-bound checkout quotes; integer paise; currency fixed to INR in this initial adapter.
 
-## Authentication integration
+## Trusted price quote integration\n\nBefore rendering the player, a trusted server-side checkout flow must load the product/cart from the database, calculate discounts, taxes and shipping, then call `createPaymentQuote({ userId, amount, description })` from `@/lib/payments/quotes`. Pass the returned `id` as `quoteId` and the returned integer-paise `amount` as the display prop. Quotes are bound to the user, expire after 15 minutes by default (bounded to 1–30 minutes), and can be consumed only once. Never expose a quote-creation endpoint that accepts a client-selected amount.\n\n## Authentication integration
 
 The routes fail closed unless `AUTH_SECRET` is configured and a valid HS256 JWT is present in the cookie named by `PAYMENT_SESSION_COOKIE` (default `corleon_session`). The token must contain `sub` and a future `exp`; optionally it must match `PAYMENT_SESSION_ISSUER`.
 
@@ -97,4 +97,4 @@ import { PaymentPlayer } from '@/components/PaymentPlayer';
 />
 ```
 
-The `amount` prop is paise (49900 = ₹499). Do not pass a rupee decimal. The component is reusable across pages; all checkout, verification, and webhook logic remains in the shared backend routes.
+The `amount` prop is display-only paise (49900 = ₹499), sourced from the server-issued quote. The backend ignores client-supplied prices and resolves the amount from the quote record. Do not pass a rupee decimal. The component is reusable across pages; all checkout, verification, and webhook logic remains in the shared backend routes.
