@@ -1,0 +1,40 @@
+name: Vercel Sandbox CI
+
+on:
+  push:
+    branches: [feat/vercel-sandbox-next16]
+  pull_request:
+    branches: [feat/corleon-taskos]
+  workflow_dispatch:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.15.0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --no-frozen-lockfile
+
+      - name: Validate Prisma schema
+        run: pnpm --filter @corleon/web exec prisma validate --schema=prisma/schema.prisma
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/corleon
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Test web workspace
+        run: pnpm --filter @corleon/web test
