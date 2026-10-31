@@ -20,6 +20,8 @@ model User {
   positions   Position[]
   riskLimits  RiskLimit[]
   auditEvents AuditEvent[]
+  currencyStores CurrencyStore[]
+  currencyWallets CurrencyWallet[]
 
   @@index([createdAt])
 }
@@ -254,4 +256,72 @@ model WorldBankSyncLog {
   job       WorldBankSyncJob @relation(fields: [jobId], references: [id], onDelete: Cascade)
 
   @@index([jobId, createdAt])
+}
+
+
+// Closed-loop Corleon credits. These are loyalty/usage credits, not money,
+// deposits, stored monetary value, or a transferable token.
+enum CurrencyWalletStatus {
+  ACTIVE
+  SUSPENDED
+  CLOSED
+}
+
+enum CurrencyLedgerType {
+  ISSUE
+  REDEEM
+  REVERSAL
+  EXPIRY
+  ADJUSTMENT
+}
+
+model CurrencyStore {
+  id          String   @id @default(cuid())
+  ownerUserId String
+  name        String
+  slug        String
+  status      String   @default("ACTIVE")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  owner       User     @relation(fields: [ownerUserId], references: [id], onDelete: Cascade)
+  entries     CurrencyLedgerEntry[]
+
+  @@unique([ownerUserId, slug])
+  @@index([ownerUserId, status])
+}
+
+model CurrencyWallet {
+  id             String               @id @default(cuid())
+  ownerUserId    String
+  customerEmail  String
+  customerName   String?
+  status         CurrencyWalletStatus @default(ACTIVE)
+  createdAt      DateTime             @default(now())
+  updatedAt      DateTime             @updatedAt
+  owner          User                 @relation(fields: [ownerUserId], references: [id], onDelete: Cascade)
+  entries        CurrencyLedgerEntry[]
+
+  @@unique([ownerUserId, customerEmail])
+  @@index([ownerUserId, status])
+}
+
+model CurrencyLedgerEntry {
+  id             String            @id @default(cuid())
+  ownerUserId    String
+  walletId       String
+  storeId        String?
+  type           CurrencyLedgerType
+  amount         Int
+  reason         String
+  orderReference String?
+  idempotencyKey String            @unique
+  metadata       Json?
+  createdAt      DateTime          @default(now())
+  wallet         CurrencyWallet    @relation(fields: [walletId], references: [id], onDelete: Restrict)
+  store          CurrencyStore?    @relation(fields: [storeId], references: [id], onDelete: SetNull)
+
+  @@index([ownerUserId, createdAt])
+  @@index([walletId, createdAt])
+  @@index([storeId, createdAt])
+  @@index([type, createdAt])
 }
