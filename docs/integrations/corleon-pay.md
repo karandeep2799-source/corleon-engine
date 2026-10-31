@@ -59,7 +59,7 @@ Do not send an ordinary Razorpay checkout URL as though it were a native WhatsAp
 - Integer paise validation and ₹5,00,000 per-order ceiling for this initial implementation; adjust only after risk review.
 - Idempotency key is unique in PostgreSQL and bound to the user and amount.
 - Razorpay checkout HMAC verification uses constant-time comparison.
-- Checkout verification fetches the payment from Razorpay and checks order, amount, currency and captured state.
+- Checkout verification fetches the payment from Razorpay and checks order, amount, currency and captured state. Automatic capture must be enabled in the Razorpay account; manual capture is not implemented in this phase.
 - Webhook HMAC verifies the raw request body; provider event IDs are unique to deduplicate retries.
 - API secrets remain server-side; UPI PIN/card data is never handled or stored by Corleon.
 - Webhook endpoint does not trust browser session identity.
