@@ -21,6 +21,10 @@ describe("sandbox job validation", () => {
     expect(sandboxJobInputSchema.safeParse({ runtime: "node", code: "1", timeoutMs: 30_001 }).success).toBe(false);
   });
 
+  it("enforces the UTF-8 source byte limit", () => {
+    expect(sandboxJobInputSchema.safeParse({ runtime: "node", code: "é".repeat(MAX_SOURCE_BYTES) }).success).toBe(false);
+  });
+
   it("validates idempotency keys", () => {
     expect(isValidIdempotencyKey("sandbox-job-001")).toBe(true);
     expect(isValidIdempotencyKey("short")).toBe(false);
