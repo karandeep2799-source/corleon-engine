@@ -13,6 +13,60 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
+async function readBoundedBody(request: NextRequest): Promise<string> {
+  const declaredLength = Number(request.headers.get("content-length") ?? "0");
+  if (declaredLength > MAX_REQUEST_BYTES) throw new Error("BODY_TOO_LARGE");
+
+  const reader = request.body?.getReader();
+  if (!reader) return "";
+
+  const chunks: Uint8Array[] = [];
+  let totalBytes = 0;
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      totalBytes += value.byteLength;
+      if (totalBytes > MAX_REQUEST_BYTES) {
+        await reader.cancel();
+        throw new Error("BODY_TOO_LARGE");
+      }
+      chunks.push(value);
+    }
+  } finally {
+    reader.releaseLock();
+  }
+  return new TextDecoder("utf-8", { fatal: true }).decode(Buffer.concat(chunks.map((chunk) => Buffer.from(chunk))));
+}
+
+function publicJob(job: {
+  id: string;
+  status: string;
+  runtime: string;
+  exitCode: number | null;
+  stdout: string | null;
+  stderr: string | null;
+  durationMs: number | null;
+  timeoutMs: number;
+  createdAt: Date;
+  finishedAt: Date | null;
+  errorCode: string | null;
+}) {
+  return {
+    id: job.id,
+    status: job.status,
+    runtime: job.runtime.toLowerCase(),
+    exitCode: job.exitCode,
+    stdout: job.stdout,
+    stderr: job.stderr,
+    durationMs: job.durationMs,
+    timeoutMs: job.timeoutMs,
+    createdAt: job.createdAt,
+    finishedAt: job.finishedAt,
+    errorCode: job.errorCode,
+  };
+}
+
 function errorResponse(message: string, status: number, requestId: string) {
   return NextResponse.json(
     { error: message, requestId },
@@ -37,13 +91,12 @@ export async function POST(request: NextRequest) {
 
   let body: unknown;
   try {
-    const rawBody = await request.text();
-    if (Buffer.byteLength(rawBody, "utf8") > MAX_REQUEST_BYTES) {
+    body = JSON.parse(await readBoundedBody(request));
+  } catch (error) {
+    if (error instanceof Error && error.message === "BODY_TOO_LARGE") {
       return errorResponse("Request body is too large", 413, auth.requestId);
     }
-    body = JSON.parse(rawBody);
-  } catch {
-    return errorResponse("Request body must be valid JSON", 400, auth.requestId);
+    return errorResponse("Request body must be valid UTF-8 JSON", 400, auth.requestId);
   }
 
   const parsed = sandboxJobInputSchema.safeParse(body);
@@ -78,7 +131,7 @@ export async function POST(request: NextRequest) {
     });
     if (existing) {
       return NextResponse.json(
-        { job: existing, idempotentReplay: true, requestId: auth.requestId },
+        { job: publicJob(existing), idempotentReplay: true, requestId: auth.requestId },
         { headers: { "Cache-Control": "no-store", "X-Request-Id": auth.requestId } },
       );
     }
@@ -118,7 +171,7 @@ export async function POST(request: NextRequest) {
       });
       if (existing) {
         return NextResponse.json(
-          { job: existing, idempotentReplay: true, requestId: auth.requestId },
+          { job: publicJob(existing), idempotentReplay: true, requestId: auth.requestId },
           { headers: { "Cache-Control": "no-store", "X-Request-Id": auth.requestId } },
         );
       }
@@ -154,7 +207,7 @@ export async function POST(request: NextRequest) {
     });
 
     return NextResponse.json(
-      { job: updated, requestId: auth.requestId },
+      { job: publicJob(updated), requestId: auth.requestId },
       {
         status: result.exitCode === 0 ? 200 : 422,
         headers: { "Cache-Control": "no-store", "X-Request-Id": auth.requestId },
