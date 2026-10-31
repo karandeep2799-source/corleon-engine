@@ -37,6 +37,8 @@ model PaymentQuote {
 model Payment {
   id                String          @id @default(uuid()) @db.Uuid
   userId            String
+  quoteId           String          @unique @db.Uuid
+  quote             PaymentQuote    @relation(fields: [quoteId], references: [id], onDelete: Restrict)
   provider          PaymentProvider
   providerOrderId   String?         @unique
   providerPaymentId String?         @unique
@@ -54,10 +56,10 @@ model Payment {
 }
 
 model PaymentWebhookEvent {
-  id             String   @id @default(uuid()) @db.Uuid
-  providerEventId String  @unique
-  eventType      String
-  receivedAt     DateTime @default(now())
+  id              String   @id @default(uuid()) @db.Uuid
+  providerEventId String   @unique
+  eventType       String
+  receivedAt      DateTime @default(now())
 
   @@index([receivedAt])
 }
