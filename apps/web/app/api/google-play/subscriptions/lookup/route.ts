@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getGooglePlayConfig } from '../../../../../../../src/google-play/config.js';
-import { googlePlay } from '../../../../../../../src/google-play/client.js';
-import { isSubscriptionEntitled, persistPurchase } from '../../../../../../../src/google-play/store.js';
-import { isGooglePlayAdminRequest } from '../../../../../../../src/google-play/security.js';
+import { getGooglePlayConfig } from '../../../../../../../src/google-play/config';
+import { googlePlay } from '../../../../../../../src/google-play/client';
+import { isSubscriptionEntitled, persistPurchase } from '../../../../../../../src/google-play/store';
+import { isGooglePlayAdminRequest } from '../../../../../../../src/google-play/security';
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 export async function POST(request: NextRequest) {
