@@ -21,5 +21,7 @@ export function getGooglePlayConfig() {
     publishingEnabled: process.env.GOOGLE_PLAY_PUBLISHING_ENABLED === 'true',
     supportWritesEnabled: process.env.GOOGLE_PLAY_SUPPORT_WRITES_ENABLED === 'true',
     writeApprovalConfigured: Boolean(process.env.GOOGLE_PLAY_WRITE_APPROVAL_TOKEN),
+    productionPublishingEnabled: process.env.GOOGLE_PLAY_PRODUCTION_PUBLISHING_ENABLED === 'true',
+    productionApprovalConfigured: Boolean(process.env.GOOGLE_PLAY_PRODUCTION_APPROVAL_TOKEN),
   };
 }
