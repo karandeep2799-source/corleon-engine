@@ -1,5 +1,5 @@
 import { createSign } from 'node:crypto';
-import { getGooglePlayConfig } from './config.js';
+import { getGooglePlayConfig } from './config';
 const SCOPES = ['https://www.googleapis.com/auth/androidpublisher','https://www.googleapis.com/auth/playdeveloperreporting'].join(' ');
 let cachedToken: { value: string; expiresAt: number } | undefined;
 export async function getGoogleAccessToken() {
