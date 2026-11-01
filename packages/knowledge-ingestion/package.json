@@ -1,0 +1,32 @@
+{
+  "name": "@corleon/knowledge-ingestion",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Tenant-scoped, rights-aware knowledge ingestion and retrieval contracts for Corleon Engine.",
+  "exports": {
+    ".": "./dist/index.js",
+    "./types": "./dist/types.js",
+    "./connectors/rss": "./dist/connectors/rss.js",
+    "./connectors/sec-edgar": "./dist/connectors/sec-edgar.js",
+    "./connectors/github": "./dist/connectors/github.js",
+    "./connectors/user-provided": "./dist/connectors/user-provided.js"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "npm run build && node --test test/*.test.js",
+    "prisma:validate": "prisma validate --schema prisma/schema.prisma",
+    "prisma:generate": "prisma generate --schema prisma/schema.prisma"
+  },
+  "dependencies": {
+    "fast-xml-parser": "^5.2.5",
+    "zod": "^4.1.5",
+    "@prisma/client": "^6.16.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.18.6",
+    "prisma": "^6.16.0",
+    "typescript": "^5.9.2"
+  }
+}

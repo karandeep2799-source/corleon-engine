@@ -1,0 +1,48 @@
+name: Knowledge Ingestion
+
+on:
+  pull_request:
+    paths:
+      - "packages/knowledge-ingestion/**"
+      - "prisma/schema.prisma"
+      - ".github/workflows/knowledge-ingestion.yml"
+  push:
+    branches: [main]
+    paths:
+      - "packages/knowledge-ingestion/**"
+      - ".github/workflows/knowledge-ingestion.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: knowledge-ingestion-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: packages/knowledge-ingestion
+    env:
+      KNOWLEDGE_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/knowledge_test
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/corleon_test
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+      - name: Validate host Prisma schema
+        run: npx prisma validate --schema ../../prisma/schema.prisma
+      - name: Validate isolated Prisma schema
+        run: npm run prisma:validate
+      - name: Typecheck
+        run: npm run typecheck
+      - name: Unit tests
+        run: npm test

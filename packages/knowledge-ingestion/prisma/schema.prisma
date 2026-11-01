@@ -1,0 +1,145 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/client"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("KNOWLEDGE_DATABASE_URL")
+}
+
+enum KnowledgeSourceKind {
+  RSS
+  SEC_EDGAR
+  ISSUER_IR
+  USER_UPLOAD
+  GITHUB
+  NOTION_EXPORT
+  LICENSED_DATA
+  MARKET_DATA
+}
+
+enum KnowledgeSourceStatus {
+  ACTIVE
+  PAUSED
+  DISABLED
+}
+
+enum KnowledgeRightsStatus {
+  PENDING
+  VERIFIED
+  RESTRICTED
+  REJECTED
+}
+
+enum KnowledgeContentMode {
+  METADATA_ONLY
+  FULL_TEXT
+}
+
+enum KnowledgeDocumentStatus {
+  READY
+  QUARANTINED
+  DELETED
+}
+
+enum KnowledgeReceiptStatus {
+  RECEIVED
+  PROCESSED
+  DUPLICATE
+  FAILED
+}
+
+model KnowledgeSource {
+  id               String                 @id @default(cuid())
+  tenantId         String
+  name             String
+  kind             KnowledgeSourceKind
+  status           KnowledgeSourceStatus  @default(PAUSED)
+  rightsStatus     KnowledgeRightsStatus  @default(PENDING)
+  contentMode      KnowledgeContentMode   @default(METADATA_ONLY)
+  rightsReference  String?
+  allowedHosts     String[]               @default([])
+  config           Json?
+  lastFetchedAt    DateTime?
+  createdAt        DateTime               @default(now())
+  updatedAt        DateTime               @updatedAt
+  documents        KnowledgeDocument[]
+  receipts         KnowledgeIngestionReceipt[]
+
+  @@unique([tenantId, name])
+  @@index([tenantId, status, kind])
+  @@index([tenantId, rightsStatus])
+}
+
+model KnowledgeDocument {
+  id              String                   @id @default(cuid())
+  tenantId        String
+  sourceId        String
+  externalId      String
+  title           String
+  canonicalUrl    String?
+  content         String
+  contentHash     String
+  contentMode     KnowledgeContentMode
+  rightsReference String?
+  publishedAt     DateTime?
+  fetchedAt       DateTime                 @default(now())
+  status          KnowledgeDocumentStatus  @default(READY)
+  metadata        Json?
+  source          KnowledgeSource          @relation(fields: [sourceId], references: [id], onDelete: Cascade)
+  chunks          KnowledgeChunk[]
+
+  @@unique([tenantId, sourceId, externalId])
+  @@index([tenantId, contentHash])
+  @@index([tenantId, publishedAt])
+  @@index([tenantId, status, fetchedAt])
+}
+
+model KnowledgeChunk {
+  id          String            @id @default(cuid())
+  tenantId    String
+  documentId  String
+  ordinal     Int
+  content     String
+  contentHash String
+  tokenCount  Int?
+  metadata    Json?
+  createdAt   DateTime          @default(now())
+  document    KnowledgeDocument @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  @@unique([documentId, ordinal])
+  @@index([tenantId, contentHash])
+}
+
+model KnowledgeIngestionReceipt {
+  id            String                 @id @default(cuid())
+  tenantId      String
+  sourceId      String
+  externalId    String
+  payloadHash   String
+  status        KnowledgeReceiptStatus @default(RECEIVED)
+  receivedAt    DateTime               @default(now())
+  processedAt   DateTime?
+  errorCode     String?
+  source        KnowledgeSource        @relation(fields: [sourceId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, sourceId, externalId])
+  @@index([tenantId, status, receivedAt])
+}
+
+model KnowledgeAuditRecord {
+  id          String   @id @default(cuid())
+  tenantId    String
+  actorId     String?
+  action      String
+  sourceId    String?
+  documentId  String?
+  requestId   String?
+  metadata    Json?
+  createdAt   DateTime @default(now())
+
+  @@index([tenantId, createdAt])
+  @@index([tenantId, sourceId, createdAt])
+  @@index([tenantId, documentId])
+}
