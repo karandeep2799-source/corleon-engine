@@ -690,3 +690,58 @@ model AuditLog {
   @@index([organizationId, createdAt])
   @@index([entityType, entityId])
 }
+
+
+// Google Play Developer API records. Purchase tokens are never stored in plaintext.
+model GooglePlayPurchase {
+  id                    String   @id @default(cuid())
+  packageName           String
+  purchaseTokenHash     String
+  productId             String?
+  purchaseKind          String
+  purchaseState         String
+  orderId               String?
+  subscriptionState     String?
+  acknowledgementState  String?
+  consumptionState      String?
+  purchasedAt           DateTime?
+  expiresAt             DateTime?
+  lastVerifiedAt        DateTime @default(now())
+  providerData          Json?
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  @@unique([packageName, purchaseTokenHash])
+  @@index([packageName, purchaseState])
+  @@index([packageName, expiresAt])
+}
+
+model GooglePlayNotification {
+  id                String   @id @default(cuid())
+  messageId         String   @unique
+  packageName       String
+  notificationType  String
+  eventTime         DateTime?
+  purchaseTokenHash String?
+  processingStatus String   @default("PROCESSED")
+  errorCode         String?
+  receivedAt        DateTime @default(now())
+  processedAt       DateTime?
+
+  @@index([packageName, receivedAt])
+  @@index([processingStatus, receivedAt])
+}
+
+model GooglePlayAuditLog {
+  id          String   @id @default(cuid())
+  action      String
+  packageName String
+  actor       String?
+  resourceId  String?
+  outcome     String
+  metadata    Json?
+  createdAt   DateTime @default(now())
+
+  @@index([packageName, createdAt])
+  @@index([action, createdAt])
+}
