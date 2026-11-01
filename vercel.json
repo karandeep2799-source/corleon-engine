@@ -1,6 +1,6 @@
 {
   "buildCommand": "pnpm turbo run build --filter=@corleon/web",
-  "installCommand": "pnpm install --no-frozen-lockfile",
+  "installCommand": "pnpm install --frozen-lockfile",
   "outputDirectory": "apps/web/.next",
   "crons": [
     {

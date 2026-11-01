@@ -6,7 +6,7 @@ Corleon Engine is a model-independent AI platform and integration backend. The N
 
 - Node.js 24
 - pnpm 12 workspaces and Turborepo
-- Next.js App Router + React + TypeScript
+- Next.js 16 App Router + React 19 + TypeScript
 - Prisma + PostgreSQL
 - Vercel deployment
 - Existing AI, cash-flow, payment, MCP, and learning modules
@@ -33,12 +33,12 @@ The Vercel project root stays at the repository root so existing root-level API 
 
 - Framework: Next.js
 - Node.js: 24.x
-- Install: `pnpm install --no-frozen-lockfile` (until the generated lockfile is committed)
+- Install: `pnpm install --frozen-lockfile`
 - Build: `pnpm turbo run build --filter=@corleon/web`
 - Output: `apps/web/.next`
 - Package manager: `pnpm@12.4.0`, selected through Corepack
 
-The Vercel project uses `ENABLE_EXPERIMENTAL_COREPACK=1` so the package-manager version in the root `package.json` is honored. Commit the generated `pnpm-lock.yaml` from the first validated CI run, then change installs to `pnpm install --frozen-lockfile`.
+The Vercel project uses `ENABLE_EXPERIMENTAL_COREPACK=1` so the package-manager version in the root `package.json` is honored. The generated `pnpm-lock.yaml` is committed and CI/Vercel use frozen installs.
 
 ## Health check
 
