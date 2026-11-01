@@ -1,6 +1,6 @@
 # Corleon Engine
 
-Corleon Engine is a model-independent AI platform and integration backend. The Next.js application is deployed from `apps/web`; existing backend modules, Prisma data models, payment/webhook handlers, and agent services remain at the repository root.
+Corleon Engine is a model-independent AI platform and integration backend. The deployable Next.js application lives in `apps/web`; the existing backend modules, Prisma data models, payment/webhook implementations, cash-flow services, and agent integrations remain at the repository root.
 
 ## Production stack
 
@@ -15,13 +15,14 @@ Corleon Engine is a model-independent AI platform and integration backend. The N
 
 ```bash
 corepack enable
-pnpm install
+pnpm install --frozen-lockfile
 pnpm dev
 ```
 
 Useful checks:
 
 ```bash
+pnpm lint
 pnpm typecheck
 pnpm test
 pnpm build
@@ -29,16 +30,19 @@ pnpm build
 
 ## Vercel
 
-The Vercel project root stays at the repository root so existing root-level API functions and cron handlers remain part of the deployment.
+The Vercel project root is `apps/web`. The project setting **Include source files outside the Root Directory** is enabled so the app can consume workspace packages and the existing backend implementations.
 
 - Framework: Next.js
 - Node.js: 24.x
-- Install: `pnpm install --frozen-lockfile`
-- Build: `pnpm turbo run build --filter=@corleon/web`
-- Output: `apps/web/.next`
-- Package manager: `pnpm@12.4.0`, selected through Corepack
+- Package manager: `pnpm@12.4.0` (Corepack enabled)
+- Install command: `cd ../.. && pnpm install --frozen-lockfile`
+- Build command: `cd ../.. && pnpm turbo run build --filter=@corleon/web`
+- Next.js output: `.next` (framework default)
+- Deployment config: `apps/web/vercel.json`
 
-The Vercel project uses `ENABLE_EXPERIMENTAL_COREPACK=1` so the package-manager version in the root `package.json` is honored. The generated `pnpm-lock.yaml` is committed and CI/Vercel use frozen installs.
+The cron and Stripe webhook entrypoints are in `apps/web/api/` and re-export the existing implementations from the root `api/` directory. Their public paths remain `/api/cron/release-commissions` and `/api/webhooks/stripe`.
+
+The Vercel project uses `ENABLE_EXPERIMENTAL_COREPACK=1` so the pinned package-manager version is honored.
 
 ## Health check
 
@@ -47,9 +51,9 @@ After deployment, `/api/health` returns a machine-readable health response.
 ## Workspace layout
 
 ```text
-apps/web       Deployable Next.js application
+apps/web       Deployable Next.js application and Vercel function entrypoints
 packages/ui    Shared React UI primitives
-api/           Existing Vercel API and webhook functions
+api/           Existing API and webhook implementations
 src/           Existing AI, cash-flow, and MCP modules
 prisma/        Existing Prisma schema
 docs/          Architecture and operating documentation
