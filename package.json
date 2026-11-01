@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
+  "packageManager": "pnpm@12.4.0",
   "engines": {
     "node": ">=22 <25"
   },
@@ -11,7 +12,13 @@
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:deploy": "prisma migrate deploy",
-    "prisma:studio": "prisma studio"
+    "prisma:studio": "prisma studio",
+    "build": "turbo run build --filter=@corleon/web",
+    "build:web": "turbo run build --filter=@corleon/web",
+    "dev": "turbo run dev --filter=@corleon/web",
+    "lint": "turbo run lint --filter=@corleon/web",
+    "test": "turbo run test --filter=@corleon/web",
+    "typecheck": "turbo run typecheck --filter=@corleon/web"
   },
   "dependencies": {
     "@openai/agents": "^0.17.0",
@@ -20,6 +27,8 @@
     "stripe": "^18.5.0"
   },
   "devDependencies": {
-    "prisma": "^6.16.0"
+    "prisma": "^6.16.0",
+    "turbo": "^2.5.6",
+    "typescript": "^5.9.2"
   }
 }
