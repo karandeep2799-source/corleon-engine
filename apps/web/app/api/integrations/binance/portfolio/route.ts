@@ -11,7 +11,7 @@ export async function GET(request: Request) {
   if (process.env.BINANCE_PRIVATE_API_ENABLED !== "true") return NextResponse.json({ error: "Binance portfolio monitoring is disabled." }, { status: 503, headers });
   if (!isAuthorizedPortfolioRequest(request)) return NextResponse.json({ error: "Unauthorized." }, { status: 401, headers });
   try {
-    const account = await getBinanceSpotAccount();
+    const account = await getBinanceAccountSnapshot();
     const balances = account.balances;
     // Bound quote lookups to avoid unbounded fan-out from large exchange accounts.
     const priced = await Promise.all(balances.slice(0, 20).map(async (balance) => {
