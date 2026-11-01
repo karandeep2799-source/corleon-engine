@@ -1,0 +1,50 @@
+name: Browser Automation
+on:
+  pull_request:
+    paths:
+      - "packages/browser-automation/**"
+      - ".github/workflows/browser-automation.yml"
+  push:
+    branches:
+      - "feat/puppeteer-browser-automation"
+    paths:
+      - "packages/browser-automation/**"
+      - ".github/workflows/browser-automation.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: browser-automation-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.15.0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --no-frozen-lockfile
+
+      - name: Typecheck
+        run: pnpm --filter @corleon/browser-automation typecheck
+
+      - name: Unit tests
+        run: pnpm --filter @corleon/browser-automation test
+
+      - name: Build
+        run: pnpm --filter @corleon/browser-automation build
