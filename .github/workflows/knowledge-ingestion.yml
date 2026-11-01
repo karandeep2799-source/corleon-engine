@@ -27,6 +27,7 @@ jobs:
         working-directory: packages/knowledge-ingestion
     env:
       KNOWLEDGE_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/knowledge_test
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/corleon_test
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -36,7 +37,9 @@ jobs:
           node-version: 22
       - name: Install dependencies
         run: npm install --no-audit --no-fund
-      - name: Validate Prisma schema
+      - name: Validate host Prisma schema
+        run: npx prisma validate --schema ../../prisma/schema.prisma
+      - name: Validate isolated Prisma schema
         run: npm run prisma:validate
       - name: Typecheck
         run: npm run typecheck
