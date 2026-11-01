@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getGooglePlayConfig } from '../../../../../../../../../../src/google-play/config.js';
-import { googlePlay } from '../../../../../../../../../../src/google-play/client.js';
-import { isGooglePlayAdminRequest, isProductionPublishingApproved, isPublishingApproved } from '../../../../../../../../../../src/google-play/security.js';
+import { getGooglePlayConfig } from '../../../../../../../../../../src/google-play/config';
+import { googlePlay } from '../../../../../../../../../../src/google-play/client';
+import { isGooglePlayAdminRequest, isProductionPublishingApproved, isPublishingApproved } from '../../../../../../../../../../src/google-play/security';
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 const TRACKS = new Set(['internal', 'alpha', 'beta', 'production']);
