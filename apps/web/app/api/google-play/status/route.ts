@@ -8,8 +8,9 @@ export async function GET(request: NextRequest) {
   const config = getGooglePlayConfig();
   return NextResponse.json({
     configured: Boolean(config.packageName && config.serviceAccount && !config.credentialError),
-    packageNameConfigured: Boolean(config.packageName), serviceAccountConfigured: Boolean(config.serviceAccount),
-    credentialError: config.credentialError, adminTokenConfigured: config.adminTokenConfigured,
+    packageNameConfigured: config.packageNameConfigured, packageNameError: config.packageNameError,
+    serviceAccountConfigured: Boolean(config.serviceAccount), credentialError: config.credentialError,
+    adminTokenConfigured: config.adminTokenConfigured, developerAccountIdConfigured: config.developerAccountIdConfigured,
     pubSubConfigured: config.pubSubConfigured, publishingEnabled: config.publishingEnabled,
     supportWritesEnabled: config.supportWritesEnabled, writeApprovalConfigured: config.writeApprovalConfigured,
     capabilities: { purchaseVerification: true, subscriptionLookup: true, voidedPurchases: true, reviewsRead: true,
