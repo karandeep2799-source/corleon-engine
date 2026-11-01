@@ -27,7 +27,11 @@ export const googlePlay = {
     return googleRequest<Record<string, unknown>>(PUBLISHER + '/applications/' + segment(pkg) + '/reviews?' + query);
   },
   replyToReview: (pkg: string, id: string, text: string) => googleRequest<Record<string, unknown>>(PUBLISHER + '/applications/' + segment(pkg) + '/reviews/' + segment(id) + ':reply', { method: 'POST', body: JSON.stringify({ replyText: text }) }),
-  users: (pkg: string) => googleRequest<Record<string, unknown>>(PUBLISHER + '/applications/' + segment(pkg) + '/users'),
+  users: (developerId: string, pageToken?: string) => {
+    const query = new URLSearchParams({ pageSize: '100' });
+    if (pageToken) query.set('pageToken', pageToken);
+    return googleRequest<Record<string, unknown>>(PUBLISHER + '/developers/' + segment(developerId) + '/users?' + query);
+  },
   createEdit: (pkg: string) => googleRequest<Record<string, unknown>>(PUBLISHER + '/applications/' + segment(pkg) + '/edits', { method: 'POST', body: '{}' }),
   commitEdit: (pkg: string, id: string) => googleRequest<Record<string, unknown>>(PUBLISHER + '/applications/' + segment(pkg) + '/edits/' + segment(id) + ':commit', { method: 'POST', body: '{}' }),
   queryVitals: (pkg: string, metric: 'crashRateMetricSet' | 'anrRateMetricSet', body: Record<string, unknown>) => googleRequest<Record<string, unknown>>(REPORTING + '/apps/' + segment(pkg) + '/' + metric + ':query', { method: 'POST', body: JSON.stringify(body) }),
