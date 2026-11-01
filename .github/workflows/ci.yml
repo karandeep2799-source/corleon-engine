@@ -36,6 +36,9 @@ jobs:
       - name: Install dependencies
         run: pnpm install --no-frozen-lockfile
 
+      - name: Lint web workspace
+        run: pnpm lint
+
       - name: Typecheck web workspace
         run: pnpm typecheck
 
