@@ -27,12 +27,12 @@ export async function persistPurchase(input: { packageName: string; token: strin
   const expiry = asDate(line?.expiryTime);
   const purchased = asDate(data.purchaseTimeMillis);
   const purchaseTokenHash = hashPurchaseToken(input.token);
-  const safeProviderData: Record<string, unknown> = {
+  const safeProviderData = Object.fromEntries(Object.entries({
     purchaseState: data.purchaseState, purchaseTimeMillis: data.purchaseTimeMillis,
     orderId, latestOrderId: data.latestOrderId, subscriptionState: data.subscriptionState,
     acknowledgementState: data.acknowledgementState, consumptionState: data.consumptionState,
-    lineItems: lines.map((item) => ({ productId: item.productId, expiryTime: item.expiryTime })),
-  };
+    lineItems: lines.map((item) => Object.fromEntries(Object.entries({ productId: item.productId, expiryTime: item.expiryTime }).filter(([, value]) => value !== undefined))),
+  }).filter(([, value]) => value !== undefined));
   const fields = {
     productId, purchaseKind: input.kind, purchaseState: state, orderId,
     subscriptionState: typeof data.subscriptionState === 'string' ? data.subscriptionState : undefined,
