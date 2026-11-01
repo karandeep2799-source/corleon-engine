@@ -12,3 +12,8 @@ export function hasWriteApproval(request: Request) {
 }
 export const isPublishingApproved = (request: Request) => process.env.GOOGLE_PLAY_PUBLISHING_ENABLED === 'true' && hasWriteApproval(request);
 export const isSupportWriteApproved = (request: Request) => process.env.GOOGLE_PLAY_SUPPORT_WRITES_ENABLED === 'true' && hasWriteApproval(request);
+export function isProductionPublishingApproved(request: Request) {
+  const expected = process.env.GOOGLE_PLAY_PRODUCTION_APPROVAL_TOKEN;
+  const supplied = request.headers.get('x-google-play-production-approval') || '';
+  return process.env.GOOGLE_PLAY_PRODUCTION_PUBLISHING_ENABLED === 'true' && Boolean(expected && supplied && equal(expected, supplied));
+}
