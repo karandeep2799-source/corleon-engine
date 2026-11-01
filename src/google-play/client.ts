@@ -1,4 +1,4 @@
-import { getGoogleAccessToken } from './auth.js';
+import { getGoogleAccessToken } from './auth';
 const PUBLISHER = 'https://androidpublisher.googleapis.com/androidpublisher/v3';
 const REPORTING = 'https://playdeveloperreporting.googleapis.com/v1beta1';
 async function googleRequest<T>(url: string, init: RequestInit = {}): Promise<T> {
