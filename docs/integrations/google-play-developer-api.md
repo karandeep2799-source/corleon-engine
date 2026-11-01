@@ -29,6 +29,8 @@ Set these only in a server-side secret manager such as Vercel Project Settings â
 | GOOGLE_PLAY_PUBLISHING_ENABLED | Must remain false until explicitly approved. |
 | GOOGLE_PLAY_SUPPORT_WRITES_ENABLED | Must remain false until review-reply writes are approved. |
 | GOOGLE_PLAY_WRITE_APPROVAL_TOKEN | Separate high-entropy token supplied in x-google-play-approval for each approved write. |
+| GOOGLE_PLAY_PRODUCTION_PUBLISHING_ENABLED | Must remain false until a production release is explicitly approved. |
+| GOOGLE_PLAY_PRODUCTION_APPROVAL_TOKEN | Independent token supplied in x-google-play-production-approval for production-track changes and commits. |
 
 Grant the service account app-level access in Play Console and the required API permissions. Enable Android Publisher API and, for vitals, Google Play Developer Reporting API in the associated Cloud project. RTDN also requires a Pub/Sub topic/subscription configured in Play Console.
 
@@ -50,7 +52,7 @@ All routes require Authorization: Bearer GOOGLE_PLAY_ADMIN_TOKEN, except the Pub
 | POST | /api/google-play/publishing/edits | Create an edit only with publishing enablement and approval |
 | PUT | /api/google-play/publishing/edits/:editId/tracks/:track | Update a release track only with publishing approval |
 | PUT | /api/google-play/publishing/edits/:editId/listings/:language | Update a localized listing only with publishing approval |
-| POST | /api/google-play/publishing/edits/:editId/commit | Commit an edit only with publishing enablement and approval |
+| POST | /api/google-play/publishing/edits/:editId/commit | Commit an edit with a track in the JSON body; production additionally requires the separate production gate |
 | POST | /api/webhooks/google-play | RTDN Pub/Sub push endpoint |
 
 ## Purchase verification
@@ -62,7 +64,7 @@ The purchase token is sent to Google over TLS and hashed before persistence. Do 
 ## Safety defaults
 
 - No production Play edit is created or committed by default.
-- Publishing requires GOOGLE_PLAY_PUBLISHING_ENABLED=true and a matching per-request x-google-play-approval token.
+- Non-production publishing requires GOOGLE_PLAY_PUBLISHING_ENABLED=true and a matching per-request x-google-play-approval token. Production-track changes and commits additionally require GOOGLE_PLAY_PRODUCTION_PUBLISHING_ENABLED=true and a matching x-google-play-production-approval token.
 - Review replies require separate support-write enablement and the same per-request approval mechanism.
 - No purchase acknowledgement, consumption, refund, cancellation or payment action is exposed.
 - Prisma migration is provided but must be reviewed and applied separately; deployment does not run migrations.
@@ -70,7 +72,7 @@ The purchase token is sent to Google over TLS and hashed before persistence. Do 
 
 ## App Bundle publishing
 
-The Vercel route layer intentionally does not accept large Android App Bundle uploads because serverless request-body limits make that an unreliable release path. Use the Node 24 CLI at scripts/google-play/publish-bundle.mjs from a trusted CI runner or release workstation. It defaults to a local dry run. Remote publishing requires --commit, --approve-publish, GOOGLE_PLAY_PUBLISHING_ENABLED=true and GOOGLE_PLAY_WRITE_APPROVAL_TOKEN. The production track additionally requires --approve-production. The CLI creates a Play edit, uploads the AAB, updates the selected track and commits the edit. Do not expose this command to untrusted pull-request workflows.
+The Vercel route layer intentionally does not accept large Android App Bundle uploads because serverless request-body limits make that an unreliable release path. Use the Node 24 CLI at scripts/google-play/publish-bundle.mjs from a trusted CI runner or release workstation. It defaults to a local dry run. Remote publishing requires --commit, --approve-publish, GOOGLE_PLAY_PUBLISHING_ENABLED=true and GOOGLE_PLAY_WRITE_APPROVAL_TOKEN. The production track additionally requires GOOGLE_PLAY_PRODUCTION_PUBLISHING_ENABLED=true, GOOGLE_PLAY_PRODUCTION_APPROVAL_TOKEN and --approve-production. The CLI creates a Play edit, uploads the AAB, updates the selected track and commits the edit. Do not expose this command to untrusted pull-request workflows.
 
 ## Database migration
 
