@@ -21,6 +21,7 @@ Set these only in a server-side secret manager such as Vercel Project Settings â
 | Variable | Purpose |
 | --- | --- |
 | GOOGLE_PLAY_PACKAGE_NAME | Exact Android application ID; not yet supplied. |
+| GOOGLE_PLAY_DEVELOPER_ACCOUNT_ID | Numeric developer account ID for the account-level users.list permissions endpoint. |
 | GOOGLE_PLAY_SERVICE_ACCOUNT_JSON | Full service-account JSON as a single-line JSON secret. |
 | GOOGLE_PLAY_ADMIN_TOKEN | High-entropy bearer token protecting administrative routes. |
 | GOOGLE_PLAY_PUBSUB_AUDIENCE | Exact audience configured on the Pub/Sub push subscription. |
@@ -45,8 +46,10 @@ All routes require Authorization: Bearer GOOGLE_PLAY_ADMIN_TOKEN, except the Pub
 | POST | /api/google-play/reviews | Reply only with support-write enablement and approval |
 | POST | /api/google-play/reporting/crash-rate | Query crash-rate metrics |
 | POST | /api/google-play/reporting/anr-rate | Query ANR-rate metrics |
-| GET | /api/google-play/permissions/users | List app users and permissions |
+| GET | /api/google-play/permissions/users | List developer-account users and permissions (account-level API) |
 | POST | /api/google-play/publishing/edits | Create an edit only with publishing enablement and approval |
+| PUT | /api/google-play/publishing/edits/:editId/tracks/:track | Update a release track only with publishing approval |
+| PUT | /api/google-play/publishing/edits/:editId/listings/:language | Update a localized listing only with publishing approval |
 | POST | /api/google-play/publishing/edits/:editId/commit | Commit an edit only with publishing enablement and approval |
 | POST | /api/webhooks/google-play | RTDN Pub/Sub push endpoint |
 
@@ -64,6 +67,10 @@ The purchase token is sent to Google over TLS and hashed before persistence. Do 
 - No purchase acknowledgement, consumption, refund, cancellation or payment action is exposed.
 - Prisma migration is provided but must be reviewed and applied separately; deployment does not run migrations.
 - API routes are protected by a high-entropy admin bearer token. Integrate this with the platform's authenticated organization/role middleware before exposing the module to multiple tenants.
+
+## App Bundle publishing
+
+The Vercel route layer intentionally does not accept large Android App Bundle uploads because serverless request-body limits make that an unreliable release path. Use the Node 24 CLI at scripts/google-play/publish-bundle.mjs from a trusted CI runner or release workstation. It defaults to a local dry run. Remote publishing requires --commit, --approve-publish, GOOGLE_PLAY_PUBLISHING_ENABLED=true and GOOGLE_PLAY_WRITE_APPROVAL_TOKEN. The production track additionally requires --approve-production. The CLI creates a Play edit, uploads the AAB, updates the selected track and commits the edit. Do not expose this command to untrusted pull-request workflows.
 
 ## Database migration
 
