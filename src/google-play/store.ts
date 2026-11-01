@@ -10,6 +10,16 @@ function asDate(value: unknown) {
   const date = new Date(parsed);
   return Number.isNaN(date.getTime()) ? undefined : date;
 }
+export function isSubscriptionEntitled(data: Record<string, unknown>, now = new Date()) {
+  const state = data.subscriptionState;
+  if (state === 'SUBSCRIPTION_STATE_ACTIVE' || state === 'SUBSCRIPTION_STATE_IN_GRACE_PERIOD') return true;
+  if (state !== 'SUBSCRIPTION_STATE_CANCELED') return false;
+  const lines = Array.isArray(data.lineItems) ? data.lineItems as Array<Record<string, unknown>> : [];
+  return lines.some((line) => {
+    const expiry = asDate(line.expiryTime);
+    return Boolean(expiry && expiry > now);
+  });
+}
 export async function persistPurchase(input: { packageName: string; token: string; kind: 'PRODUCT' | 'SUBSCRIPTION'; productId?: string; data: Record<string, unknown> }) {
   const data = input.data;
   const lines = Array.isArray(data.lineItems) ? data.lineItems as Array<Record<string, unknown>> : [];
@@ -41,12 +51,8 @@ export async function markVoidedPurchase(packageName: string, token: string, rea
   const purchaseTokenHash = hashPurchaseToken(token);
   const existing = await prisma.googlePlayPurchase.findUnique({ where: { packageName_purchaseTokenHash: { packageName, purchaseTokenHash } } });
   if (!existing) return false;
-  await prisma.googlePlayPurchase.update({
-    where: { id: existing.id },
-    data: { purchaseState: 'VOIDED', subscriptionState: 'SUBSCRIPTION_STATE_CANCELED', lastVerifiedAt: new Date() },
-  });
-  await prisma.googlePlayAuditLog.create({
-    data: { action: 'PURCHASE_VOIDED', packageName, resourceId: existing.id, outcome: 'SUCCESS', metadata: { reason: typeof reason === 'number' || typeof reason === 'string' ? reason : undefined } },
-  });
+  await prisma.googlePlayPurchase.update({ where: { id: existing.id }, data: { purchaseState: 'VOIDED', subscriptionState: 'SUBSCRIPTION_STATE_CANCELED', lastVerifiedAt: new Date() } });
+  const metadata = typeof reason === 'number' || typeof reason === 'string' ? { reason } : {};
+  await prisma.googlePlayAuditLog.create({ data: { action: 'PURCHASE_VOIDED', packageName, resourceId: existing.id, outcome: 'SUCCESS', metadata } });
   return true;
 }
