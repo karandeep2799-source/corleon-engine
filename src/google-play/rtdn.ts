@@ -1,5 +1,5 @@
-import { hashPurchaseToken, persistPurchase, prisma } from './store.js';
-import { googlePlay } from './client.js';
+import { hashPurchaseToken, persistPurchase, prisma } from './store';
+import { googlePlay } from './client';
 interface PubSubPush { message?: { messageId?: string; data?: string; publishTime?: string }; subscription?: string; }
 async function verifyPubSubOidc(request: Request) {
   const audience = process.env.GOOGLE_PLAY_PUBSUB_AUDIENCE;
