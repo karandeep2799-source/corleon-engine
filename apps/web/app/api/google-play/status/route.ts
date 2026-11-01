@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getGooglePlayConfig } from '../../../../../../src/google-play/config.js';
-import { isGooglePlayAdminRequest } from '../../../../../../src/google-play/security.js';
+import { getGooglePlayConfig } from '../../../../../../src/google-play/config';
+import { isGooglePlayAdminRequest } from '../../../../../../src/google-play/security';
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 export async function GET(request: NextRequest) {
