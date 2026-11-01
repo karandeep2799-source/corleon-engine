@@ -40,7 +40,7 @@ All routes require Authorization: Bearer GOOGLE_PLAY_ADMIN_TOKEN, except the Pub
 | --- | --- | --- |
 | GET | /api/google-play/status | Configuration and capability status |
 | POST | /api/google-play/purchases/verify | Verify a product or subscription token |
-| GET | /api/google-play/subscriptions/:token | Refresh one subscription from Google |
+| POST | /api/google-play/subscriptions/lookup | Refresh one subscription from Google (token in request body, never URL) |
 | GET | /api/google-play/voided-purchases | Retrieve voided purchases |
 | GET | /api/google-play/reviews | Retrieve production reviews with comments |
 | POST | /api/google-play/reviews | Reply only with support-write enablement and approval |
