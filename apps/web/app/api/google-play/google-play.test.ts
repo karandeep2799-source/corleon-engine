@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { hashPurchaseToken, isSubscriptionEntitled } from '../../../../../src/google-play/store.js';
+import { hashPurchaseToken, isSubscriptionEntitled } from '../../../../../src/google-play/store';
 
 describe('Google Play purchase helpers', () => {
   it('hashes purchase tokens deterministically without returning the token', () => {
