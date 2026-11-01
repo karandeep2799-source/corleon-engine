@@ -5,17 +5,17 @@ const originalAllowed = process.env.BINANCE_PAPER_ALLOWED_SYMBOLS;
 const originalLimit = process.env.BINANCE_PAPER_MAX_NOTIONAL_USDT;
 
 afterEach(() => {
-  if (originalAllowed === undefined) delete process.env.BINANCE_RISK_ALLOWED_SYMBOLS;
-  else process.env.BINANCE_RISK_ALLOWED_SYMBOLS = originalAllowed;
+  if (originalAllowed === undefined) delete process.env.BINANCE_PAPER_ALLOWED_SYMBOLS;
+  else process.env.BINANCE_PAPER_ALLOWED_SYMBOLS = originalAllowed;
 
-  if (originalLimit === undefined) delete process.env.BINANCE_RISK_MAX_ORDER_NOTIONAL_USDT;
-  else process.env.BINANCE_RISK_MAX_ORDER_NOTIONAL_USDT = originalLimit;
+  if (originalLimit === undefined) delete process.env.BINANCE_PAPER_MAX_NOTIONAL_USDT;
+  else process.env.BINANCE_PAPER_MAX_NOTIONAL_USDT = originalLimit;
 });
 
 describe("assessSpotOrderRisk", () => {
   it("allows an allowlisted order within the default notional limit for simulation only", () => {
-    delete process.env.BINANCE_RISK_ALLOWED_SYMBOLS;
-    delete process.env.BINANCE_RISK_MAX_ORDER_NOTIONAL_USDT;
+    delete process.env.BINANCE_PAPER_ALLOWED_SYMBOLS;
+    delete process.env.BINANCE_PAPER_MAX_NOTIONAL_USDT;
 
     const result = assessSpotOrderRisk({
       symbol: "btcusdt",
@@ -42,7 +42,7 @@ describe("assessSpotOrderRisk", () => {
   });
 
   it("rejects orders above the configured per-order notional ceiling", () => {
-    process.env.BINANCE_RISK_MAX_ORDER_NOTIONAL_USDT = "10";
+    process.env.BINANCE_PAPER_MAX_NOTIONAL_USDT = "10";
 
     const result = assessSpotOrderRisk({
       symbol: "BTCUSDT",
