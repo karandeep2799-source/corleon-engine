@@ -13,10 +13,14 @@ export async function GET(request: NextRequest) {
     const result = await googlePlay.voidedPurchases(packageName, request.nextUrl.searchParams.get('pageToken') || undefined);
     const voided = Array.isArray(result.voidedPurchases) ? result.voidedPurchases as Array<Record<string, unknown>> : [];
     let revokedCount = 0;
+    const safePurchases = [];
     for (const item of voided) {
       if (typeof item.purchaseToken === 'string' && await markVoidedPurchase(packageName, item.purchaseToken, item.voidedReason)) revokedCount += 1;
+      const { purchaseToken: _purchaseToken, ...safeItem } = item;
+      safePurchases.push(safeItem);
     }
-    return NextResponse.json({ ...result, locallyRevokedCount: revokedCount }, { headers: { 'cache-control': 'no-store' } });
+    const { voidedPurchases: _items, ...pagination } = result;
+    return NextResponse.json({ ...pagination, voidedPurchases: safePurchases, locallyRevokedCount: revokedCount }, { headers: { 'cache-control': 'no-store' } });
   } catch (error) {
     console.error('Google Play voided-purchases reconciliation failed', error instanceof Error ? error.message : 'unknown error');
     return NextResponse.json({ error: 'Voided-purchases reconciliation failed' }, { status: 502 });
