@@ -63,5 +63,6 @@ docs/          Architecture and operating documentation
 
 - Keep production financial execution disabled; Binance integration is market-data and paper-trading only.
 - Do not apply Prisma migrations as part of a web deployment.
+- Commission-release cron fails closed unless `CRON_SECRET` is configured in Vercel; do not configure it until commission release is explicitly approved.
 - Configure secrets only in Vercel's environment-variable manager; never commit populated environment files.
 - Merge and promote only after CI, preview route checks, and application smoke tests pass.
