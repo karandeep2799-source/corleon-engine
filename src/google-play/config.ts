@@ -1,6 +1,8 @@
 export interface GooglePlayServiceAccount { client_email: string; private_key: string; token_uri?: string; }
+const PACKAGE_NAME_PATTERN = /^[A-Za-z][A-Za-z0-9_]*(\.[A-Za-z][A-Za-z0-9_]*)+$/;
 export function getGooglePlayConfig() {
-  const packageName = process.env.GOOGLE_PLAY_PACKAGE_NAME?.trim();
+  const rawPackageName = process.env.GOOGLE_PLAY_PACKAGE_NAME?.trim();
+  const packageName = rawPackageName && PACKAGE_NAME_PATTERN.test(rawPackageName) ? rawPackageName : undefined;
   const rawAccount = process.env.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON;
   let serviceAccount: GooglePlayServiceAccount | undefined;
   let credentialError: string | undefined;
@@ -12,14 +14,12 @@ export function getGooglePlayConfig() {
     } catch { credentialError = 'GOOGLE_PLAY_SERVICE_ACCOUNT_JSON is not valid service-account JSON'; }
   }
   return {
-    packageName, serviceAccount, credentialError,
-    adminTokenConfigured: Boolean(process.env.GOOGLE_PLAY_ADMIN_TOKEN),
+    packageName, packageNameConfigured: Boolean(packageName), packageNameError: rawPackageName && !packageName ? 'GOOGLE_PLAY_PACKAGE_NAME is not a valid Android application ID' : undefined,
+    serviceAccount, credentialError, adminTokenConfigured: Boolean(process.env.GOOGLE_PLAY_ADMIN_TOKEN),
+    developerAccountIdConfigured: Boolean(process.env.GOOGLE_PLAY_DEVELOPER_ACCOUNT_ID),
     pubSubConfigured: Boolean(process.env.GOOGLE_PLAY_PUBSUB_AUDIENCE && process.env.GOOGLE_PLAY_PUBSUB_SERVICE_ACCOUNT_EMAIL),
     publishingEnabled: process.env.GOOGLE_PLAY_PUBLISHING_ENABLED === 'true',
     supportWritesEnabled: process.env.GOOGLE_PLAY_SUPPORT_WRITES_ENABLED === 'true',
     writeApprovalConfigured: Boolean(process.env.GOOGLE_PLAY_WRITE_APPROVAL_TOKEN),
   };
-}
-export function assertPackageName(packageName: string) {
-  if (!/^[A-Za-z][A-Za-z0-9_]*(\\.[A-Za-z][A-Za-z0-9_]*)+$/.test(packageName)) throw new Error('A valid Android package name is required');
 }
