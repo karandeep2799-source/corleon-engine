@@ -1,0 +1,27 @@
+{
+  "name": "@corleon/browser-automation",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Policy-gated Puppeteer keyboard, mouse and text automation for Corleon Engine.",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": ["dist", "README.md"],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "puppeteer": "^24.25.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24.3.0",
+    "typescript": "^5.9.2",
+    "vitest": "^3.2.4"
+  }
+}
