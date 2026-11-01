@@ -1,8 +1,7 @@
 {
   "buildCommand": "pnpm turbo build --filter=@corleon/web",
-  "installCommand": "pnpm install",
+  "installCommand": "pnpm install --no-frozen-lockfile",
   "outputDirectory": "apps/web/.next",
-  "framework": "nextjs",
   "crons": [
     {
       "path": "/api/cron/release-commissions",
