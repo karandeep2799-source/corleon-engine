@@ -40,7 +40,7 @@ The Vercel project root is `apps/web`. The project setting **Include source file
 - Next.js output: `.next` (framework default)
 - Deployment config: `apps/web/vercel.json`
 
-The cron and Stripe webhook entrypoints are in `apps/web/api/` and re-export the existing implementations from the root `api/` directory. Their public paths remain `/api/cron/release-commissions` and `/api/webhooks/stripe`.
+The existing root-level Vercel API functions under `api/` are included through the project's outside-root source setting. Their public paths remain `/api/cron/release-commissions` and `/api/webhooks/stripe`.
 
 The Vercel project uses `ENABLE_EXPERIMENTAL_COREPACK=1` so the pinned package-manager version is honored.
 
@@ -51,7 +51,7 @@ After deployment, `/api/health` returns a machine-readable health response.
 ## Workspace layout
 
 ```text
-apps/web       Deployable Next.js application and Vercel function entrypoints
+apps/web       Deployable Next.js application and App Router endpoints
 packages/ui    Shared React UI primitives
 api/           Existing API and webhook implementations
 src/           Existing AI, cash-flow, and MCP modules
