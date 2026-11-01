@@ -33,6 +33,8 @@ export const googlePlay = {
     return googleRequest<Record<string, unknown>>(PUBLISHER + '/developers/' + segment(developerId) + '/users?' + query);
   },
   createEdit: (pkg: string) => googleRequest<Record<string, unknown>>(PUBLISHER + '/applications/' + segment(pkg) + '/edits', { method: 'POST', body: '{}' }),
+  updateTrack: (pkg: string, editId: string, track: string, body: Record<string, unknown>) => googleRequest<Record<string, unknown>>(PUBLISHER + '/applications/' + segment(pkg) + '/edits/' + segment(editId) + '/tracks/' + segment(track), { method: 'PUT', body: JSON.stringify(body) }),
+  updateListing: (pkg: string, editId: string, language: string, body: Record<string, unknown>) => googleRequest<Record<string, unknown>>(PUBLISHER + '/applications/' + segment(pkg) + '/edits/' + segment(editId) + '/listings/' + segment(language), { method: 'PUT', body: JSON.stringify(body) }),
   commitEdit: (pkg: string, id: string) => googleRequest<Record<string, unknown>>(PUBLISHER + '/applications/' + segment(pkg) + '/edits/' + segment(id) + ':commit', { method: 'POST', body: '{}' }),
   queryVitals: (pkg: string, metric: 'crashRateMetricSet' | 'anrRateMetricSet', body: Record<string, unknown>) => googleRequest<Record<string, unknown>>(REPORTING + '/apps/' + segment(pkg) + '/' + metric + ':query', { method: 'POST', body: JSON.stringify(body) }),
 };
