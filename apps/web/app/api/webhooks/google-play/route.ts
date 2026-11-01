@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { processRtdn } from '../../../../../../src/google-play/rtdn.js';
+import { processRtdn } from '../../../../../../src/google-play/rtdn';
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 export async function POST(request: Request) {
