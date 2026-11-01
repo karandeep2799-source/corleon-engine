@@ -4,6 +4,7 @@ on:
   pull_request:
     paths:
       - "packages/knowledge-ingestion/**"
+      - "prisma/schema.prisma"
       - ".github/workflows/knowledge-ingestion.yml"
   push:
     branches: [main]
