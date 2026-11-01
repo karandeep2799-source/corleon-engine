@@ -27,7 +27,7 @@ const committing = args.has('--commit');
 if (committing && (process.env.GOOGLE_PLAY_PUBLISHING_ENABLED !== 'true' || !process.env.GOOGLE_PLAY_WRITE_APPROVAL_TOKEN || !args.has('--approve-publish'))) {
   fail('Commit requires GOOGLE_PLAY_PUBLISHING_ENABLED=true, GOOGLE_PLAY_WRITE_APPROVAL_TOKEN and --approve-publish.');
 }
-if (committing && track === 'production' && !args.has('--approve-production')) fail('Production track additionally requires --approve-production.');
+if (committing && track === 'production' && (process.env.GOOGLE_PLAY_PRODUCTION_PUBLISHING_ENABLED !== 'true' || !process.env.GOOGLE_PLAY_PRODUCTION_APPROVAL_TOKEN || !args.has('--approve-production'))) fail('Production publishing additionally requires GOOGLE_PLAY_PRODUCTION_PUBLISHING_ENABLED=true, GOOGLE_PLAY_PRODUCTION_APPROVAL_TOKEN and --approve-production.');
 console.log(JSON.stringify({ mode: committing ? 'COMMIT' : 'DRY_RUN', packageName, track, releaseStatus, bundle: basename(file), sizeBytes: size, remoteChanges: committing }, null, 2));
 if (!committing) {
   console.log('Dry run only. No Google API call or remote edit was made. Add --commit and the required approvals to execute.');
