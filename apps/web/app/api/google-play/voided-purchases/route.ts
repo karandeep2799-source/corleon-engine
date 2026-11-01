@@ -16,10 +16,9 @@ export async function GET(request: NextRequest) {
     const safePurchases = [];
     for (const item of voided) {
       if (typeof item.purchaseToken === 'string' && await markVoidedPurchase(packageName, item.purchaseToken, item.voidedReason)) revokedCount += 1;
-      const { purchaseToken: _purchaseToken, ...safeItem } = item;
-      safePurchases.push(safeItem);
+      safePurchases.push(Object.fromEntries(Object.entries(item).filter(([key]) => key !== 'purchaseToken')));
     }
-    const { voidedPurchases: _items, ...pagination } = result;
+    const pagination = Object.fromEntries(Object.entries(result).filter(([key]) => key !== 'voidedPurchases'));
     return NextResponse.json({ ...pagination, voidedPurchases: safePurchases, locallyRevokedCount: revokedCount }, { headers: { 'cache-control': 'no-store' } });
   } catch (error) {
     console.error('Google Play voided-purchases reconciliation failed', error instanceof Error ? error.message : 'unknown error');
