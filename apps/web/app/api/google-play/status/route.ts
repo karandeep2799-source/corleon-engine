@@ -13,8 +13,11 @@ export async function GET(request: NextRequest) {
     adminTokenConfigured: config.adminTokenConfigured, developerAccountIdConfigured: config.developerAccountIdConfigured,
     pubSubConfigured: config.pubSubConfigured, publishingEnabled: config.publishingEnabled,
     supportWritesEnabled: config.supportWritesEnabled, writeApprovalConfigured: config.writeApprovalConfigured,
+    productionPublishingEnabled: config.productionPublishingEnabled,
+    productionApprovalConfigured: config.productionApprovalConfigured,
     capabilities: { purchaseVerification: true, subscriptionLookup: true, voidedPurchases: true, reviewsRead: true,
       reviewReplies: config.supportWritesEnabled && config.writeApprovalConfigured, vitalsReporting: true,
-      publishing: config.publishingEnabled && config.writeApprovalConfigured, productionRelease: false },
+      publishing: config.publishingEnabled && config.writeApprovalConfigured,
+      productionRelease: config.productionPublishingEnabled && config.productionApprovalConfigured },
   }, { headers: { 'cache-control': 'no-store' } });
 }
