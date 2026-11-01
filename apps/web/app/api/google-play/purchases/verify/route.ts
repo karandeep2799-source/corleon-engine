@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getGooglePlayConfig } from '../../../../../../src/google-play/config.js';
 import { googlePlay } from '../../../../../../src/google-play/client.js';
-import { persistPurchase } from '../../../../../../src/google-play/store.js';
+import { isSubscriptionEntitled, persistPurchase } from '../../../../../../src/google-play/store.js';
 import { isGooglePlayAdminRequest } from '../../../../../../src/google-play/security.js';
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -15,8 +15,7 @@ export async function POST(request: NextRequest) {
     if (!token || token.length > 4096) return NextResponse.json({ error: 'Valid purchaseToken is required' }, { status: 400 });
     if (body.kind === 'SUBSCRIPTION') {
       const data = await googlePlay.subscription(config.packageName, token);
-      const state = typeof data.subscriptionState === 'string' ? data.subscriptionState : 'UNKNOWN';
-      const entitled = ['SUBSCRIPTION_STATE_ACTIVE', 'SUBSCRIPTION_STATE_IN_GRACE_PERIOD'].includes(state);
+      const entitled = isSubscriptionEntitled(data);
       const saved = await persistPurchase({ packageName: config.packageName, token, kind: 'SUBSCRIPTION', data });
       return NextResponse.json({ verified: entitled, purchase: { id: saved.id, productId: saved.productId, orderId: saved.orderId, subscriptionState: saved.subscriptionState, expiresAt: saved.expiresAt, lastVerifiedAt: saved.lastVerifiedAt } }, { status: entitled ? 200 : 409, headers: { 'cache-control': 'no-store' } });
     }
