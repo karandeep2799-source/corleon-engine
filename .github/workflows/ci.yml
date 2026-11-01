@@ -80,12 +80,12 @@ jobs:
         shell: bash
         run: |
           cp .lockfile-artifact/pnpm-lock.yaml pnpm-lock.yaml
-          if git diff --quiet -- pnpm-lock.yaml; then
+          git add pnpm-lock.yaml
+          if git diff --cached --quiet -- pnpm-lock.yaml; then
             echo "Lockfile is already current."
             exit 0
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add pnpm-lock.yaml
           git commit -m "chore: commit pnpm workspace lockfile"
           git push
