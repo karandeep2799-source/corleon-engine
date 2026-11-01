@@ -1,0 +1,10 @@
+{
+  "installCommand": "cd ../.. && pnpm install --frozen-lockfile",
+  "buildCommand": "cd ../.. && pnpm turbo run build --filter=@corleon/web",
+  "crons": [
+    {
+      "path": "/api/cron/release-commissions",
+      "schedule": "0 0 * * *"
+    }
+  ]
+}

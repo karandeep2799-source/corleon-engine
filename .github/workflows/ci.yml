@@ -1,0 +1,91 @@
+name: CI
+
+on:
+  push:
+    branches: [main, fix/production-vercel-recovery]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 12.4.0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint web workspace
+        run: pnpm lint
+
+      - name: Typecheck web workspace
+        run: pnpm typecheck
+
+      - name: Run web workspace tests
+        run: pnpm test
+
+      - name: Build web workspace
+        run: pnpm build
+
+      - name: Upload generated lockfile for review
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: corleon-pnpm-lockfile
+          path: pnpm-lock.yaml
+          if-no-files-found: error
+          retention-days: 7
+
+  commit-lockfile:
+    name: Commit generated pnpm lockfile
+    needs: validate
+    if: github.event_name == 'push' && github.ref == 'refs/heads/fix/production-vercel-recovery'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+
+      - name: Download generated lockfile
+        uses: actions/download-artifact@v4
+        with:
+          name: corleon-pnpm-lockfile
+          path: .lockfile-artifact
+
+      - name: Commit lockfile
+        shell: bash
+        run: |
+          cp .lockfile-artifact/pnpm-lock.yaml pnpm-lock.yaml
+          git add pnpm-lock.yaml
+          if git diff --cached --quiet -- pnpm-lock.yaml; then
+            echo "Lockfile is already current."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "chore: commit pnpm workspace lockfile"
+          git push
