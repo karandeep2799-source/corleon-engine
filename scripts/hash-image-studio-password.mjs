@@ -1,0 +1,1 @@
+import {randomBytes,scryptSync} from "node:crypto";const p=process.argv[2];if(!p||p.length<14){console.error("Usage: node scripts/hash-image-studio-password.mjs '<password>' (14+ characters)");process.exit(1);}const salt=randomBytes(16).toString("hex");console.log("scrypt$"+salt+"$"+scryptSync(p,salt,64).toString("hex"));

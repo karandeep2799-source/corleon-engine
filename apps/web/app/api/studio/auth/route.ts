@@ -1,0 +1,6 @@
+import { NextResponse } from "next/server";
+import { clearCookie,cookie,readSession,sameOrigin,token,verifyAdmin } from "../../../../lib/image-studio";
+export const runtime="nodejs",dynamic="force-dynamic";
+export async function GET(req:Request){const s=readSession(req);return NextResponse.json({authenticated:!!s,email:s?.email||null},{headers:{"Cache-Control":"no-store"}});}
+export async function POST(req:Request){if(!sameOrigin(req))return NextResponse.json({error:"Cross-origin request rejected."},{status:403});const b=await req.json().catch(()=>null);if(!b||typeof b.email!=="string"||typeof b.password!=="string"||b.password.length>1024)return NextResponse.json({error:"Email and password required."},{status:400});try{if(!verifyAdmin(b.email,b.password))return NextResponse.json({error:"Invalid email or password."},{status:401});const r=NextResponse.json({authenticated:true});r.headers.set("Set-Cookie",cookie(token(b.email)));r.headers.set("Cache-Control","no-store");return r;}catch(e){return NextResponse.json({error:e instanceof Error?e.message:"Authentication unavailable."},{status:503});}}
+export async function DELETE(req:Request){if(!sameOrigin(req))return NextResponse.json({error:"Cross-origin request rejected."},{status:403});const r=NextResponse.json({authenticated:false});r.headers.set("Set-Cookie",clearCookie());return r;}
