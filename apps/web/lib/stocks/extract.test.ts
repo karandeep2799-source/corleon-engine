@@ -62,3 +62,17 @@ describe("extractTradesFromEmail", () => {
     expect(trades).toHaveLength(0);
   });
 });
+
+  it("extracts trade rows from a CSV attachment", async () => {
+    const { extractTradesFromCsv } = await import("./extract");
+    const trades = extractTradesFromCsv({
+      ownerEmail: "investor@example.com",
+      messageId: "message-csv",
+      fileName: "tradebook.csv",
+      text: "Symbol,Trade Type,Quantity,Average Price,Trade Date,Currency\nINFY,BUY,12,1450.50,2026-11-09,INR\nTCS,SELL,2,3200,09/11/2026,INR",
+      receivedAt,
+    });
+    expect(trades).toHaveLength(2);
+    expect(trades[0]).toMatchObject({ type: "BUY", symbol: "INFY", quantity: 12, price: 1450.5, currency: "INR", confidence: 92 });
+    expect(trades[1]).toMatchObject({ type: "SELL", symbol: "TCS", quantity: 2, price: 3200, currency: "INR" });
+  });
