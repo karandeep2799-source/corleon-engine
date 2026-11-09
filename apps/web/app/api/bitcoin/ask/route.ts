@@ -18,12 +18,12 @@ export async function POST(request: NextRequest) {
     try {
       const terms = [...new Set(question.toLowerCase().split(/[^a-z0-9-]+/).filter(term => term.length > 3))].slice(0, 5);
       const indexed = terms.length ? await bitcoinPrisma.bitcoinKnowledgeSource.findMany({
-        where: { OR: terms.map(term => ({ title: { contains: term, mode: "insensitive" as const } })) },
+        where: { OR: terms.flatMap(term => [{ title: { contains: term, mode: "insensitive" as const } }, { body: { contains: term, mode: "insensitive" as const } }]) },
         orderBy: [{ score: "desc" }, { creationDate: "desc" }], take: 6
       }) : [];
       sources = indexed.map((item, index) => ({
         id: index + 1, title: item.title, url: item.url, score: item.score,
-        accepted: item.acceptedAnswerExists, tags: item.tags, excerpt: item.body.slice(0, 1800)
+        accepted: item.acceptedAnswerExists, tags: item.tags, license: item.license, excerpt: item.body.slice(0, 1800)
       }));
     } catch (error) {
       console.warn("Bitcoin knowledge index unavailable; falling back to live retrieval", error);
