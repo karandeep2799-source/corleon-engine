@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { extractTradesFromEmail } from "./extract";
+import { extractTradesFromCsv, extractTradesFromEmail } from "./extract";
 
 const receivedAt = new Date("2026-11-10T10:00:00.000Z");
 
@@ -61,10 +61,8 @@ describe("extractTradesFromEmail", () => {
     });
     expect(trades).toHaveLength(0);
   });
-});
 
-  it("extracts trade rows from a CSV attachment", async () => {
-    const { extractTradesFromCsv } = await import("./extract");
+  it("extracts trade rows from a CSV attachment", () => {
     const trades = extractTradesFromCsv({
       ownerEmail: "investor@example.com",
       messageId: "message-csv",
@@ -76,3 +74,4 @@ describe("extractTradesFromEmail", () => {
     expect(trades[0]).toMatchObject({ type: "BUY", symbol: "INFY", quantity: 12, price: 1450.5, currency: "INR", confidence: 92 });
     expect(trades[1]).toMatchObject({ type: "SELL", symbol: "TCS", quantity: 2, price: 3200, currency: "INR" });
   });
+});
