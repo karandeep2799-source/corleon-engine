@@ -105,7 +105,8 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    const complete = !batch.nextPageToken;
+    const retryBatch = batch.failedMessages > 0;
+    const complete = !batch.nextPageToken && !retryBatch;
     const scannedCount = (restartingScan ? 0 : previous?.scannedCount ?? 0) + batch.messages.length;
     const candidateCount = (restartingScan ? 0 : previous?.candidateCount ?? 0) + candidateTransactions;
     await bitcoinPrisma.stockSyncState.update({
@@ -114,7 +115,7 @@ export async function POST(request: NextRequest) {
         lastSyncedAt: new Date(),
         scannedCount,
         candidateCount,
-        nextPageToken: batch.nextPageToken ?? null,
+        nextPageToken: retryBatch ? nextPageToken ?? null : batch.nextPageToken ?? null,
         scanComplete: complete,
       },
     });
@@ -128,7 +129,7 @@ export async function POST(request: NextRequest) {
       attachmentEmails,
       failedMessages: batch.failedMessages,
       estimatedMatchingEmails: batch.resultSizeEstimate,
-      hasMore: !complete,
+      hasMore: !complete,\n      retryingFailedMessages: retryBatch,
       note: "The scan parses email text and supported CSV/text attachments. PDF and spreadsheet binaries are listed but not parsed in this release. Every extracted trade remains unverified until you approve it.",
     }, { headers: { "Cache-Control": "no-store" } });
   } catch (error) {
