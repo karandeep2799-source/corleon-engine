@@ -909,6 +909,8 @@ model StockSyncState {
   ownerEmail        String   @unique @db.VarChar(320)
   lastSyncStartedAt DateTime?
   lastSyncedAt      DateTime?
+  nextPageToken     String?  @db.Text
+  scanComplete      Boolean  @default(false)
   scannedCount      Int      @default(0)
   candidateCount    Int      @default(0)
   updatedAt         DateTime @updatedAt
