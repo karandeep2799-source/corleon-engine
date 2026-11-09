@@ -1,0 +1,42 @@
+name: SEBI regulatory source ingestion
+
+on:
+  schedule:
+    - cron: "30 1 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sebi-source-ingestion
+  cancel-in-progress: false
+
+jobs:
+  ingest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Validate configuration
+        env:
+          SEBI_INGEST_SECRET: ${{ secrets.SEBI_INGEST_SECRET }}
+        run: |
+          if [ -z "$SEBI_INGEST_SECRET" ]; then
+            echo "::error::Configure the SEBI_INGEST_SECRET GitHub Actions secret before enabling ingestion."
+            exit 1
+          fi
+
+      - name: Ingest official SEBI RSS feed
+        env:
+          SEBI_INGEST_SECRET: ${{ secrets.SEBI_INGEST_SECRET }}
+          SEBI_INGEST_URL: ${{ vars.SEBI_INGEST_URL }}
+        run: |
+          if [ -z "$SEBI_INGEST_URL" ]; then
+            echo "::error::Configure the SEBI_INGEST_URL repository variable (for example, the deployed /api/sebi/ingest endpoint)."
+            exit 1
+          fi
+          curl --fail-with-body --silent --show-error \
+            --max-time 180 \
+            --request POST "$SEBI_INGEST_URL" \
+            --header "Authorization: Bearer $SEBI_INGEST_SECRET" \
+            --header "Accept: application/json"
