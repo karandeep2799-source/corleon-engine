@@ -15,7 +15,7 @@ export async function POST(request: NextRequest) {
   if (question.length < 8) return NextResponse.json({ error: "Ask a specific question (at least 8 characters)." }, { status: 400 });
 
   try {
-    const terms = question.split(/\\s+/).filter((term) => term.length > 2).slice(0, 8);
+    const terms = question.split(/\s+/).filter((term) => term.length > 2).slice(0, 8);
     const documents = await sebiPrisma.sebiDocument.findMany({
       where: { status: { not: "ARCHIVED" }, OR: terms.flatMap((term) => [
         { title: { contains: term, mode: "insensitive" as const } },
@@ -43,9 +43,9 @@ export async function POST(request: NextRequest) {
     });
 
     const context = sources.map((source, index) =>
-      "[S" + (index + 1) + "] " + source.title + "\\nURL: " + source.url + "\\nCategory: " + source.category +
-      "\\nPublished: " + (source.publishedAt ?? "Not stated") + "\\nExtract: " + source.excerpt
-    ).join("\\n\\n");
+      "[S" + (index + 1) + "] " + source.title + "\nURL: " + source.url + "\nCategory: " + source.category +
+      "\nPublished: " + (source.publishedAt ?? "Not stated") + "\nExtract: " + source.excerpt
+    ).join("\n\n");
 
     const response = await fetch("https://api.openai.com/v1/responses", {
       method: "POST",
@@ -61,7 +61,7 @@ export async function POST(request: NextRequest) {
           "Cite claims inline using [S1], [S2] identifiers. State when evidence is insufficient.",
           "Provide general information only, not legal, investment, tax, or personalized compliance advice.",
         ].join(" "),
-        input: "Question: " + question + "\\n\\nOfficial SEBI source extracts:\\n" + context,
+        input: "Question: " + question + "\n\nOfficial SEBI source extracts:\n" + context,
       }),
     });
     if (!response.ok) {
@@ -70,7 +70,7 @@ export async function POST(request: NextRequest) {
     }
     const payload = await response.json() as { output?: Array<{ content?: Array<{ type?: string; text?: string }> }> };
     const answer = (payload.output ?? []).flatMap((item) => item.content ?? [])
-      .filter((part) => part.type === "output_text" && part.text).map((part) => part.text).join("\\n").slice(0, 12000);
+      .filter((part) => part.type === "output_text" && part.text).map((part) => part.text).join("\n").slice(0, 12000);
     return NextResponse.json({
       answer: answer || "No answer text was returned. Please review the official sources below.",
       sources, mode: "ai-assisted",
