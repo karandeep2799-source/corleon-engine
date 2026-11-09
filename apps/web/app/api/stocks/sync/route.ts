@@ -18,6 +18,8 @@ export async function POST(request: NextRequest) {
     if (previous?.lastSyncStartedAt && now.getTime() - previous.lastSyncStartedAt.getTime() < 30_000) {
       return NextResponse.json({ error: "Please wait 30 seconds between mailbox scans." }, { status: 429 });
     }
+    const restartingScan = !previous || previous.scanComplete;
+    const nextPageToken = restartingScan ? undefined : previous?.nextPageToken ?? undefined;
     await bitcoinPrisma.stockSyncState.upsert({
       where: { ownerEmail: session.email },
       create: { ownerEmail: session.email, lastSyncStartedAt: now },
@@ -25,13 +27,13 @@ export async function POST(request: NextRequest) {
     });
 
     const accessToken = await getGmailAccessToken(session.email);
-    const messages = await listStockEmailMessages(accessToken, 200);
+    const batch = await listStockEmailMessages(accessToken, nextPageToken, 100);
     let newTransactions = 0;
     let candidateTransactions = 0;
     let attachmentEmails = 0;
     let matchedEmails = 0;
 
-    for (const message of messages) {
+    for (const message of batch.messages) {
       if (!message.id) continue;
       const parsedEmail = readMessageContent(message);
       const trades = extractTradesFromEmail({
@@ -41,7 +43,7 @@ export async function POST(request: NextRequest) {
         body: parsedEmail.body,
         receivedAt: parsedEmail.receivedAt,
       });
-      if (trades.length) candidateTransactions += trades.length;
+      candidateTransactions += trades.length;
       if (parsedEmail.attachments.length) attachmentEmails++;
 
       const evidence = await bitcoinPrisma.stockEmailEvidence.upsert({
@@ -69,8 +71,10 @@ export async function POST(request: NextRequest) {
       if (trades.length) matchedEmails++;
 
       for (const trade of trades) {
-        const result = await bitcoinPrisma.stockTransaction.upsert({
-          where: { ownerEmail_fingerprint: { ownerEmail: session.email, fingerprint: trade.fingerprint } },
+        const unique = { ownerEmail_fingerprint: { ownerEmail: session.email, fingerprint: trade.fingerprint } };
+        const existing = await bitcoinPrisma.stockTransaction.findUnique({ where: unique, select: { id: true } });
+        await bitcoinPrisma.stockTransaction.upsert({
+          where: unique,
           create: {
             ownerEmail: session.email,
             evidenceId: evidence.id,
@@ -86,26 +90,37 @@ export async function POST(request: NextRequest) {
             evidenceExcerpt: trade.evidenceExcerpt,
             fingerprint: trade.fingerprint,
           },
-          update: {},
-          select: { createdAt: true },
+          update: { evidenceId: evidence.id },
         });
-        if (result.createdAt.getTime() >= now.getTime() - 1000) newTransactions++;
+        if (!existing) newTransactions++;
       }
     }
 
+    const complete = !batch.nextPageToken;
+    const scannedCount = (restartingScan ? 0 : previous?.scannedCount ?? 0) + batch.messages.length;
+    const candidateCount = (restartingScan ? 0 : previous?.candidateCount ?? 0) + candidateTransactions;
     await bitcoinPrisma.stockSyncState.update({
       where: { ownerEmail: session.email },
-      data: { lastSyncedAt: new Date(), scannedCount: messages.length, candidateCount: candidateTransactions },
+      data: {
+        lastSyncedAt: new Date(),
+        scannedCount,
+        candidateCount,
+        nextPageToken: batch.nextPageToken ?? null,
+        scanComplete: complete,
+      },
     });
     return NextResponse.json({
       ok: true,
-      scannedEmails: messages.length,
+      scannedThisBatch: batch.messages.length,
+      scannedEmails: scannedCount,
       matchedEmails,
       candidateTransactions,
       newTransactions,
       attachmentEmails,
-      scanLimit: 200,
-      note: "Email attachments are listed as evidence but are not parsed. Every extracted transaction remains unverified until you approve it.",
+      failedMessages: batch.failedMessages,
+      estimatedMatchingEmails: batch.resultSizeEstimate,
+      hasMore: !complete,
+      note: "Continue the scan to page through older matching emails. Attachments are identified but not parsed. Every extracted trade remains unverified until you approve it.",
     }, { headers: { "Cache-Control": "no-store" } });
   } catch (error) {
     console.error("Stock Intelligence Gmail sync failed", error);
