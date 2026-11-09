@@ -84,7 +84,7 @@ async function getAttachmentText(messageId: string, part: GmailPart, accessToken
   let encoded = part.body?.data;
   if (!encoded && part.body?.attachmentId) {
     try {
-      const attachment = await gmailFetch<{ data?: string; size?: number }>(`/messages/${encodeURIComponent(messageId)}/attachments/${encodeURIComponent(part.body.attachmentId)}`, accessToken);
+      const attachment = await gmailFetch<{ data?: string; size?: number }>("/messages/" + encodeURIComponent(messageId) + "/attachments/" + encodeURIComponent(part.body.attachmentId), accessToken);
       if ((attachment.size ?? 0) > 1_000_000) return null;
       encoded = attachment.data;
     } catch {
@@ -104,8 +104,18 @@ export async function readMessageContent(message: GmailMessage, accessToken: str
     filename: (output.attachments[index].filename || "statement.csv").slice(0, 180),
     text: value,
   }] : []);
-  const htmlText = output.html.join("\\n").replace(/<style[\\s\\S]*?<\\/style>/gi, " ").replace(/<script[\\s\\S]*?<\\/script>/gi, " ").replace(/<\\/(p|div|tr|li|h[1-6])>/gi, "\\n").replace(/<[^>]+>/g, " ").replace(/&nbsp;/gi, " ").replace(/&amp;/gi, "&").replace(/&lt;/gi, "<").replace(/&gt;/gi, ">").replace(/&quot;/gi, '"');
-  const body = [output.plain.join("\\n") || htmlText, ...csvAttachments.map((attachment) => `\\n[Attachment: ${attachment.filename}]\\n${attachment.text}`)].join("\\n").replace(/\\r/g, "").replace(/[ \\t]+/g, " ").replace(/\\n{3,}/g, "\\n\\n").slice(0, 60_000);
+  const htmlText = output.html.join("\n")
+    .replace(/<style[\s\S]*?<\/style>/gi, " ")
+    .replace(/<script[\s\S]*?<\/script>/gi, " ")
+    .replace(/<\/(p|div|tr|li|h[1-6])>/gi, "\n")
+    .replace(/<[^>]+>/g, " ")
+    .replace(/&nbsp;/gi, " ")
+    .replace(/&amp;/gi, "&")
+    .replace(/&lt;/gi, "<")
+    .replace(/&gt;/gi, ">")
+    .replace(/&quot;/gi, '"');
+  const body = [output.plain.join("\n") || htmlText, ...csvAttachments.map((attachment) => "\n[Attachment: " + attachment.filename + "]\n" + attachment.text)]
+    .join("\n").replace(/\r/g, "").replace(/[ \t]+/g, " ").replace(/\n{3,}/g, "\n\n").slice(0, 60_000);
   const headers = new Map((message.payload?.headers ?? []).map((header) => [header.name.toLowerCase(), header.value]));
   const attachments: AttachmentMetadata[] = output.attachments.map((part, index) => ({
     filename: (part.filename || "attachment").slice(0, 180),
@@ -118,23 +128,6 @@ export async function readMessageContent(message: GmailMessage, accessToken: str
     subject: (headers.get("subject") || "(No subject)").slice(0, 500),
     sender: (headers.get("from") || "").slice(0, 320),
     attachments,
-    receivedAt: message.internalDate ? new Date(Number(message.internalDate)) : new Date(),
-  };
-}
-
-export function readMessageContent(message: GmailMessage) {
-  const output = { plain: [] as string[], html: [] as string[], attachments: [] as Array<{ filename: string; mimeType: string }> };
-  walkParts(message.payload?.parts, output);
-  const root = decodeBody(message.payload?.body?.data);
-  if (root && !output.plain.length && !output.html.length) output.plain.push(root);
-  const htmlText = output.html.join("\n").replace(/<style[\s\S]*?<\/style>/gi, " ").replace(/<script[\s\S]*?<\/script>/gi, " ").replace(/<\/(p|div|tr|li|h[1-6])>/gi, "\n").replace(/<[^>]+>/g, " ").replace(/&nbsp;/gi, " ").replace(/&amp;/gi, "&").replace(/&lt;/gi, "<").replace(/&gt;/gi, ">").replace(/&quot;/gi, '"');
-  const body = (output.plain.join("\n") || htmlText).replace(/\r/g, "").replace(/[ \t]+/g, " ").replace(/\n{3,}/g, "\n\n").slice(0, 60_000);
-  const headers = new Map((message.payload?.headers ?? []).map((header) => [header.name.toLowerCase(), header.value]));
-  return {
-    body,
-    subject: (headers.get("subject") || "(No subject)").slice(0, 500),
-    sender: (headers.get("from") || "").slice(0, 320),
-    attachments: output.attachments,
     receivedAt: message.internalDate ? new Date(Number(message.internalDate)) : new Date(),
   };
 }
