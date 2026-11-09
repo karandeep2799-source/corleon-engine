@@ -1,0 +1,96 @@
+import { bitcoinPrisma } from "../bitcoin/prisma";
+import { decryptRefreshToken } from "./session";
+
+const GMAIL_API = "https://gmail.googleapis.com/gmail/v1/users/me";
+type GmailPart = { mimeType?: string; filename?: string; body?: { data?: string }; parts?: GmailPart[] };
+export type GmailMessage = {
+  id: string; threadId?: string; internalDate?: string; snippet?: string;
+  payload?: { headers?: Array<{ name: string; value: string }>; body?: { data?: string }; parts?: GmailPart[] };
+};
+
+export async function getGmailAccessToken(email: string): Promise<string> {
+  const connection = await bitcoinPrisma.gmailConnection.findUnique({ where: { email: email.toLowerCase() } });
+  if (!connection) throw new Error("Gmail is not connected for this account.");
+  const refreshToken = decryptRefreshToken(connection.refreshTokenEncrypted);
+  const response = await fetch("https://oauth2.googleapis.com/token", {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams({
+      client_id: process.env.GOOGLE_OAUTH_CLIENT_ID || "",
+      client_secret: process.env.GOOGLE_OAUTH_CLIENT_SECRET || "",
+      refresh_token: refreshToken,
+      grant_type: "refresh_token",
+    }),
+    cache: "no-store",
+  });
+  const data = await response.json() as { access_token?: string; error?: string };
+  if (!response.ok || !data.access_token) throw new Error(data.error || "Could not refresh Gmail access. Reconnect the Google account.");
+  return data.access_token;
+}
+async function gmailFetch<T>(path: string, accessToken: string): Promise<T> {
+  const response = await fetch(`${GMAIL_API}${path}`, {
+    headers: { Authorization: `Bearer ${accessToken}` },
+    cache: "no-store",
+  });
+  const data = await response.json() as T & { error?: { message?: string } };
+  if (!response.ok) throw new Error(data.error?.message || `Gmail API returned ${response.status}.`);
+  return data;
+}
+export async function listStockEmailMessages(accessToken: string, maxMessages = 200): Promise<GmailMessage[]> {
+  const query = '{ "contract note" "trade confirmation" "portfolio statement" holdings dividend demat equity shares stocks }';
+  const output: GmailMessage[] = [];
+  let pageToken: string | undefined;
+  while (output.length < maxMessages) {
+    const params = new URLSearchParams({ q: query, maxResults: String(Math.min(100, maxMessages - output.length)) });
+    if (pageToken) params.set("pageToken", pageToken);
+    const page = await gmailFetch<{ messages?: Array<{ id: string; threadId: string }>; nextPageToken?: string }>(`/messages?${params}`, accessToken);
+    const ids = page.messages ?? [];
+    const fetched = await mapLimit(ids, 8, async (message) => gmailFetch<GmailMessage>(`/messages/${encodeURIComponent(message.id)}?format=full`, accessToken));
+    output.push(...fetched);
+    if (!page.nextPageToken || ids.length === 0) break;
+    pageToken = page.nextPageToken;
+  }
+  return output.slice(0, maxMessages);
+}
+async function mapLimit<T, R>(items: T[], limit: number, run: (item: T) => Promise<R>): Promise<R[]> {
+  const results = new Array<R>(items.length);
+  let cursor = 0;
+  const workers = Array.from({ length: Math.min(limit, items.length) }, async () => {
+    while (true) {
+      const index = cursor++;
+      if (index >= items.length) return;
+      results[index] = await run(items[index]);
+    }
+  });
+  await Promise.all(workers);
+  return results;
+}
+function decodeBody(data?: string): string {
+  if (!data) return "";
+  return Buffer.from(data.replace(/-/g, "+").replace(/_/g, "/"), "base64").toString("utf8");
+}
+function walkParts(parts: GmailPart[] | undefined, output: { plain: string[]; html: string[]; attachments: Array<{ filename: string; mimeType: string }> }) {
+  for (const part of parts ?? []) {
+    if (part.filename) output.attachments.push({ filename: part.filename.slice(0, 180), mimeType: (part.mimeType || "application/octet-stream").slice(0, 120) });
+    const decoded = decodeBody(part.body?.data);
+    if (decoded && part.mimeType === "text/plain") output.plain.push(decoded);
+    else if (decoded && part.mimeType === "text/html") output.html.push(decoded);
+    if (part.parts?.length) walkParts(part.parts, output);
+  }
+}
+export function readMessageContent(message: GmailMessage) {
+  const output = { plain: [] as string[], html: [] as string[], attachments: [] as Array<{ filename: string; mimeType: string }> };
+  walkParts(message.payload?.parts, output);
+  const root = decodeBody(message.payload?.body?.data);
+  if (root && !output.plain.length && !output.html.length) output.plain.push(root);
+  const htmlText = output.html.join("\n").replace(/<style[\s\S]*?<\/style>/gi, " ").replace(/<script[\s\S]*?<\/script>/gi, " ").replace(/<\/(p|div|tr|li|h[1-6])>/gi, "\n").replace(/<[^>]+>/g, " ").replace(/&nbsp;/gi, " ").replace(/&amp;/gi, "&").replace(/&lt;/gi, "<").replace(/&gt;/gi, ">").replace(/&quot;/gi, '"');
+  const body = (output.plain.join("\n") || htmlText).replace(/\r/g, "").replace(/[ \t]+/g, " ").replace(/\n{3,}/g, "\n\n").slice(0, 60_000);
+  const headers = new Map((message.payload?.headers ?? []).map((header) => [header.name.toLowerCase(), header.value]));
+  return {
+    body,
+    subject: (headers.get("subject") || "(No subject)").slice(0, 500),
+    sender: (headers.get("from") || "").slice(0, 320),
+    attachments: output.attachments,
+    receivedAt: message.internalDate ? new Date(Number(message.internalDate)) : new Date(),
+  };
+}
