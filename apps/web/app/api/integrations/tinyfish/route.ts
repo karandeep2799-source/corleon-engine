@@ -1,6 +1,6 @@
 import { createHash, timingSafeEqual } from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
-import { executeTinyFishAction, TinyFishError, type TinyFishAction } from "@/lib/tinyfish";
+import { executeTinyFishAction, TinyFishError, type TinyFishAction } from "../../../../lib/tinyfish";
 
 export const runtime = "nodejs";
 export const maxDuration = 300;
