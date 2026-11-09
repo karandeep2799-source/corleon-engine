@@ -8,6 +8,11 @@ export type TinyFishAction =
   | "search.query"
   | "fetch.contents"
   | "research.run"
+  | "research.list"
+  | "research.get"
+  | "research.cancel"
+  | "browser.create"
+  | "browser.terminate"
   | "wallet.get"
   | "monitors.list"
   | "monitors.create"
@@ -201,6 +206,31 @@ export async function executeTinyFishAction(action: TinyFishAction, rawInput: un
           ...(response.headers.get("x-research-run-id") ? { "X-Research-Run-Id": response.headers.get("x-research-run-id")! } : {}),
         },
       });
+    }
+    case "research.list": {
+      const params = new URLSearchParams();
+      for (const key of ["status", "query", "created_after", "created_before", "sort_direction", "limit", "cursor"] as const) {
+        if (input[key] !== undefined) params.set(key, String(input[key]));
+      }
+      return jsonRequest("/v1/research-run" + (params.size ? "?" + params.toString() : ""), "GET");
+    }
+    case "research.get": {
+      const id = requireId(input.research_run_id, "research run ID");
+      return jsonRequest("/v1/research-run/" + id, "GET");
+    }
+    case "research.cancel": {
+      const id = requireId(input.research_run_id, "research run ID");
+      return jsonRequest("/v1/research-run/" + id + "/cancel", "POST", {});
+    }
+    case "browser.create": {
+      const body: JsonObject = {};
+      if (input.url !== undefined) body.url = assertPublicHttpUrl(input.url);
+      if (typeof input.timeout_seconds === "number") body.timeout_seconds = Math.min(86400, Math.max(5, Math.floor(input.timeout_seconds)));
+      return jsonRequest("/", "POST", body, "https://api.browser.tinyfish.ai");
+    }
+    case "browser.terminate": {
+      const id = requireId(input.session_id, "browser session ID");
+      return jsonRequest("/" + id, "DELETE", undefined, "https://api.browser.tinyfish.ai");
     }
     case "wallet.get":
       return jsonRequest("/v1/wallet", "GET");
