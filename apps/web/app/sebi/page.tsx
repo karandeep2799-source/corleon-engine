@@ -10,7 +10,20 @@ export const metadata: Metadata = {
   description: "Source-grounded SEBI regulatory intelligence, circular discovery and investor-protection research.",
 };
 
+type InitialDocument = {
+  id: string;
+  title: string;
+  canonicalUrl: string;
+  description: string | null;
+  category: string;
+  publishedAt: string | null;
+  fetchedAt: string;
+  status: string;
+};
+
 export default async function SebiPage() {
+  let initialDocuments: InitialDocument[] = [];
+  let initialTotal = 0;
   try {
     const [documents, total] = await Promise.all([
       sebiPrisma.sebiDocument.findMany({
@@ -21,11 +34,14 @@ export default async function SebiPage() {
       }),
       sebiPrisma.sebiDocument.count({ where: { status: { not: "ARCHIVED" } } }),
     ]);
-    return <SebiDashboard
-      initialDocuments={documents.map((doc) => ({ ...doc, publishedAt: doc.publishedAt?.toISOString() ?? null, fetchedAt: doc.fetchedAt.toISOString() }))}
-      initialTotal={total}
-    />;
-  } catch {
-    return <SebiDashboard initialDocuments={[]} initialTotal={0} />;
+    initialDocuments = documents.map((doc) => ({
+      ...doc,
+      publishedAt: doc.publishedAt?.toISOString() ?? null,
+      fetchedAt: doc.fetchedAt.toISOString(),
+    }));
+    initialTotal = total;
+  } catch (error) {
+    console.error("SEBI initial source query unavailable", error);
   }
+  return <SebiDashboard initialDocuments={initialDocuments} initialTotal={initialTotal} />;
 }
