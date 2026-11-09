@@ -23,7 +23,7 @@ export async function createSession(input:RuntimeCreateInput){
  const p=await r.json().catch(()=>({}));if(!r.ok)throw new Error(`DIGITALOCEAN_${r.status}: ${p.message??"Session provisioning failed"}`);
  if(!p.session?.id)throw new Error("DigitalOcean response did not include session.id");return p.session as {id:string;name?:string;state?:string;agent_kind?:string;config_id?:string;region?:string};
 }
-export const sendInput=(id:string,message:string)=>call<{run_id?:string}>(`/sessions/${encodeURIComponent(id)}/input`,{method:"POST",body:JSON.stringify({message})});
+export const sendInput=(id:string,message:string)=>call<{run_id?:string}>(`/sessions/${encodeURIComponent(id)}/input`,{method:"POST",body:JSON.stringify({text:message})});
 export const cancelSession=(id:string)=>call<{outcome:string}>(`/sessions/${encodeURIComponent(id)}/cancel`,{method:"POST",body:"{}"});
 export const pauseSession=(id:string)=>call<unknown>(`/sessions/${encodeURIComponent(id)}/pause`,{method:"POST",body:"{}"});
 export const resumeSession=(id:string)=>call<unknown>(`/sessions/${encodeURIComponent(id)}/resume`,{method:"POST",body:"{}"});
