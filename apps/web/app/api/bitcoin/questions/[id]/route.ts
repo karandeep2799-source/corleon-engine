@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { stackExchange } from "../../../../lib/bitcoin/stackexchange";
+import { stackExchange } from "../../../../../lib/bitcoin/stackexchange";
 
 export const runtime = "nodejs";
 
