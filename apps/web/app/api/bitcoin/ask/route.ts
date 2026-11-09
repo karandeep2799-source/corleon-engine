@@ -63,8 +63,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "The AI provider is temporarily unavailable.", sources }, { status: 502 });
     }
     const result = await response.json();
-    const answer = (result.output ?? []).flatMap((item: any) => item.content ?? [])
-      .filter((part: any) => part.type === "output_text").map((part: any) => part.text).join("\n").trim();
+    const answer = (result.output ?? []).flatMap((item: { content?: Array<{ type?: string; text?: string }> }) => item.content ?? [])
+      .filter((part: { type?: string; text?: string }) => part.type === "output_text").map((part: { text?: string }) => part.text ?? "").join("\n").trim();
     return NextResponse.json({ answer: answer || "The model returned no answer. Please try again.", sources, mode: "retrieval-augmented" });
   } catch (error) {
     console.error("Bitcoin AI request failed", error);

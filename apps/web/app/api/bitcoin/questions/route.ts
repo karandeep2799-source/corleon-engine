@@ -4,6 +4,8 @@ import { bitcoinPrisma } from "../../../../lib/bitcoin/prisma";
 
 export const runtime = "nodejs";
 
+type StackExchangeQuestion = { question_id: number; title: string; body?: string; link: string; score: number; answer_count: number; view_count: number; is_answered: boolean; tags: string[]; creation_date: number; owner?: { display_name?: string } };
+
 export async function GET(request: NextRequest) {
   const query = (request.nextUrl.searchParams.get("q") ?? "").trim().slice(0, 160);
   const sortInput = request.nextUrl.searchParams.get("sort") ?? "activity";
@@ -15,12 +17,12 @@ export async function GET(request: NextRequest) {
       orderBy: [{ score: "desc" }, { createdAt: "desc" }], take: 12,
       select: { id: true, title: true, body: true, authorName: true, tags: true, score: true, answerCount: true, createdAt: true }
     }).catch(() => []);
-    const remote = await stackExchange<any>(query ? "/search/advanced" : "/questions", query
+    const remote = await stackExchange<StackExchangeQuestion>(query ? "/search/advanced" : "/questions", query
       ? { q: query, sort: "relevance", order: "desc", page }
       : { sort, order: "desc", page });
     return NextResponse.json({
       local,
-      external: remote.items.map((q: any) => ({
+      external: remote.items.map((q) => ({
         id: q.question_id, title: q.title, body: q.body ?? "", link: q.link,
         score: q.score, answerCount: q.answer_count, viewCount: q.view_count,
         isAnswered: q.is_answered, tags: q.tags ?? [], createdAt: q.creation_date,
