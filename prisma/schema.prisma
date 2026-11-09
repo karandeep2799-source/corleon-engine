@@ -690,3 +690,88 @@ model AuditLog {
   @@index([organizationId, createdAt])
   @@index([entityType, entityId])
 }
+
+enum AgentRuntimeProvider { DIGITALOCEAN VERCEL_SANDBOX }
+enum AgentRuntimeAdapter { CODEX CLAUDE_CODE OPENCODE NONE }
+enum AgentRuntimeJobStatus { QUEUED PROVISIONING RUNNING AWAITING_APPROVAL SUCCEEDED FAILED CANCELLED }
+enum AgentRuntimeSessionStatus { PROVISIONING RUNNING PAUSED STOPPED FAILED UNKNOWN }
+enum AgentRuntimeApprovalStatus { PENDING APPROVED DENIED EXPIRED }
+
+model AgentRuntimeJob {
+  id String @id @default(cuid())
+  organizationId String
+  requestedBy String?
+  provider AgentRuntimeProvider @default(DIGITALOCEAN)
+  adapter AgentRuntimeAdapter
+  status AgentRuntimeJobStatus @default(QUEUED)
+  prompt String @db.Text
+  repository String?
+  branch String?
+  idempotencyKey String? @unique
+  metadata Json?
+  errorCode String?
+  errorMessage String? @db.Text
+  startedAt DateTime?
+  finishedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  session AgentRuntimeSession?
+  approvals AgentRuntimeApproval[]
+  auditEvents AgentRuntimeAuditEvent[]
+  @@index([organizationId, status, createdAt])
+  @@index([provider, createdAt])
+}
+model AgentRuntimeSession {
+  id String @id @default(cuid())
+  jobId String @unique
+  provider AgentRuntimeProvider
+  externalSessionId String? @unique
+  configId String?
+  sessionName String?
+  region String?
+  status AgentRuntimeSessionStatus @default(PROVISIONING)
+  lastEventAt DateTime?
+  pausedAt DateTime?
+  stoppedAt DateTime?
+  metadata Json?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  job AgentRuntimeJob @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  approvals AgentRuntimeApproval[]
+  auditEvents AgentRuntimeAuditEvent[]
+  @@index([provider, status, updatedAt])
+}
+model AgentRuntimeApproval {
+  id String @id @default(cuid())
+  jobId String
+  sessionId String?
+  organizationId String
+  toolName String
+  request Json
+  status AgentRuntimeApprovalStatus @default(PENDING)
+  requestedAt DateTime @default(now())
+  reviewedAt DateTime?
+  reviewedBy String?
+  decisionNote String? @db.Text
+  expiresAt DateTime?
+  job AgentRuntimeJob @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  session AgentRuntimeSession? @relation(fields: [sessionId], references: [id], onDelete: SetNull)
+  @@index([organizationId, status, requestedAt])
+  @@index([jobId, status])
+}
+model AgentRuntimeAuditEvent {
+  id String @id @default(cuid())
+  organizationId String
+  jobId String?
+  sessionId String?
+  actorType String
+  actorId String?
+  action String
+  details Json?
+  createdAt DateTime @default(now())
+  job AgentRuntimeJob? @relation(fields: [jobId], references: [id], onDelete: SetNull)
+  session AgentRuntimeSession? @relation(fields: [sessionId], references: [id], onDelete: SetNull)
+  @@index([organizationId, createdAt])
+  @@index([jobId, createdAt])
+  @@index([sessionId, createdAt])
+}
