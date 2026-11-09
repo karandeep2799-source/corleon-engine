@@ -69,6 +69,15 @@ Use the first value for STOCKS_SESSION_SECRET and the second for STOCKS_TOKEN_EN
 
 Google classifies Gmail API scopes separately from basic sign-in. The Gmail read-only scope gives access to mailbox message content and attachments, so the scope must be explained clearly and only the data needed for the visible portfolio feature should be processed. Review Google's current Gmail scope classification, OAuth verification instructions and Workspace user-data / Limited Use policy before launch.
 
+
+## Public-launch compliance gates
+
+The current engineering notice at /stocks/privacy is not a finished legal privacy policy. Before public release, the operator must supply the legal entity name, registered address, privacy contact, data retention schedule, backup-deletion schedule and subprocessor list, then publish a legally reviewed privacy policy.
+
+The requested Gmail scope is restricted. Google requires OAuth verification for public use of restricted scopes and a security assessment when restricted-scope data is stored on or transmitted by application servers. The public-launch plan must account for Google's CASA requirements, encryption at rest, HTTPS, encrypted OAuth refresh tokens and appropriate key management. The sample environment-variable encryption key is intended for development and must not be assumed to satisfy a production security assessment.
+
+Google's Workspace policy requires a prominent disclosure immediately before user consent, a privacy-policy URL in the OAuth client configuration, user-facing deletion instructions and strict Limited Use restrictions. It also prohibits creating permanent copies of Google user data. The precise retention and persistence model for derived portfolio records must be reviewed against the current Google policy and any conditions imposed during OAuth verification. Do not invite general users or enable production Gmail access until this review is complete.
+
 ## Database migration
 
 The schema change and SQL migration are committed but are not applied automatically.
