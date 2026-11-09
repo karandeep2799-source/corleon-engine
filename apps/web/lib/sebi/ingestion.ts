@@ -13,15 +13,15 @@ export type FeedItem = {
 };
 
 function decodeXml(value: string): string {
-  return value.replace(/<!\\[CDATA\\[([\\s\\S]*?)\\]\\]>/g, "$1")
+  return value.replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, "$1")
     .replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">")
     .replace(/&quot;/g, '"').replace(/&#39;|&apos;/g, "'")
-    .replace(/&#(\\d+);/g, (_, n: string) => String.fromCodePoint(Number(n)))
-    .replace(/&#x([\\da-f]+);/gi, (_, n: string) => String.fromCodePoint(parseInt(n, 16))).trim();
+    .replace(/&#(\d+);/g, (_, n: string) => String.fromCodePoint(Number(n)))
+    .replace(/&#x([\da-f]+);/gi, (_, n: string) => String.fromCodePoint(parseInt(n, 16))).trim();
 }
 
 function tagValue(xml: string, tag: string): string {
-  const match = xml.match(new RegExp("<" + tag + "(?:\\\\s[^>]*)?>([\\\\s\\\\S]*?)</" + tag + ">", "i"));
+  const match = xml.match(new RegExp("<" + tag + "(?:\\s[^>]*)?>([\\s\\S]*?)</" + tag + ">", "i"));
   return match ? decodeXml(match[1]) : "";
 }
 
@@ -48,12 +48,12 @@ export function classifySebiItem(title: string, description: string): string {
 
 export function parseSebiRss(xml: string): FeedItem[] {
   const items: FeedItem[] = [];
-  for (const match of xml.matchAll(/<item(?:\\s[^>]*)?>([\\s\\S]*?)<\\/item>/gi)) {
+  for (const match of xml.matchAll(/<item(?:\s[^>]*)?>([\s\S]*?)<\/item>/gi)) {
     const block = match[1];
     const title = tagValue(block, "title").slice(0, 500);
     const link = normalizeSebiUrl(tagValue(block, "link"));
     if (!title || !link) continue;
-    const description = tagValue(block, "description").replace(/<[^>]*>/g, " ").replace(/\\s+/g, " ").slice(0, 12000);
+    const description = tagValue(block, "description").replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").slice(0, 12000);
     const dateText = tagValue(block, "pubDate");
     const parsedDate = dateText ? new Date(dateText) : null;
     items.push({ title, link, description, publishedAt: parsedDate && !Number.isNaN(parsedDate.getTime()) ? parsedDate : null, category: classifySebiItem(title, description) });
@@ -75,7 +75,7 @@ export async function ingestSebiFeed() {
     const items = parseSebiRss(xml);
     discovered = items.length;
     for (const item of items) {
-      const contentHash = createHash("sha256").update([item.title, item.description, item.link, item.publishedAt?.toISOString() ?? ""].join("\\n")).digest("hex");
+      const contentHash = createHash("sha256").update([item.title, item.description, item.link, item.publishedAt?.toISOString() ?? ""].join("\n")).digest("hex");
       const existing = await sebiPrisma.sebiDocument.findUnique({ where: { canonicalUrl: item.link }, select: { id: true, contentHash: true } });
       if (existing?.contentHash === contentHash) {
         await sebiPrisma.sebiDocument.update({ where: { id: existing.id }, data: { lastSeenAt: new Date(), fetchedAt: new Date() } });
