@@ -54,6 +54,7 @@ export async function GET() {
         confirmedTransactions: confirmed.length,
         scannedEmails: syncState?.scannedCount ?? 0,
         lastSyncedAt: syncState?.lastSyncedAt ?? null,
+        scanComplete: syncState?.scanComplete ?? false,
       },
       holdings: buildPositions(confirmed),
       transactions: transactions.map((item) => ({
