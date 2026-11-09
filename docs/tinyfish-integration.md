@@ -7,7 +7,9 @@ Corleon Engine's TinyFish adapter provides a server-side gateway to TinyFish Age
 - Next.js route: `POST /api/integrations/tinyfish`
 - Health / wallet check: `GET /api/integrations/tinyfish`
 - Server adapter: `apps/web/lib/tinyfish.ts`
-- Provider API: `https://agent.tinyfish.ai`
+- Agent, Research, Monitor, Dataset, Profile and Wallet APIs: `https://agent.tinyfish.ai`
+- Search API: `https://api.search.tinyfish.ai` (GET)
+- Fetch API: `https://api.fetch.tinyfish.ai` (POST)
 - Authentication: server-only `TINYFISH_API_KEY` plus a separate Corleon access token.
 - No TinyFish credential is exposed to browser code.
 - The adapter uses native fetch and the documented REST endpoints, avoiding a runtime SDK dependency in this workspace. For standalone Node scripts, TinyFish's official SDK is `@tiny-fish/sdk`.
