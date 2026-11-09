@@ -803,3 +803,76 @@ model AgentRuntimeAuditEvent {
   @@index([jobId, createdAt])
   @@index([sessionId, createdAt])
 }
+
+
+enum BitcoinQuestionStatus {
+  PENDING
+  PUBLISHED
+  HIDDEN
+}
+
+model BitcoinQuestion {
+  id          String               @id @default(cuid())
+  title       String               @db.VarChar(180)
+  body        String               @db.Text
+  authorName  String               @db.VarChar(60)
+  authorHash  String?
+  tags        String[]             @default([])
+  status      BitcoinQuestionStatus @default(PENDING)
+  score       Int                  @default(0)
+  answerCount Int                  @default(0)
+  views       Int                  @default(0)
+  answers     BitcoinAnswer[]
+  votes       BitcoinVote[]
+  createdAt   DateTime             @default(now())
+  updatedAt   DateTime             @updatedAt
+  @@index([status, createdAt])
+  @@index([status, score])
+}
+
+model BitcoinAnswer {
+  id         String        @id @default(cuid())
+  questionId String
+  body       String        @db.Text
+  authorName String        @db.VarChar(60)
+  authorHash String?
+  score      Int           @default(0)
+  isAccepted Boolean       @default(false)
+  question   BitcoinQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  votes      BitcoinVote[]
+  createdAt  DateTime      @default(now())
+  updatedAt  DateTime      @updatedAt
+  @@index([questionId, score])
+}
+
+model BitcoinVote {
+  id         String          @id @default(cuid())
+  questionId String?
+  answerId   String?
+  voterHash  String
+  value      Int             @default(1)
+  question   BitcoinQuestion? @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  answer     BitcoinAnswer?   @relation(fields: [answerId], references: [id], onDelete: Cascade)
+  createdAt  DateTime        @default(now())
+  @@unique([questionId, voterHash])
+  @@unique([answerId, voterHash])
+  @@index([voterHash, createdAt])
+}
+
+
+model BitcoinKnowledgeSource {
+  id                  String   @id @default(cuid())
+  externalId          Int      @unique
+  title               String   @db.VarChar(500)
+  body                String   @db.Text
+  url                 String
+  tags                String[] @default([])
+  score               Int      @default(0)
+  acceptedAnswerExists Boolean @default(false)
+  authorName          String?
+  creationDate        DateTime
+  license             String
+  fetchedAt           DateTime @default(now())
+  @@index([score, creationDate])
+  @@index([tags], type: Gin)
+}
