@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { bitcoinPrisma } from "@/lib/bitcoin/prisma";
 import { getStockSession, isSameOrigin } from "@/lib/stocks/session";
 import { getGmailAccessToken, listStockEmailMessages, readMessageContent } from "@/lib/stocks/gmail";
-import { extractTradesFromEmail } from "@/lib/stocks/extract";
+import { extractTradesFromEmail, extractTradesFromCsv } from "@/lib/stocks/extract";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -15,8 +15,8 @@ export async function POST(request: NextRequest) {
   try {
     const now = new Date();
     const previous = await bitcoinPrisma.stockSyncState.findUnique({ where: { ownerEmail: session.email } });
-    if (previous?.lastSyncStartedAt && now.getTime() - previous.lastSyncStartedAt.getTime() < 30_000) {
-      return NextResponse.json({ error: "Please wait 30 seconds between mailbox scans." }, { status: 429 });
+    if (previous?.lastSyncStartedAt && now.getTime() - previous.lastSyncStartedAt.getTime() < 5_000) {
+      return NextResponse.json({ error: "Please wait a few seconds between mailbox scans." }, { status: 429 });
     }
     const restartingScan = !previous || previous.scanComplete;
     const nextPageToken = restartingScan ? undefined : previous?.nextPageToken ?? undefined;
@@ -35,14 +35,23 @@ export async function POST(request: NextRequest) {
 
     for (const message of batch.messages) {
       if (!message.id) continue;
-      const parsedEmail = readMessageContent(message);
-      const trades = extractTradesFromEmail({
-        ownerEmail: session.email,
-        messageId: message.id,
-        subject: parsedEmail.subject,
-        body: parsedEmail.body,
-        receivedAt: parsedEmail.receivedAt,
-      });
+      const parsedEmail = await readMessageContent(message, accessToken);
+      const trades = [
+        ...extractTradesFromEmail({
+          ownerEmail: session.email,
+          messageId: message.id,
+          subject: parsedEmail.subject,
+          body: parsedEmail.body,
+          receivedAt: parsedEmail.receivedAt,
+        }),
+        ...parsedEmail.csvAttachments.flatMap((attachment) => extractTradesFromCsv({
+          ownerEmail: session.email,
+          messageId: message.id,
+          fileName: attachment.filename,
+          text: attachment.text,
+          receivedAt: parsedEmail.receivedAt,
+        })),
+      ];
       candidateTransactions += trades.length;
       if (parsedEmail.attachments.length) attachmentEmails++;
 
@@ -120,7 +129,7 @@ export async function POST(request: NextRequest) {
       failedMessages: batch.failedMessages,
       estimatedMatchingEmails: batch.resultSizeEstimate,
       hasMore: !complete,
-      note: "Continue the scan to page through older matching emails. Attachments are identified but not parsed. Every extracted trade remains unverified until you approve it.",
+      note: "The scan parses email text and supported CSV/text attachments. PDF and spreadsheet binaries are listed but not parsed in this release. Every extracted trade remains unverified until you approve it.",
     }, { headers: { "Cache-Control": "no-store" } });
   } catch (error) {
     console.error("Stock Intelligence Gmail sync failed", error);
