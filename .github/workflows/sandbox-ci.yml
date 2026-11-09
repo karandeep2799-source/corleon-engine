@@ -1,0 +1,52 @@
+name: Vercel Sandbox integration
+
+on:
+  push:
+    branches:
+      - main
+      - "feat/**"
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sandbox-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  sandbox:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      SANDBOX_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/corleon_sandbox
+      CORLEON_SANDBOX_API_KEY: ci-only-test-secret-with-at-least-32-characters
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.15.0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Install dependencies
+        run: pnpm install --no-frozen-lockfile
+
+      - name: Generate Prisma client
+        run: pnpm --filter @corleon/db generate
+
+      - name: Typecheck web app
+        run: pnpm --filter @corleon/web typecheck
+
+      - name: Run sandbox validation tests
+        run: pnpm --filter @corleon/web test
+
+      - name: Build web app
+        run: pnpm --filter @corleon/web build
