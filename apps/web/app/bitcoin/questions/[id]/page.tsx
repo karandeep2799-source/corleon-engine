@@ -49,7 +49,7 @@ export default async function BitcoinQuestionPage({ params }: { params: Promise<
         <p className="btc-kicker">BITCOIN STACK EXCHANGE · COMMUNITY QUESTION</p>
         <h1>{question.title ?? `Question #${id}`}</h1>
         <p className="btc-subtle">This post is displayed from the Stack Exchange API. Open the original post for full formatting, comments, edits and community actions.</p>
-        <div className="btc-detail-post"><b>Question details</b><p>{cleanHtml(question.body)}</p></div>
+        <div className="btc-detail-post"><b>Question details</b><p>{cleanHtml(question.body ?? "")}</p></div>
         <div className="btc-sources"><h3>{remoteAnswers.length} answers</h3>{remoteAnswers.map((answer, index) => <article className="btc-detail-post" key={answer.answer_id ?? index}>
           <div className="btc-detail-meta"><b>{answer.score} votes</b>{answer.is_accepted && <span className="btc-answered">Accepted answer</span>}</div>
           <p>{cleanHtml(answer.body)}</p><small>{answer.owner?.display_name ?? "Community member"}</small>
