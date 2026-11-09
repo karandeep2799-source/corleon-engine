@@ -2,9 +2,9 @@ name: CI
 
 on:
   push:
-    branches: [main, fix/production-vercel-recovery]
+    branches: [main, fix/production-vercel-recovery, feat/stock-intelligence]
   pull_request:
-    branches: [main]
+    branches: [main, feat/bitcoin-knowledge-platform]
 
 permissions:
   contents: read

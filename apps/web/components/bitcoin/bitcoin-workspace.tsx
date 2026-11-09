@@ -1,11 +1,14 @@
 "use client";
 
+import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 
 type Question = {
-  id: number; title: string; link: string; score: number; answerCount: number;
+  id: number | string; title: string; link: string; score: number; answerCount: number;
   viewCount: number; isAnswered: boolean; tags: string[]; author: string; source: string;
 };
+type LocalQuestion = { id: string; title: string; authorName: string; tags: string[]; score: number; answerCount: number };
+type QuestionSearchResponse = { local?: LocalQuestion[]; external?: Question[] };
 type Source = { id: number; title: string; url: string; score: number; accepted: boolean; tags: string[]; excerpt: string; license?: string };
 
 const topics = ["bitcoin-core", "lightning-network", "transactions", "wallet", "script", "consensus", "segwit", "taproot"];
@@ -14,30 +17,30 @@ export default function BitcoinWorkspace() {
   const [tab, setTab] = useState<"questions" | "research">("questions");
   const [query, setQuery] = useState("");
   const [questions, setQuestions] = useState<Question[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [researchQuestion, setResearchQuestion] = useState("");
   const [answer, setAnswer] = useState("");
   const [sources, setSources] = useState<Source[]>([]);
   const [asking, setAsking] = useState(false);
 
-  const loadQuestions = useCallback(async (search = "") => {
-    setLoading(true); setError("");
+  const loadQuestions = useCallback(async (search = "", quiet = false) => {
+    if (!quiet) { setLoading(true); setError(""); }
     try {
       const response = await fetch(`/api/bitcoin/questions?q=${encodeURIComponent(search)}`, { cache: "no-store" });
       if (!response.ok) throw new Error("Could not load questions.");
-      const data = await response.json();
-      const local = (data.local ?? []).map((q: any) => ({
+      const data = await response.json() as QuestionSearchResponse;
+      const local: Question[] = (data.local ?? []).map((q) => ({
         id: q.id, title: q.title, link: `/bitcoin/questions/${q.id}`, score: q.score,
         answerCount: q.answerCount, viewCount: 0, isAnswered: q.answerCount > 0,
         tags: q.tags ?? [], author: q.authorName, source: "corleon"
       }));
       setQuestions([...local, ...(data.external ?? [])]);
     } catch (e) { setError(e instanceof Error ? e.message : "Search failed."); }
-    finally { setLoading(false); }
+    finally { if (!quiet) setLoading(false); }
   }, []);
 
-  useEffect(() => { void loadQuestions(); }, [loadQuestions]);
+  useEffect(() => { void loadQuestions("", true); }, [loadQuestions]);
 
   async function askResearch(event: React.FormEvent) {
     event.preventDefault();
@@ -58,8 +61,8 @@ export default function BitcoinWorkspace() {
   return (
     <main className="btc-shell">
       <header className="btc-nav">
-        <a href="/" className="btc-brand"><span className="btc-mark">₿</span><span>corleon<span className="btc-muted"> / bitcoin</span></span></a>
-        <nav><a href="/">Engine home</a><a href="https://bitcoin.org/en/developer-documentation" target="_blank" rel="noreferrer">Developer docs ↗</a></nav>
+        <Link href="/" className="btc-brand"><span className="btc-mark">₿</span><span>corleon<span className="btc-muted"> / bitcoin</span></span></Link>
+        <nav><Link href="/">Engine home</Link><a href="https://bitcoin.org/en/developer-documentation" target="_blank" rel="noreferrer">Developer docs ↗</a></nav>
       </header>
 
       <section className="btc-hero">
@@ -86,7 +89,7 @@ export default function BitcoinWorkspace() {
           <div className="btc-question-list">
             {questions.map((q, i) => <article className="btc-question" key={`${q.source}-${q.id}-${i}`}>
               <div className="btc-q-metrics"><b>{q.score}</b><span>votes</span><b>{q.answerCount}</b><span>answers</span></div>
-              <div className="btc-q-content"><a href={q.link}>{q.title}</a>
+              <div className="btc-q-content">{q.source === "corleon" ? <Link href={q.link}>{q.title}</Link> : <a href={q.link} target="_blank" rel="noreferrer">{q.title}</a>}
                 <div className="btc-tags">{q.tags.slice(0, 5).map(tag => <span key={tag}>{tag}</span>)}</div>
                 <small>{q.author} · {q.source === "stackexchange" ? "Bitcoin Stack Exchange" : "Corleon community"}</small>
               </div>

@@ -62,9 +62,13 @@ export async function POST(request: NextRequest) {
       console.error("OpenAI Responses API error", response.status, detail.slice(0, 500));
       return NextResponse.json({ error: "The AI provider is temporarily unavailable.", sources }, { status: 502 });
     }
-    const result = await response.json();
-    const answer = (result.output ?? []).flatMap((item: any) => item.content ?? [])
-      .filter((part: any) => part.type === "output_text").map((part: any) => part.text).join("\n").trim();
+    type ResponseTextPart = { type?: string; text?: string };
+    type ResponseOutputItem = { content?: ResponseTextPart[] };
+    type OpenAIResponsesPayload = { output?: ResponseOutputItem[] };
+    const result = await response.json() as OpenAIResponsesPayload;
+    const answer = (result.output ?? []).flatMap((item) => item.content ?? [])
+      .filter((part): part is ResponseTextPart & { text: string } => part.type === "output_text" && typeof part.text === "string")
+      .map((part) => part.text).join("\n").trim();
     return NextResponse.json({ answer: answer || "The model returned no answer. Please try again.", sources, mode: "retrieval-augmented" });
   } catch (error) {
     console.error("Bitcoin AI request failed", error);
