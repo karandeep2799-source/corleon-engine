@@ -5,7 +5,7 @@ Private, read-only Gmail stock-record discovery inside Corleon Engine.
 ## What it does
 
 - Links one Google mailbox using OAuth 2.0 and the Gmail gmail.readonly scope.
-- Searches Gmail for contract notes, trade confirmations, trade books, portfolio statements, dividends, demat/CAS, CDSL and NSDL terms.
+- Searches Gmail for contract notes, trade confirmations, trade books, weekly and retention statements, funds-and-securities reports, client-master/account-opening records, dividends, demat/CAS, CDSL and NSDL terms.
 - Pages through Gmail search results in batches of up to 100 messages; a later scan request resumes from the stored Gmail page token.
 - Reads message text and supported plain-text, CSV and TSV attachments (maximum 1 MB per attachment).
 - Extracts candidate BUY/SELL rows with deterministic patterns and keeps a subject, sender, received date, filename list and short evidence excerpt.
@@ -17,7 +17,7 @@ Private, read-only Gmail stock-record discovery inside Corleon Engine.
 
 This is a review-first extraction tool, not a broker integration or a certified portfolio ledger.
 
-- PDF, password-protected PDF, image scans, XLS/XLSX and other binary attachments are identified but not parsed. CDSL/NSDL e-CAS and many broker contract notes arrive as PDFs, so those important statement formats are not yet fully extracted.
+- PDF, password-protected PDF, image scans, XLS/XLSX and other binary attachments are identified by filename and MIME type but not parsed. Weekly broker statements, retention statements, CDSL/NSDL e-CAS and many contract notes commonly arrive as PDFs, so these important statement formats are not yet extracted. Passwords must never be sent to Corleon in chat or stored as application configuration; a future in-product flow should handle them ephemerally and locally or through an appropriately reviewed secure parser.
 - The initial parser handles common text patterns and tabular trade rows. It does not yet fully normalize every broker's contract note template, all ISINs, exchange-specific symbols, options/futures, corporate actions, dividends, mutual funds or tax-lot accounting.
 - Symbols are not a security master. The same ticker can refer to different securities on different venues; an ISIN-backed security mapping is a required next phase before a consolidated global portfolio can be trusted.
 - The displayed cost basis is calculated only from confirmed BUY/SELL rows, grouped by currency. It is not a live market valuation, tax computation, or broker statement reconciliation.
