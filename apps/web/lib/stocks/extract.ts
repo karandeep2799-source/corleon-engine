@@ -46,7 +46,7 @@ export function extractTradesFromEmail(input: {
       if (!match) continue;
       const typeText = i === 1 ? match[2] : i === 3 ? match[2] === "B" ? "BUY" : "SELL" : match[1] === "B" ? "BUY" : match[1] === "S" ? "SELL" : match[1];
       const symbolText = i === 1 ? match[1] : i === 3 ? match[1] : i === 2 ? match[2] : match[3];
-      const quantityText = i >= 2 ? match[3] : match[2];
+      const quantityText = i === 1 || i >= 2 ? match[3] : match[2];
       const priceText = match[4];
       const symbol = normalizeSymbol(symbolText).replace(/-(EQ|BE)$/, "");
       const quantity = amount(quantityText);
@@ -77,7 +77,7 @@ function parseCsvRows(text: string): string[][] {
     const char = text[index];
     if (char === '"' && quoted && text[index + 1] === '"') { field += '"'; index++; }
     else if (char === '"') quoted = !quoted;
-    else if (char === "," && !quoted) { row.push(field.trim()); field = ""; }
+    else if (char === delimiter && !quoted) { row.push(field.trim()); field = ""; }
     else if ((char === "\n" || char === "\r") && !quoted) {
       if (field.length || row.length) { row.push(field.trim()); rows.push(row); }
       row = []; field = "";
