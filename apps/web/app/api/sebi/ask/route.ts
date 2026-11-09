@@ -37,7 +37,7 @@ export async function POST(request: NextRequest) {
     });
 
     const apiKey = process.env.OPENAI_API_KEY;
-    if (!apiKey) return NextResponse.json({
+    if (!apiKey || process.env.SEBI_AI_ENABLED !== "true") return NextResponse.json({
       answer: "AI synthesis is not enabled yet. Here are the closest official SEBI source records. Open the documents and verify the operative provisions, amendments, and effective dates before relying on them.",
       sources, mode: "retrieval-only", disclaimer: "This is an information tool, not legal, investment, tax, or compliance advice.",
     });
