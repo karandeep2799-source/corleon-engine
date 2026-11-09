@@ -11,7 +11,7 @@ type Transaction = {
 type Source = { id: string; subject: string; sender: string | null; receivedAt: string | null; hasFinancialData: boolean; attachments: unknown[]; sourceUrl: string };
 type Portfolio = {
   connected: boolean; account?: { email: string; name: string | null; picture: string | null };
-  summary?: { holdingsCount: number; pendingReview: number; confirmedTransactions: number; scannedEmails: number; lastSyncedAt: string | null };
+  summary?: { holdingsCount: number; pendingReview: number; confirmedTransactions: number; scannedEmails: number; lastSyncedAt: string | null; scanComplete: boolean };
   holdings: Holding[]; transactions: Transaction[]; sources: Source[];
 };
 const emptyPortfolio: Portfolio = { connected: false, holdings: [], transactions: [], sources: [] };
@@ -68,7 +68,7 @@ export default function StocksWorkspace() {
       const response = await fetch("/api/stocks/sync", { method: "POST" });
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || "Mailbox scan failed.");
-      setNotice(`Scanned ${result.scannedEmails} emails · ${result.matchedEmails} matched · ${result.newTransactions} new trade candidates. Review every candidate before it enters your holdings.`);
+      setNotice(`Scanned ${result.scannedThisBatch} emails in this batch · ${result.scannedEmails} total · ${result.newTransactions} new trade candidates.${result.hasMore ? " More matching email remains; scan again to continue." : " The current search has been fully paged."} Review every candidate before it enters your holdings.`);
       await load();
     } catch (e) { setError(e instanceof Error ? e.message : "Mailbox scan failed."); }
     finally { setSyncing(false); }
@@ -102,7 +102,8 @@ export default function StocksWorkspace() {
 
   const pending = useMemo(() => data.transactions.filter((item) => item.reviewStatus === "NEEDS_REVIEW"), [data.transactions]);
   const confirmed = useMemo(() => data.transactions.filter((item) => item.reviewStatus === "CONFIRMED"), [data.transactions]);
-  const totalCost = useMemo(() => data.holdings.reduce((sum, item) => sum + item.costBasis, 0), [data.holdings]);
+  const costByCurrency = useMemo(() => data.holdings.reduce<Record<string, number>>((totals, item) => { totals[item.currency] = (totals[item.currency] ?? 0) + item.costBasis; return totals; }, {}), [data.holdings]);
+  const costSummary = Object.entries(costByCurrency).map(([currency, amount]) => money(amount, currency)).join(" · ") || "—";
 
   return (
     <main className="stocks-shell">
@@ -144,14 +145,14 @@ export default function StocksWorkspace() {
           <section className="stocks-toolbar">
             <div><span className="stocks-connected-pill">● Gmail connected</span><b>{data.account?.name || data.account?.email}</b></div>
             <div>
-              <button className="stocks-button primary" onClick={syncMailbox} disabled={syncing || loading}>{syncing ? "Scanning inbox…" : "Scan stock emails →"}</button>
+              <button className="stocks-button primary" onClick={syncMailbox} disabled={syncing || loading}>{syncing ? "Scanning inbox…" : data.summary?.scanComplete ? "Rescan stock emails →" : data.summary?.scannedEmails ? "Continue older email scan →" : "Scan stock emails →"}</button>
               <button className="stocks-button muted" onClick={disconnect} disabled={disconnecting}>{disconnecting ? "Disconnecting…" : "Disconnect & delete data"}</button>
             </div>
           </section>
 
           <section className="stocks-metrics">
             <article><span>CONFIRMED HOLDINGS</span><strong>{data.summary?.holdingsCount ?? 0}</strong><small>Built from approved trade rows</small></article>
-            <article><span>ESTIMATED COST BASIS</span><strong>{money(totalCost, "INR")}</strong><small>Not a live market valuation</small></article>
+            <article><span>ESTIMATED COST BASIS</span><strong>{costSummary}</strong><small>Not a live market valuation</small></article>
             <article><span>NEEDS YOUR REVIEW</span><strong>{data.summary?.pendingReview ?? 0}</strong><small>Unverified email extractions</small></article>
             <article><span>EMAILS SCANNED</span><strong>{data.summary?.scannedEmails ?? 0}</strong><small>{data.summary?.lastSyncedAt ? `Last scan ${date(data.summary.lastSyncedAt)}` : "No scan completed yet"}</small></article>
           </section>
