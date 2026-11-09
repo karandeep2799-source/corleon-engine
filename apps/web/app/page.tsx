@@ -5,6 +5,7 @@ const capabilities = [
   ['Connected systems', 'Bring APIs, payments, webhooks, and external services behind one application boundary.'],
   ['Data foundation', 'Use PostgreSQL and Prisma for durable application state when DATABASE_URL is configured.'],
   ['Operational control', 'Use health endpoints, typed workspace checks, and Vercel-native deployments to keep the platform observable.'],
+  ['SEBI Intelligence', 'Search official securities regulations, monitor circulars, and research investor-protection requirements with source citations.'],
 ];
 
 export default function Home() {
@@ -25,6 +26,7 @@ export default function Home() {
         <div className="actions">
           <a href="/api/health"><Button>Check platform health</Button></a>
           <a className="secondary" href="#architecture">Explore architecture</a>
+          <a className="secondary" href="/sebi">Open SEBI Intelligence →</a>
         </div>
       </section>
 
