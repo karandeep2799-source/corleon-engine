@@ -12,7 +12,7 @@ export default function Home() {
     <main className="shell">
       <nav className="nav">
         <strong>Corleon Engine</strong>
-        <a href="/api/health">API health</a>
+        <div className="nav-links"><a href="/stocks">Stock Intelligence</a><a href="/bitcoin">Bitcoin Knowledge</a><a href="/api/health">API health</a></div>
       </nav>
 
       <section className="hero">
