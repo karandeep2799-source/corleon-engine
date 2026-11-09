@@ -86,7 +86,7 @@ export default function BitcoinWorkspace() {
           <div className="btc-question-list">
             {questions.map((q, i) => <article className="btc-question" key={`${q.source}-${q.id}-${i}`}>
               <div className="btc-q-metrics"><b>{q.score}</b><span>votes</span><b>{q.answerCount}</b><span>answers</span></div>
-              <div className="btc-q-content"><a href={q.link} target={q.source === "stackexchange" ? "_blank" : undefined} rel={q.source === "stackexchange" ? "noreferrer" : undefined}>{q.title}</a>
+              <div className="btc-q-content"><a href={q.link}>{q.title}</a>
                 <div className="btc-tags">{q.tags.slice(0, 5).map(tag => <span key={tag}>{tag}</span>)}</div>
                 <small>{q.author} · {q.source === "stackexchange" ? "Bitcoin Stack Exchange" : "Corleon community"}</small>
               </div>
