@@ -33,7 +33,7 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
 export default async function BitcoinQuestionPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
 
-  if (/^\\d{1,12}$/.test(id)) {
+  if (/^\d{1,12}$/.test(id)) {
     let question: RemotePost | null = null;
     let answers: RemotePost[] = [];
     try {
