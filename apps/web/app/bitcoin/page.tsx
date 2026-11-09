@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
-import BitcoinWorkspace from "@/components/bitcoin/bitcoin-workspace";
+import BitcoinWorkspace from "../../components/bitcoin/bitcoin-workspace";
+import "./bitcoin.css";
 
 export const metadata: Metadata = {
   title: "Bitcoin Knowledge | Corleon Engine",
