@@ -25,7 +25,7 @@ export async function createSession(input:RuntimeCreateInput){
 }
 export const getSession=(id:string)=>call<{session?:{session_id:string;status?:string;name?:string;agent_kind?:string;config_id?:string;region?:string}}>(`/sessions/${encodeURIComponent(id)}`);
 export const sendInput=(id:string,message:string)=>call<{run_id?:string}>(`/sessions/${encodeURIComponent(id)}/input`,{method:"POST",body:JSON.stringify({text:message})});
-export const cancelSession=(id:string)=>call<{outcome:string}>(`/sessions/${encodeURIComponent(id)}/cancel`,{method:"POST",body:"{}"});
-export const pauseSession=(id:string)=>call<unknown>(`/sessions/${encodeURIComponent(id)}/pause`,{method:"POST",body:"{}"});
-export const resumeSession=(id:string)=>call<unknown>(`/sessions/${encodeURIComponent(id)}/resume`,{method:"POST",body:"{}"});
+export const cancelSession=(id:string)=>call<{outcome:string}>(`/sessions/${encodeURIComponent(id)}/cancel`,{method:"POST"});
+export const pauseSession=(id:string)=>call<unknown>(`/sessions/${encodeURIComponent(id)}/pause`,{method:"POST"});
+export const resumeSession=(id:string)=>call<unknown>(`/sessions/${encodeURIComponent(id)}/resume`,{method:"POST"});
 export const removeSession=(id:string)=>call<unknown>(`/sessions/${encodeURIComponent(id)}`,{method:"DELETE"});
