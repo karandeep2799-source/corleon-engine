@@ -36,21 +36,18 @@ async function gmailFetch<T>(path: string, accessToken: string): Promise<T> {
   if (!response.ok) throw new Error(data.error?.message || `Gmail API returned ${response.status}.`);
   return data;
 }
-export async function listStockEmailMessages(accessToken: string, maxMessages = 200): Promise<GmailMessage[]> {
+export async function listStockEmailMessages(accessToken: string, pageToken?: string, maxResults = 100): Promise<{ messages: GmailMessage[]; nextPageToken?: string; resultSizeEstimate: number; failedMessages: number }> {
   const query = '{ "contract note" "trade confirmation" "portfolio statement" holdings dividend demat equity shares stocks }';
-  const output: GmailMessage[] = [];
-  let pageToken: string | undefined;
-  while (output.length < maxMessages) {
-    const params = new URLSearchParams({ q: query, maxResults: String(Math.min(100, maxMessages - output.length)) });
-    if (pageToken) params.set("pageToken", pageToken);
-    const page = await gmailFetch<{ messages?: Array<{ id: string; threadId: string }>; nextPageToken?: string }>(`/messages?${params}`, accessToken);
-    const ids = page.messages ?? [];
-    const fetched = await mapLimit(ids, 8, async (message) => gmailFetch<GmailMessage>(`/messages/${encodeURIComponent(message.id)}?format=full`, accessToken));
-    output.push(...fetched);
-    if (!page.nextPageToken || ids.length === 0) break;
-    pageToken = page.nextPageToken;
-  }
-  return output.slice(0, maxMessages);
+  const params = new URLSearchParams({ q: query, maxResults: String(Math.min(100, Math.max(1, maxResults))) });
+  if (pageToken) params.set("pageToken", pageToken);
+  const page = await gmailFetch<{ messages?: Array<{ id: string; threadId: string }>; nextPageToken?: string; resultSizeEstimate?: number }>(`/messages?${params}`, accessToken);
+  const ids = page.messages ?? [];
+  const fetched = await mapLimit(ids, 8, async (message) => {
+    try { return await gmailFetch<GmailMessage>(`/messages/${encodeURIComponent(message.id)}?format=full`, accessToken); }
+    catch { return null; }
+  });
+  const messages = fetched.filter((message): message is GmailMessage => message !== null);
+  return { messages, nextPageToken: page.nextPageToken, resultSizeEstimate: page.resultSizeEstimate ?? messages.length, failedMessages: fetched.length - messages.length };
 }
 async function mapLimit<T, R>(items: T[], limit: number, run: (item: T) => Promise<R>): Promise<R[]> {
   const results = new Array<R>(items.length);
