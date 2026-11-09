@@ -8,7 +8,7 @@ type Transaction = {
   amount: string | null; currency: string; executedAt: string; confidence: number; reviewStatus: string;
   evidenceExcerpt: string; sourceSubject: string; sourceSender: string | null; sourceUrl: string;
 };
-type Source = { id: string; subject: string; sender: string | null; receivedAt: string | null; hasFinancialData: boolean; attachments: unknown[]; sourceUrl: string };
+type Source = { id: string; subject: string; sender: string | null; receivedAt: string | null; hasFinancialData: boolean; attachments: Array<{ filename: string; mimeType: string; parsed: boolean }>; sourceUrl: string };
 type Portfolio = {
   connected: boolean; account?: { email: string; name: string | null; picture: string | null };
   summary?: { holdingsCount: number; pendingReview: number; confirmedTransactions: number; scannedEmails: number; lastSyncedAt: string | null; scanComplete: boolean };
@@ -168,7 +168,7 @@ export default function StocksWorkspace() {
           <section className="stocks-section">
             <div className="stocks-section-head"><div><p className="stocks-eyebrow">HUMAN VERIFICATION</p><h2>Review extracted trades</h2></div><span>{pending.length} awaiting approval</span></div>
             {pending.length ? <div className="stocks-review-list">{pending.map((item) => <article className="stocks-review" key={item.id}>
-              <div className="stocks-review-main"><div className="stocks-review-title"><b>{item.type} {item.symbol}</b><span>{item.confidence}% parser confidence · verify against source</span></div>
+              <div className="stocks-review-main"><div className="stocks-review-title"><b>{item.type} {item.symbol}</b><span>rule-match score {item.confidence}/100 · verify against source</span></div>
                 <p>{item.quantity} shares × {money(Number(item.price), item.currency)} · {date(item.executedAt)}</p>
                 <small>{item.sourceSubject} · {item.sourceSender || "Unknown sender"}</small>
                 <blockquote>{item.evidenceExcerpt}</blockquote>
@@ -182,7 +182,7 @@ export default function StocksWorkspace() {
             <div className="stocks-section-head"><div><p className="stocks-eyebrow">SOURCE MAILBOX</p><h2>Investment-related emails</h2></div><span>{data.sources.length} recent source records</span></div>
             {data.sources.length ? <div className="stocks-source-list">{data.sources.map((item) => <a className="stocks-source" key={item.id} href={item.sourceUrl} target="_blank" rel="noreferrer">
               <span className="stocks-source-icon">✉</span><span><b>{item.subject}</b><small>{item.sender || "Unknown sender"} · {date(item.receivedAt)}</small></span>
-              <span className="stocks-source-meta">{item.hasFinancialData ? "Trade data found" : "Review source"}{item.attachments.length ? ` · ${item.attachments.length} attachment(s)` : ""}</span>
+              <span className="stocks-source-meta">{item.hasFinancialData ? "Trade data found" : "Review source"}{item.attachments.length ? ` · ${item.attachments.filter((attachment) => attachment.parsed).length} text/CSV parsed · ${item.attachments.filter((attachment) => !attachment.parsed).length} other/unsupported` : ""}</span>
             </a>)}</div> : <div className="stocks-empty">No source emails imported yet.</div>}
           </section>
 
