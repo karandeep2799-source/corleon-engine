@@ -44,8 +44,8 @@ export function extractTradesFromEmail(input: {
     for (let i = 0; i < patterns.length; i++) {
       const match = line.match(patterns[i]);
       if (!match) continue;
-      const typeText = i === 1 ? match[2] : match[1] === "B" ? "BUY" : match[1] === "S" ? "SELL" : match[1];
-      const symbolText = i === 1 ? match[1] : i >= 2 ? match[2] : match[3];
+      const typeText = i === 1 ? match[2] : i === 3 ? match[2] === "B" ? "BUY" : "SELL" : match[1] === "B" ? "BUY" : match[1] === "S" ? "SELL" : match[1];
+      const symbolText = i === 1 ? match[1] : i === 3 ? match[1] : i === 2 ? match[2] : match[3];
       const quantityText = i >= 2 ? match[3] : match[2];
       const priceText = match[4];
       const symbol = normalizeSymbol(symbolText).replace(/-(EQ|BE)$/, "");
