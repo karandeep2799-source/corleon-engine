@@ -1,0 +1,99 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600;700&display=swap');
+
+.trade-app{--bg:#0b1018;--panel:#111a26;--panel2:#141f2d;--line:#243244;--muted:#8d9bad;--text:#eef3f8;--mint:#72e0b4;min-height:100vh;background:var(--bg);color:var(--text);display:grid;grid-template-columns:248px minmax(0,1fr);font-family:'DM Sans',Arial,sans-serif}
+.trade-sidebar{position:sticky;top:0;height:100vh;border-right:1px solid var(--line);padding:27px 17px;display:flex;flex-direction:column;background:#0d141e}
+.trade-logo{display:flex;align-items:center;gap:11px;font-size:18px;font-weight:700;letter-spacing:-.7px;padding:0 9px 38px}
+.trade-logo-light{color:var(--mint);font-weight:500}
+.trade-brand-mark{width:44px;height:44px;border-radius:14px;display:grid;place-items:center;background:var(--mint);color:#07140f;font-size:25px;font-weight:800}
+.trade-brand-mark.small{width:32px;height:32px;border-radius:10px;font-size:18px}
+.trade-sidebar-label,.trade-kicker{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:1.3px;color:#738397;font-weight:500}
+.trade-sidebar-label{padding:12px 10px 10px}
+.trade-side-link,.trade-market-link{height:41px;display:flex;align-items:center;gap:12px;padding:0 11px;border:0;border-radius:8px;background:transparent;color:#aab7c7;font:500 13px 'DM Sans',sans-serif;text-align:left;cursor:pointer}
+.trade-side-link span{width:17px;color:#7f91a6;font-size:17px}
+.trade-side-link.active,.trade-market-link.selected{background:#172536;color:#eff7ff}
+.trade-market-link{width:100%;height:38px}
+.trade-market-code{display:inline-grid;place-items:center;width:27px;height:24px;border:1px solid #33465b;border-radius:6px;color:#a7b7c8;font:10px 'DM Mono',monospace}
+.trade-sidebar-bottom{margin-top:auto;border:1px solid var(--line);border-radius:10px;padding:13px;font-size:11px;color:#c4d0dd;position:relative}
+.trade-sidebar-bottom small{display:block;color:#76879a;margin:6px 0 0 14px}
+.trade-status-dot,.trade-live-pill span{display:inline-block;width:7px;height:7px;border-radius:50%;background:#f0b85c;margin-right:7px}
+.trade-main{min-width:0}
+.trade-topbar{height:72px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;padding:0 34px;color:#9eacbd;font-size:12px}
+.trade-topbar strong{color:#e7edf4}
+.trade-breadcrumb-sep{padding:0 11px;color:#526276}
+.trade-user{display:flex;align-items:center;gap:10px;color:#c2cedb}
+.trade-user img,.trade-avatar{width:29px;height:29px;border-radius:50%;object-fit:cover;background:#284051;display:grid;place-items:center}
+.trade-user button{margin-left:9px;background:none;border:0;color:#7f91a6;cursor:pointer;font-size:11px}
+.trade-content{max-width:1500px;margin:auto;padding:33px 34px 24px}
+.trade-heading{display:flex;align-items:flex-end;justify-content:space-between;margin:4px 0 26px}
+.trade-heading h1{font-size:30px;letter-spacing:-1.2px;margin:9px 0 6px}
+.trade-muted{color:var(--muted);font-size:13px;margin:0}
+.trade-live-pill,.trade-unavailable-tag{border:1px solid #654e2c;color:#e4b66e;background:#261f16;border-radius:30px;padding:8px 12px;font:10px 'DM Mono',monospace;letter-spacing:.5px}
+.trade-live-pill span{background:#e6ae52}
+.trade-metric-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:13px;margin-bottom:16px}
+.trade-metric-card,.trade-panel{background:var(--panel);border:1px solid var(--line);border-radius:12px}
+.trade-metric-card{padding:17px 18px;min-height:125px}
+.trade-metric-card.primary{background:linear-gradient(135deg,#142c2b,#13202a);border-color:#31514b}
+.trade-metric-top{display:flex;justify-content:space-between;align-items:center;color:#8798aa;font:10px 'DM Mono',monospace;letter-spacing:.8px}
+.trade-card-icon{color:#7894a9;font-size:17px}
+.trade-metric-value{font-size:27px;font-weight:600;letter-spacing:-1px;margin:15px 0 5px}
+.trade-metric-value small{font:11px 'DM Mono',monospace;color:#94a4b4}
+.trade-metric-foot{font-size:10px;color:#8292a3}
+.trade-two-col{display:grid;grid-template-columns:minmax(0,1.45fr) minmax(320px,.85fr);gap:14px}
+.trade-panel{padding:19px 20px;margin-bottom:14px;min-width:0}
+.trade-panel-heading{display:flex;align-items:center;justify-content:space-between;margin-bottom:17px}
+.trade-panel-heading .trade-kicker{margin:0 0 6px}
+.trade-panel-heading h2{font-size:17px;letter-spacing:-.4px;margin:0}
+.trade-unavailable-tag{font-size:9px;padding:6px 9px;border-radius:5px}
+.trade-tabs{display:flex;gap:5px;border-bottom:1px solid var(--line);padding-bottom:11px;overflow:auto}
+.trade-tabs button{white-space:nowrap;border:0;background:transparent;color:#8595a7;padding:7px 10px;border-radius:6px;font-size:11px;cursor:pointer}
+.trade-tabs button.active{background:#1d3441;color:var(--mint)}
+.trade-chart-empty{height:218px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:20px}
+.trade-chart-symbol{font-size:28px;color:#547a77;margin-bottom:10px}
+.trade-chart-empty strong{font-size:13px;font-weight:600}
+.trade-chart-empty p{max-width:340px;color:#8292a3;font-size:11px;line-height:1.7}
+.trade-panel-foot{display:flex;justify-content:space-between;border-top:1px solid var(--line);padding-top:12px;color:#738498;font:10px 'DM Mono',monospace}
+.trade-order-warning{padding:11px 12px;border-radius:8px;background:#292216;border:1px solid #5c482a;display:flex;flex-direction:column;gap:4px;margin-bottom:14px}
+.trade-order-warning strong{font-size:11px;color:#efc27d}
+.trade-order-warning span{font-size:10px;color:#b8a27f;line-height:1.5}
+.order-panel form label{display:flex;flex-direction:column;gap:6px;color:#8fa0b2;font-size:10px;margin:10px 0}
+.order-panel input,.order-panel select{width:100%;height:37px;border:1px solid #304155;border-radius:7px;background:#0d1621;color:#e7edf4;padding:0 10px;font:12px 'DM Sans',sans-serif;outline:none}
+.order-panel input:focus,.order-panel select:focus{border-color:#66bda3}
+.trade-side-switch{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin:12px 0}
+.trade-side-switch button{height:33px;border:1px solid #33465a;border-radius:6px;background:#101a26;color:#91a1b2;cursor:pointer}
+.trade-side-switch button.buy.selected{background:#17372f;border-color:#39866c;color:#86e3bc}
+.trade-side-switch button.sell.selected{background:#3a2427;border-color:#9a4e55;color:#f3a0a7}
+.trade-input-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.trade-submit{width:100%;height:39px;border:0;border-radius:7px;background:#37564f;color:#9ab9ae;font-weight:700;font-size:11px;cursor:not-allowed;opacity:.8}
+.trade-panel-disclaimer{font-size:9px;color:#6e7f91;line-height:1.5;margin:10px 0 0}
+.trade-notice{font-size:10px;color:#f0c67f;line-height:1.5}
+.trade-bottom-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.trade-risk-row,.trade-connection-row{display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-top:1px solid var(--line);font-size:11px;color:#9eacbd}
+.trade-risk-row strong,.trade-connection-row strong{font:10px 'DM Mono',monospace;color:#8293a5}
+.trade-risk-row .trade-risk-off{color:#e8b96d}
+.trade-connection-row{justify-content:flex-start;gap:10px}
+.trade-connection-row strong{margin-left:auto}
+.trade-connection-row strong.connected{color:var(--mint)}
+.trade-secondary-button{margin-top:12px;border:1px solid #34485c;background:#152131;color:#c4d0dd;border-radius:7px;padding:9px 12px;font-size:10px;cursor:pointer}
+.trade-shield{color:var(--mint);font-size:20px}
+.trade-footer{display:flex;justify-content:space-between;gap:12px;color:#607184;font:9px 'DM Mono',monospace;padding:10px 2px}
+.trade-login,.trade-loading{min-height:100vh;display:grid;place-items:center;background:#0b1018;color:#edf3f8;font-family:'DM Sans',Arial,sans-serif}
+.trade-login-card{width:min(440px,calc(100% - 32px));padding:42px;background:#111a26;border:1px solid #243244;border-radius:18px;display:flex;align-items:flex-start;flex-direction:column;gap:16px}
+.trade-login-card h1{font-size:34px;letter-spacing:-1.4px;margin:0}
+.trade-login-card .trade-muted{line-height:1.7}
+.trade-fineprint{font-size:10px;color:#76889b;line-height:1.7;margin-top:8px}
+.trade-setup-note{padding:12px;border:1px solid #5b482b;background:#292216;border-radius:8px;color:#d7bc8e;font-size:11px;line-height:1.7}
+.trade-setup-note code{color:#f1d29c}
+.trade-loading{font-size:13px;color:#91a4b6}
+@media(max-width:1100px){.trade-app{grid-template-columns:210px minmax(0,1fr)}.trade-metric-grid{grid-template-columns:repeat(2,1fr)}.trade-two-col{grid-template-columns:1fr}}
+@media(max-width:760px){.trade-app{display:block}.trade-sidebar{position:relative;height:auto;padding:15px;display:block;border-right:0;border-bottom:1px solid var(--line)}.trade-logo{padding:0 4px 14px}.trade-sidebar-label,.trade-side-link,.trade-sidebar-bottom{display:none}.trade-market-link{display:inline-flex;width:auto;margin-right:5px;padding:0 8px}.trade-topbar{height:58px;padding:0 16px}.trade-user>span:not(.trade-avatar){display:none}.trade-content{padding:22px 14px}.trade-heading{align-items:flex-start;gap:14px;flex-direction:column}.trade-heading h1{font-size:25px}.trade-metric-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.trade-metric-card{padding:13px;min-height:115px}.trade-metric-value{font-size:22px}.trade-panel{padding:15px}.trade-bottom-grid{grid-template-columns:1fr}.trade-footer{flex-direction:column}.trade-two-col{grid-template-columns:minmax(0,1fr)}}
+
+.trade-history-panel{margin-top:0}
+.trade-history-empty{padding:27px 12px;text-align:center;color:#8393a5;font-size:11px;line-height:1.7}
+.trade-history-scroll{overflow-x:auto}
+.trade-history-table{width:100%;border-collapse:collapse;white-space:nowrap;text-align:left;font-size:10px}
+.trade-history-table th{padding:10px 12px;color:#77899c;font:9px 'DM Mono',monospace;letter-spacing:.6px;border-bottom:1px solid var(--line)}
+.trade-history-table td{padding:13px 12px;border-bottom:1px solid #1c2a39;color:#aab8c7}
+.trade-history-table td strong{color:#eef3f8}
+.trade-history-table .positive{color:#7de0b8}
+.trade-history-table .negative{color:#f19a9e}
+.trade-order-status{display:inline-block;padding:4px 7px;border-radius:5px;background:#252b33;color:#e5b96f;font:9px 'DM Mono',monospace}

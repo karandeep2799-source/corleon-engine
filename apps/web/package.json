@@ -3,22 +3,35 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "prisma generate --schema prisma/schema.prisma && next build",
     "start": "next start",
-    "lint": "next lint",
-    "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "lint": "eslint .",
+    "typecheck": "prisma generate --schema prisma/schema.prisma && tsc --noEmit",
+    "test": "vitest run",
+    "prisma:generate": "prisma generate --schema prisma/schema.prisma",
+    "prisma:migrate": "prisma migrate dev --schema prisma/schema.prisma",
+    "prisma:deploy": "prisma migrate deploy --schema prisma/schema.prisma",
+    "prisma:studio": "prisma studio --schema prisma/schema.prisma"
   },
   "dependencies": {
     "@corleon/ui": "workspace:*",
-    "next": "^15.5.0",
-    "react": "^19.1.1",
-    "react-dom": "^19.1.1"
+    "@prisma/client": "^6.16.0",
+    "@react-oauth/google": "^0.12.2",
+    "google-auth-library": "^10.3.0",
+    "jose": "^6.1.0",
+    "next": "^16.0.0",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "zod": "^4.1.11"
   },
   "devDependencies": {
+    "@eslint/eslintrc": "^3.3.1",
     "@types/node": "^24.3.0",
     "@types/react": "^19.1.10",
     "@types/react-dom": "^19.1.7",
+    "eslint": "^9.35.0",
+    "eslint-config-next": "^16.0.0",
+    "prisma": "^6.16.0",
     "typescript": "^5.9.2",
     "vitest": "^3.2.4"
   }
