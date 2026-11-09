@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { stackExchange, cleanHtml } from "@/lib/bitcoin/stackexchange";
+import { stackExchange, cleanHtml } from "../../../../lib/bitcoin/stackexchange";
 
 export const runtime = "nodejs";
 export const maxDuration = 30;
