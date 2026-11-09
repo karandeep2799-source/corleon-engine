@@ -309,7 +309,6 @@ export async function executeTinyFishAction(action: TinyFishAction, rawInput: un
       if (typeof input.name !== "string" || !input.name.trim() || input.name.length > 100) throw new TinyFishError("A profile name is required.", 400, "INVALID_PROFILE");
       const body: JsonObject = { name: input.name.trim() };
       if (input.set_as_default === true) body.set_as_default = true;
-      if (typeof input.url === "string") body.url = assertPublicHttpUrl(input.url);
       if (typeof input.proxy_country_code === "string") body.proxy_country_code = input.proxy_country_code;
       return jsonRequest("/v1/profiles", "POST", body);
     }
