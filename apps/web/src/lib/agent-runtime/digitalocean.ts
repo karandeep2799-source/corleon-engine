@@ -23,7 +23,8 @@ export async function createSession(input:RuntimeCreateInput){
  const p=await r.json().catch(()=>({}));if(!r.ok)throw new Error(`DIGITALOCEAN_${r.status}: ${p.message??"Session provisioning failed"}`);
  if(!p.session?.session_id)throw new Error("DigitalOcean response did not include session.session_id");return {id:p.session.session_id,name:p.session.name,state:p.session.status,agent_kind:p.session.agent_kind,config_id:p.session.config_id,region:p.session.region};
 }
-export const getSession=(id:string)=>call<{session?:{session_id:string;status?:string;name?:string;agent_kind?:string;config_id?:string;region?:string}}>(`/sessions/${encodeURIComponent(id)}`);\nexport const sendInput=(id:string,message:string)=>call<{run_id?:string}>(`/sessions/${encodeURIComponent(id)}/input`,{method:"POST",body:JSON.stringify({text:message})});
+export const getSession=(id:string)=>call<{session?:{session_id:string;status?:string;name?:string;agent_kind?:string;config_id?:string;region?:string}}>(`/sessions/${encodeURIComponent(id)}`);
+export const sendInput=(id:string,message:string)=>call<{run_id?:string}>(`/sessions/${encodeURIComponent(id)}/input`,{method:"POST",body:JSON.stringify({text:message})});
 export const cancelSession=(id:string)=>call<{outcome:string}>(`/sessions/${encodeURIComponent(id)}/cancel`,{method:"POST",body:"{}"});
 export const pauseSession=(id:string)=>call<unknown>(`/sessions/${encodeURIComponent(id)}/pause`,{method:"POST",body:"{}"});
 export const resumeSession=(id:string)=>call<unknown>(`/sessions/${encodeURIComponent(id)}/resume`,{method:"POST",body:"{}"});
