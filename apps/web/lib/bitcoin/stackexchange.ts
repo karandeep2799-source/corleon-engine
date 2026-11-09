@@ -31,6 +31,7 @@ export async function stackExchange<T>(path: string, params: Record<string, stri
   const url = new URL(API + path);
   url.searchParams.set("site", SITE);
   url.searchParams.set("pagesize", "15");
+  if (process.env.STACKEXCHANGE_KEY) url.searchParams.set("key", process.env.STACKEXCHANGE_KEY);
   url.searchParams.set("filter", "withbody");
   for (const [key, value] of Object.entries(params)) {
     if (value !== undefined && value !== "") url.searchParams.set(key, String(value));
