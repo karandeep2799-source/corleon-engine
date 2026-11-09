@@ -1,6 +1,7 @@
 "use client";
 
-import { FormEvent, useCallback, useEffect, useState } from "react";
+import { FormEvent, useCallback, useState } from "react";
+import Link from "next/link";
 
 type Document = { id: string; title: string; canonicalUrl: string; description: string | null; category: string; publishedAt: string | null; fetchedAt: string; status: string };
 type Source = { id: string; title: string; url: string; category: string; publishedAt: string | null };
@@ -12,9 +13,9 @@ const dateLabel = (value: string | null) => {
   return Number.isNaN(date.getTime()) ? "Date not supplied" : date.toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
 };
 
-export default function SebiDashboard() {
-  const [documents, setDocuments] = useState<Document[]>([]);
-  const [total, setTotal] = useState(0);
+export default function SebiDashboard({ initialDocuments, initialTotal }: { initialDocuments: Document[]; initialTotal: number }) {
+  const [documents, setDocuments] = useState<Document[]>(initialDocuments);
+  const [total, setTotal] = useState(initialTotal);
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState("All");
   const [question, setQuestion] = useState("");
@@ -38,7 +39,6 @@ export default function SebiDashboard() {
     } finally { setLoading(false); }
   }, []);
 
-  useEffect(() => { void loadDocuments("", "All"); }, [loadDocuments]);
 
   async function submitQuestion(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -64,7 +64,7 @@ export default function SebiDashboard() {
   return (
     <main className="sebi-shell">
       <nav className="sebi-nav">
-        <a className="sebi-brand" href="/"><span className="sebi-mark">C</span> CORLEON <span>/ REGULATORY INTELLIGENCE</span></a>
+        <Link className="sebi-brand" href="/"><span className="sebi-mark">C</span> CORLEON <span>/ REGULATORY INTELLIGENCE</span></Link>
         <div><a href="https://www.sebi.gov.in/" target="_blank" rel="noreferrer">SEBI official site ↗</a><a href="https://scores.sebi.gov.in/" target="_blank" rel="noreferrer">SCORES 2.0 ↗</a></div>
       </nav>
       <section className="sebi-hero">
