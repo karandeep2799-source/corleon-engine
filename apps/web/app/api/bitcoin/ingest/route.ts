@@ -18,7 +18,7 @@ function licenseFor(timestamp: number) {
 }
 
 export async function POST(request: NextRequest) {
-  const secret = process.env.CRON_SECRET;
+  const secret = process.env.BITCOIN_INGEST_SECRET;
   if (!secret || request.headers.get("authorization") !== `Bearer ${secret}`) {
     return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
   }
