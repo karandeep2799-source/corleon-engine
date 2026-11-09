@@ -19,9 +19,7 @@ function clearOAuthCookies(response: NextResponse) {
 }
 function redirectWithError(request: NextRequest, reason: string) {
   const response = NextResponse.redirect(new URL(`/stocks?error=${encodeURIComponent(reason)}`, request.url));
-  response.cookies.delete("corleon_stocks_oauth_state");
-  response.cookies.delete("corleon_stocks_pkce");
-  return response;
+  return clearOAuthCookies(response);
 }
 export async function GET(request: NextRequest) {
   const code = request.nextUrl.searchParams.get("code");
@@ -64,9 +62,7 @@ export async function GET(request: NextRequest) {
     response.cookies.set("corleon_stocks_session", sessionToken, {
       httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: "lax", path: "/", maxAge: 60 * 60 * 8,
     });
-    response.cookies.delete("corleon_stocks_oauth_state");
-    response.cookies.delete("corleon_stocks_pkce");
-    return response;
+    return clearOAuthCookies(response);
   } catch (error) {
     console.error("Stock Intelligence Google callback failed", error);
     return redirectWithError(request, "google_connection_failed");
