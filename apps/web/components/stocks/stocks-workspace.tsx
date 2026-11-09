@@ -95,7 +95,7 @@ export default function StocksWorkspace() {
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || "Could not disconnect Gmail.");
       setData(emptyPortfolio);
-      setNotice("Gmail disconnected and imported stock records deleted.");
+      setNotice(result.googleRevoked ? "Gmail disconnected. Google access was revoked and imported stock records were deleted." : "Imported stock records were deleted locally, but Google token revocation could not be confirmed. Remove Corleon Engine access from your Google Account security settings.");
     } catch (e) { setError(e instanceof Error ? e.message : "Could not disconnect Gmail."); }
     finally { setDisconnecting(false); }
   }
@@ -138,7 +138,7 @@ export default function StocksWorkspace() {
             <p>Connect the Google account where your broker and depository emails arrive. Corleon requests Gmail read-only access; it cannot send, delete, archive or modify messages.</p>
           </div>
           <a className="stocks-button primary" href="/api/stocks/auth/google">Connect Gmail securely <span>→</span></a>
-          <p className="stocks-privacy">Your Google password is never shared with Corleon. Imported data is scoped to the connected email account and stored as encrypted-token access plus normalized records.</p>
+          <p className="stocks-privacy">By selecting Connect Gmail, you authorize Corleon to search your mailbox for investment-related messages, read their content and supported CSV/text attachments, and save the extracted trade candidates, source details and short evidence excerpts in this private workspace until you disconnect and delete the data. Corleon does not change email, place trades, sell or advertise with Google data, or send Gmail content to AI models. <a href="/stocks/privacy" target="_blank" rel="noreferrer">Read the Google data use and privacy notice ↗</a></p>
         </section>
       ) : (
         <>
