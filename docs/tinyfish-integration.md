@@ -63,7 +63,9 @@ For streaming browser automation, use `agent.run`. The response is the provider'
 | `agent.run` | Goal-driven website automation with SSE progress |
 | `search.query` | Ranked web search |
 | `fetch.contents` | Extract up to 10 known URLs |
-| `research.run` | Deep or max source-backed research |
+| `research.run` | Deep or max source-backed research (SSE) |
+| `research.list/get/cancel` | Retrieve and manage saved research runs |
+| `browser.create/terminate` | Start and close remote Playwright/CDP browser sessions |
 | `wallet.get` | Read wallet balance and rates |
 | `monitors.list/create/get/update/run/delete` | Manage scheduled page and topic monitors |
 | `datasets.list/plan/create/get/rows/populate/cancel/delete` | Plan and manage structured datasets |
@@ -98,6 +100,7 @@ Example agent request:
 - IDs are validated before being interpolated into provider paths.
 - Provider errors retain status and code; sensitive details are omitted from production responses.
 - No wallet top-up or auto-reload operation is exposed.
+- Remote browser sessions are billable at the account rate (currently shown as $0.002 per browser minute); create them only when needed and always terminate them when finished. The configured inactivity timeout is a fallback, not a substitute for cleanup.
 - No payment, publishing, account deletion, or irreversible website submission is automated by this adapter.
 - Authenticated site workflows require a user-managed TinyFish Browser Context Profile. Never collect passwords in Corleon chat; use TinyFish's setup flow and Vault.
 - A browser profile is persistent login state; `browser_profile: "lite" | "stealth"` is a separate runtime selection.
