@@ -17,7 +17,8 @@ See `.env.example`. Provisioning requires a DigitalOcean API token and a model c
 ## API (all routes require the runtime bearer token)
 - `GET /api/agent-runtime`: job, session and approval counts.
 - `POST /api/agent-runtime`: create durable job. Body: `organizationId`, `prompt`, optional `adapter` (`CODEX`, `CLAUDE_CODE`, `OPENCODE`), `repository` (`OWNER/REPO`), `branch`, `requestedBy`. Supply `Idempotency-Key` for safe retries.
-- `POST /api/agent-runtime/jobs/:jobId/provision`: provision a remote session. Requires feature flag.
+- `POST /api/agent-runtime/jobs/:jobId/provision`: allocate a remote session. Returns 202 while the sandbox boots. Requires feature flag.
+- `POST /api/agent-runtime/jobs/:jobId/start`: check remote readiness and deliver the saved job prompt only when the session reports `SESSION_STATUS_READY` or `SESSION_STATUS_RUNNING`.
 - `POST /api/agent-runtime/sessions/:sessionId/input`: send task input.
 - `POST /api/agent-runtime/sessions/:sessionId/actions`: `pause`, `resume`, `cancel`, `remove`.
 - `PATCH /api/agent-runtime/approvals/:approvalId`: record `APPROVED` or `DENIED`.
