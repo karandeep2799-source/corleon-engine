@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 type Holding = { symbol: string; companyName: string | null; currency: string; quantity: number; costBasis: number; realizedPnl: number; averageCost: number };
@@ -43,7 +43,6 @@ export default function StocksWorkspace() {
   const [notice, setNotice] = useState("");
   const [reviewing, setReviewing] = useState("");
   const [disconnecting, setDisconnecting] = useState(false);
-  const router = useRouter();
   const searchParams = useSearchParams();
   const queryError = searchParams.get("error");
   const queryConnected = searchParams.get("connected");
@@ -64,8 +63,7 @@ export default function StocksWorkspace() {
 
   useEffect(() => {
     void load();
-    if (queryError || queryConnected) router.replace("/stocks", { scroll: false });
-  }, [load, queryError, queryConnected, router]);
+  }, [load]);
 
   async function syncMailbox() {
     setSyncing(true); setError(""); setNotice("");
