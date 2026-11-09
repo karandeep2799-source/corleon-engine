@@ -6,7 +6,7 @@ export const runtime = "nodejs";
 export const maxDuration = 300;
 
 const ACTIONS = new Set<TinyFishAction>([
-  "agent.run", "search.query", "fetch.contents", "research.run", "wallet.get",
+  "agent.run", "search.query", "fetch.contents", "research.run", "research.list", "research.get", "research.cancel", "browser.create", "browser.terminate", "wallet.get",
   "monitors.list", "monitors.create", "monitors.get", "monitors.update", "monitors.run", "monitors.delete",
   "datasets.list", "datasets.plan", "datasets.create", "datasets.get", "datasets.rows", "datasets.populate", "datasets.cancel", "datasets.delete",
   "profiles.list", "profiles.create", "profiles.setup", "profiles.save",
