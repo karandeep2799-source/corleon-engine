@@ -129,7 +129,8 @@ export async function POST(request: NextRequest) {
       attachmentEmails,
       failedMessages: batch.failedMessages,
       estimatedMatchingEmails: batch.resultSizeEstimate,
-      hasMore: !complete,\n      retryingFailedMessages: retryBatch,
+      hasMore: !complete,
+      retryingFailedMessages: retryBatch,
       note: "The scan parses email text and supported CSV/text attachments. PDF and spreadsheet binaries are listed but not parsed in this release. Every extracted trade remains unverified until you approve it.",
     }, { headers: { "Cache-Control": "no-store" } });
   } catch (error) {
