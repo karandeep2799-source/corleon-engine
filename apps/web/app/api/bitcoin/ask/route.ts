@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { stackExchange, cleanHtml } from "../../../../lib/bitcoin/stackexchange";
+import { bitcoinPrisma } from "../../../../lib/bitcoin/prisma";
 
 export const runtime = "nodejs";
 export const maxDuration = 30;
@@ -13,12 +14,29 @@ export async function POST(request: NextRequest) {
   if (question.length < 8 || question.length > 1200) return NextResponse.json({ error: "Question must be between 8 and 1,200 characters." }, { status: 400 });
 
   try {
-    const search = await stackExchange<SearchItem>("/search/advanced", { q: question, sort: "relevance", order: "desc", page: 1 });
-    const sources = search.items.slice(0, 6).map((item, index) => ({
-      id: index + 1, title: item.title, url: item.link, score: item.score,
-      accepted: Boolean(item.accepted_answer_id), tags: item.tags,
-      excerpt: cleanHtml(item.body).slice(0, 1800)
-    }));
+    let sources: Array<{ id: number; title: string; url: string; score: number; accepted: boolean; tags: string[]; excerpt: string }> = [];
+    try {
+      const terms = [...new Set(question.toLowerCase().split(/[^a-z0-9-]+/).filter(term => term.length > 3))].slice(0, 5);
+      const indexed = terms.length ? await bitcoinPrisma.bitcoinKnowledgeSource.findMany({
+        where: { OR: terms.map(term => ({ title: { contains: term, mode: "insensitive" as const } })) },
+        orderBy: [{ score: "desc" }, { creationDate: "desc" }], take: 6
+      }) : [];
+      sources = indexed.map((item, index) => ({
+        id: index + 1, title: item.title, url: item.url, score: item.score,
+        accepted: item.acceptedAnswerExists, tags: item.tags, excerpt: item.body.slice(0, 1800)
+      }));
+    } catch (error) {
+      console.warn("Bitcoin knowledge index unavailable; falling back to live retrieval", error);
+    }
+
+    if (sources.length === 0) {
+      const search = await stackExchange<SearchItem>("/search/advanced", { q: question, sort: "relevance", order: "desc", page: 1 });
+      sources = search.items.slice(0, 6).map((item, index) => ({
+        id: index + 1, title: item.title, url: item.link, score: item.score,
+        accepted: Boolean(item.accepted_answer_id), tags: item.tags,
+        excerpt: cleanHtml(item.body).slice(0, 1800)
+      }));
+    }
     if (!process.env.OPENAI_API_KEY) {
       return NextResponse.json({
         answer: sources.length
