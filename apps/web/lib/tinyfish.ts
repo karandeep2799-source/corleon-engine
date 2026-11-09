@@ -166,7 +166,7 @@ export async function executeTinyFishAction(action: TinyFishAction, rawInput: un
         throw new TinyFishError("A search query is required (maximum 2,000 characters).", 400, "INVALID_QUERY");
       }
       const params = new URLSearchParams({ query: input.query.trim() });
-      for (const key of ["location", "language", "include_domains", "exclude_domains", "domain_type", "after_date", "before_date", "recency_minutes", "pub_year_min", "pub_year_max", "page"] as const) {
+      for (const key of ["purpose", "location", "language", "include_domains", "exclude_domains", "domain_type", "after_date", "before_date", "recency_minutes", "pub_year_min", "pub_year_max", "page"] as const) {
         if (input[key] !== undefined) params.set(key, String(input[key]));
       }
       const response = await tinyFishRequest(`/?${params.toString()}`, "GET", undefined, "application/json", "https://api.search.tinyfish.ai");
