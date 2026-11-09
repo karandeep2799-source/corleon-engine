@@ -876,3 +876,83 @@ model BitcoinKnowledgeSource {
   @@index([score, creationDate])
   @@index([tags], type: Gin)
 }
+
+
+enum StockTransactionType {
+  BUY
+  SELL
+  DIVIDEND
+  BONUS
+  SPLIT
+}
+
+enum StockReviewStatus {
+  NEEDS_REVIEW
+  CONFIRMED
+  IGNORED
+}
+
+model GmailConnection {
+  id                    String   @id @default(cuid())
+  email                 String   @unique @db.VarChar(320)
+  displayName           String?  @db.VarChar(120)
+  picture               String?  @db.VarChar(500)
+  refreshTokenEncrypted String   @db.Text
+  grantedScopes         String[] @default([])
+  connectedAt           DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+  @@index([connectedAt])
+}
+
+model StockSyncState {
+  id                String   @id @default(cuid())
+  ownerEmail        String   @unique @db.VarChar(320)
+  lastSyncStartedAt DateTime?
+  lastSyncedAt      DateTime?
+  scannedCount      Int      @default(0)
+  candidateCount    Int      @default(0)
+  updatedAt         DateTime @updatedAt
+}
+
+model StockEmailEvidence {
+  id              String             @id @default(cuid())
+  ownerEmail      String             @db.VarChar(320)
+  gmailMessageId  String             @db.VarChar(200)
+  threadId        String?            @db.VarChar(200)
+  subject         String             @db.VarChar(500)
+  sender          String?            @db.VarChar(320)
+  receivedAt      DateTime?
+  attachmentNames Json?
+  hasFinancialData Boolean           @default(false)
+  scannedAt       DateTime           @default(now())
+  transactions    StockTransaction[]
+  @@unique([ownerEmail, gmailMessageId])
+  @@index([ownerEmail, receivedAt])
+  @@index([ownerEmail, hasFinancialData])
+}
+
+model StockTransaction {
+  id              String              @id @default(cuid())
+  ownerEmail      String              @db.VarChar(320)
+  evidenceId      String
+  broker          String?             @db.VarChar(120)
+  symbol          String              @db.VarChar(24)
+  companyName     String?             @db.VarChar(180)
+  exchange        String?             @db.VarChar(12)
+  type            StockTransactionType
+  quantity        Decimal             @db.Decimal(30,10)
+  price           Decimal             @db.Decimal(30,10)
+  amount          Decimal?            @db.Decimal(30,10)
+  currency        String              @default("INR") @db.VarChar(8)
+  executedAt      DateTime
+  confidence      Int                 @default(0)
+  reviewStatus    StockReviewStatus   @default(NEEDS_REVIEW)
+  evidenceExcerpt String              @db.Text
+  fingerprint     String              @db.VarChar(64)
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+  evidence        StockEmailEvidence  @relation(fields: [evidenceId], references: [id], onDelete: Cascade)
+  @@unique([ownerEmail, fingerprint])
+  @@index([ownerEmail, reviewStatus, executedAt])
+  @@index([ownerEmail, symbol, executedAt])
+}
