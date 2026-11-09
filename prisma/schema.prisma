@@ -803,3 +803,45 @@ model AgentRuntimeAuditEvent {
   @@index([jobId, createdAt])
   @@index([sessionId, createdAt])
 }
+
+enum SebiDocumentStatus {
+  DISCOVERED
+  REVIEWED
+  ARCHIVED
+}
+
+model SebiDocument {
+  id           String             @id @default(cuid())
+  canonicalUrl String             @unique
+  title        String             @db.VarChar(500)
+  description  String?            @db.Text
+  content      String?            @db.Text
+  category     String             @default("Other") @db.VarChar(80)
+  publishedAt  DateTime?
+  sourceUrl    String
+  sourceName   String             @default("SEBI")
+  contentHash  String?
+  status       SebiDocumentStatus @default(DISCOVERED)
+  fetchedAt    DateTime           @default(now())
+  lastSeenAt   DateTime           @updatedAt
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
+
+  @@index([category, publishedAt])
+  @@index([status, publishedAt])
+  @@index([contentHash])
+}
+
+model SebiIngestionRun {
+  id         String   @id @default(cuid())
+  sourceUrl  String
+  status     String   @default("RUNNING")
+  discovered Int      @default(0)
+  inserted   Int      @default(0)
+  updated    Int      @default(0)
+  error      String?  @db.Text
+  startedAt  DateTime @default(now())
+  finishedAt DateTime?
+
+  @@index([startedAt])
+}
