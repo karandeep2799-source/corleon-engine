@@ -50,5 +50,6 @@ The module discovers and indexes official SEBI RSS items (circulars, orders/ruli
 ## Operations and release
 
 - Run `pnpm prisma:generate`, `pnpm --filter @corleon/web typecheck`, `pnpm --filter @corleon/web test`, and `pnpm build`.
-- Configure a scheduled caller only after the endpoint and database migration are verified. Use the dedicated SEBI secret, never the finance cron secret.
+- The GitHub Actions schedule runs daily at 01:30 UTC (07:00 India time) only after this workflow reaches the repository default branch. Until then, workflow_dispatch can be used manually from the feature branch.
+- Configure scheduled execution only after the endpoint and database migration are verified. Set the dedicated SEBI secret in both GitHub Actions and Vercel; never reuse the finance cron secret.
 - Do not merge or promote this feature to production until preview checks, migration review and source-ingestion smoke tests pass.
