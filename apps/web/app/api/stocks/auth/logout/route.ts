@@ -21,7 +21,7 @@ export async function POST(request: NextRequest) {
           cache: "no-store",
         });
         googleRevoked = response.ok;
-      } catch (error) {
+      } catch {
         console.warn("Could not revoke the Google token during local disconnect.");
       }
     }
