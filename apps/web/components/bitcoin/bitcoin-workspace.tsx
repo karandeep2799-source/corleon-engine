@@ -6,7 +6,7 @@ type Question = {
   id: number; title: string; link: string; score: number; answerCount: number;
   viewCount: number; isAnswered: boolean; tags: string[]; author: string; source: string;
 };
-type Source = { id: number; title: string; url: string; score: number; accepted: boolean; tags: string[]; excerpt: string };
+type Source = { id: number; title: string; url: string; score: number; accepted: boolean; tags: string[]; excerpt: string; license?: string };
 
 const topics = ["bitcoin-core", "lightning-network", "transactions", "wallet", "script", "consensus", "segwit", "taproot"];
 
@@ -104,7 +104,7 @@ export default function BitcoinWorkspace() {
           </form>
           {error && <p className="btc-error" role="alert">{error}</p>}
           {answer && <section className="btc-answer" aria-live="polite"><p className="btc-kicker">CORLEON RESEARCH RESPONSE</p><div className="btc-answer-copy">{answer}</div>
-            {sources.length > 0 && <div className="btc-sources"><h3>Source material</h3>{sources.map(s => <a key={s.id} href={s.url} target="_blank" rel="noreferrer"><b>[{s.id}] {s.title}</b><span>{s.score} votes · {s.accepted ? "Accepted answer exists" : "Community discussion"} · Bitcoin Stack Exchange ↗</span></a>)}</div>}
+            {sources.length > 0 && <div className="btc-sources"><h3>Source material</h3>{sources.map(s => <a key={s.id} href={s.url} target="_blank" rel="noreferrer"><b>[{s.id}] {s.title}</b><span>{s.score} votes · {s.accepted ? "Accepted answer exists" : "Community discussion"} · {s.license ?? "Original post attribution"} · Bitcoin Stack Exchange ↗</span></a>)}</div>}
           </section>}
           <p className="btc-disclaimer">Never enter seed phrases, private keys, wallet backups, or exchange credentials. AI output is educational and must not be treated as transaction authorization or investment advice.</p>
         </div>}
