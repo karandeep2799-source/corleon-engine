@@ -73,6 +73,8 @@ function parseCsvRows(text: string): string[][] {
   let row: string[] = [];
   let field = "";
   let quoted = false;
+  const firstLine = text.split(/[\r\n]/, 1)[0] ?? "";
+  const delimiter = firstLine.includes("\t") ? "\t" : ",";
   for (let index = 0; index < text.length; index++) {
     const char = text[index];
     if (char === '"' && quoted && text[index + 1] === '"') { field += '"'; index++; }
