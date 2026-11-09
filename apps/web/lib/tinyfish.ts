@@ -95,9 +95,10 @@ async function tinyFishRequest(
   method: string,
   body?: JsonObject,
   accept = "application/json",
+  baseUrl = API_BASE,
 ): Promise<Response> {
   const key = assertConfigured();
-  const response = await fetch(`${API_BASE}${path}`, {
+  const response = await fetch(`${baseUrl}${path}`, {
     method,
     headers: {
       "X-API-Key": key,
@@ -125,8 +126,8 @@ async function tinyFishRequest(
   return response;
 }
 
-async function jsonRequest(path: string, method: string, body?: JsonObject) {
-  const response = await tinyFishRequest(path, method, body);
+async function jsonRequest(path: string, method: string, body?: JsonObject, baseUrl = API_BASE) {
+  const response = await tinyFishRequest(path, method, body, "application/json", baseUrl);
   if (response.status === 204) return { success: true };
   const text = await response.text();
   if (!text) return { success: true };
@@ -164,11 +165,14 @@ export async function executeTinyFishAction(action: TinyFishAction, rawInput: un
       if (typeof input.query !== "string" || !input.query.trim() || input.query.length > 2000) {
         throw new TinyFishError("A search query is required (maximum 2,000 characters).", 400, "INVALID_QUERY");
       }
-      const body: JsonObject = { query: input.query.trim() };
+      const params = new URLSearchParams({ query: input.query.trim() });
       for (const key of ["location", "language", "include_domains", "exclude_domains", "domain_type", "after_date", "before_date", "recency_minutes", "pub_year_min", "pub_year_max", "page"] as const) {
-        if (input[key] !== undefined) body[key] = input[key];
+        if (input[key] !== undefined) params.set(key, String(input[key]));
       }
-      return jsonRequest("/v1/search", "POST", body);
+      const response = await tinyFishRequest(`/?${params.toString()}`, "GET", undefined, "application/json", "https://api.search.tinyfish.ai");
+      const text = await response.text();
+      try { return JSON.parse(text) as unknown; }
+      catch { throw new TinyFishError("TinyFish Search returned an invalid JSON response.", 502, "INVALID_PROVIDER_RESPONSE"); }
     }
     case "fetch.contents": {
       if (!Array.isArray(input.urls) || input.urls.length < 1 || input.urls.length > 10) {
@@ -176,10 +180,10 @@ export async function executeTinyFishAction(action: TinyFishAction, rawInput: un
       }
       const urls = input.urls.map(assertPublicHttpUrl);
       const body: JsonObject = { urls, format: input.format === "html" || input.format === "json" ? input.format : "markdown" };
-      for (const key of ["links", "image_links", "iframe_links", "page_metadata", "ttl", "per_url_timeout_ms", "include_etag_and_last_modified", "include_selectors", "exclude_selectors"] as const) {
+      for (const key of ["purpose", "links", "image_links", "iframe_links", "page_metadata", "ttl", "per_url_timeout_ms", "include_etag_and_last_modified", "include_selectors", "exclude_selectors"] as const) {
         if (input[key] !== undefined) body[key] = input[key];
       }
-      return jsonRequest("/v1/fetch", "POST", body);
+      return jsonRequest("/", "POST", body, "https://api.fetch.tinyfish.ai");
     }
     case "research.run": {
       if (typeof input.query !== "string" || input.query.trim().length < 5 || input.query.length > 10000) {
@@ -187,7 +191,16 @@ export async function executeTinyFishAction(action: TinyFishAction, rawInput: un
       }
       const body: JsonObject = { query: input.query.trim(), mode: input.mode === "max" ? "max" : "deep" };
       if (input.domain_filter && typeof input.domain_filter === "object") body.domain_filter = input.domain_filter;
-      return jsonRequest("/v1/automation/run-research", "POST", body);
+      const response = await tinyFishRequest("/v1/automation/run-research", "POST", body, "text/event-stream");
+      return new Response(response.body, {
+        status: response.status,
+        headers: {
+          "Content-Type": response.headers.get("content-type") ?? "text/event-stream",
+          "Cache-Control": "no-cache, no-transform",
+          "X-Accel-Buffering": "no",
+          ...(response.headers.get("x-research-run-id") ? { "X-Research-Run-Id": response.headers.get("x-research-run-id")! } : {}),
+        },
+      });
     }
     case "wallet.get":
       return jsonRequest("/v1/wallet", "GET");
@@ -214,7 +227,7 @@ export async function executeTinyFishAction(action: TinyFishAction, rawInput: un
     }
     case "monitors.run": {
       const id = requireId(input.monitor_id, "monitor ID");
-      return jsonRequest(`/v1/monitors/${id}/run`, "POST", {});
+      return jsonRequest(`/v1/monitors/${id}/runs`, "POST", {});
     }
     case "monitors.delete": {
       const id = requireId(input.monitor_id, "monitor ID");
