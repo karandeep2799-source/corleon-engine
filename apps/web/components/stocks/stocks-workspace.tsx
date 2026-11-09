@@ -181,7 +181,7 @@ export default function StocksWorkspace() {
           <section className="stocks-section">
             <div className="stocks-section-head"><div><p className="stocks-eyebrow">SOURCE MAILBOX</p><h2>Investment-related emails</h2></div><span>{data.sources.length} recent source records</span></div>
             {data.sources.length ? <div className="stocks-source-list">{data.sources.map((item) => <a className="stocks-source" key={item.id} href={item.sourceUrl} target="_blank" rel="noreferrer">
-              <span className="stocks-source-icon">✉</span><span><b>{item.subject}</b><small>{item.sender || "Unknown sender"} · {date(item.receivedAt)}</small></span>
+              <span className="stocks-source-icon">✉</span><span><b>{item.subject}</b><small>{item.sender || "Unknown sender"} · {date(item.receivedAt)}</small>{item.attachments.length > 0 && <small className="stocks-source-files">{item.attachments.map((attachment) => `${attachment.filename}${attachment.parsed ? " · parsed" : " · not parsed"}`).join(" · ")}</small>}</span>
               <span className="stocks-source-meta">{item.hasFinancialData ? "Trade data found" : "Review source"}{item.attachments.length ? ` · ${item.attachments.filter((attachment) => attachment.parsed).length} text/CSV parsed · ${item.attachments.filter((attachment) => !attachment.parsed).length} other/unsupported` : ""}</span>
             </a>)}</div> : <div className="stocks-empty">No source emails imported yet.</div>}
           </section>
