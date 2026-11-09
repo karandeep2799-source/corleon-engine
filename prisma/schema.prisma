@@ -691,11 +691,39 @@ model AuditLog {
   @@index([entityType, entityId])
 }
 
-enum AgentRuntimeProvider { DIGITALOCEAN VERCEL_SANDBOX }
-enum AgentRuntimeAdapter { CODEX CLAUDE_CODE OPENCODE NONE }
-enum AgentRuntimeJobStatus { QUEUED PROVISIONING RUNNING AWAITING_APPROVAL SUCCEEDED FAILED CANCELLED }
-enum AgentRuntimeSessionStatus { PROVISIONING RUNNING PAUSED STOPPED FAILED UNKNOWN }
-enum AgentRuntimeApprovalStatus { PENDING APPROVED DENIED EXPIRED }
+enum AgentRuntimeProvider {
+  DIGITALOCEAN
+  VERCEL_SANDBOX
+}
+enum AgentRuntimeAdapter {
+  CODEX
+  CLAUDE_CODE
+  OPENCODE
+  NONE
+}
+enum AgentRuntimeJobStatus {
+  QUEUED
+  PROVISIONING
+  RUNNING
+  AWAITING_APPROVAL
+  SUCCEEDED
+  FAILED
+  CANCELLED
+}
+enum AgentRuntimeSessionStatus {
+  PROVISIONING
+  RUNNING
+  PAUSED
+  STOPPED
+  FAILED
+  UNKNOWN
+}
+enum AgentRuntimeApprovalStatus {
+  PENDING
+  APPROVED
+  DENIED
+  EXPIRED
+}
 
 model AgentRuntimeJob {
   id String @id @default(cuid())
