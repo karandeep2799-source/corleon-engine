@@ -49,3 +49,22 @@ CREATE TABLE "BitcoinVote" (
 CREATE UNIQUE INDEX "BitcoinVote_questionId_voterHash_key" ON "BitcoinVote"("questionId","voterHash");
 CREATE UNIQUE INDEX "BitcoinVote_answerId_voterHash_key" ON "BitcoinVote"("answerId","voterHash");
 CREATE INDEX "BitcoinVote_voterHash_createdAt_idx" ON "BitcoinVote"("voterHash","createdAt");
+
+CREATE TABLE "BitcoinKnowledgeSource" (
+  "id" TEXT NOT NULL,
+  "externalId" INTEGER NOT NULL,
+  "title" VARCHAR(500) NOT NULL,
+  "body" TEXT NOT NULL,
+  "url" TEXT NOT NULL,
+  "tags" TEXT[] NOT NULL DEFAULT ARRAY[]::TEXT[],
+  "score" INTEGER NOT NULL DEFAULT 0,
+  "acceptedAnswerExists" BOOLEAN NOT NULL DEFAULT false,
+  "authorName" TEXT,
+  "creationDate" TIMESTAMP(3) NOT NULL,
+  "license" TEXT NOT NULL,
+  "fetchedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT "BitcoinKnowledgeSource_pkey" PRIMARY KEY ("id")
+);
+CREATE UNIQUE INDEX "BitcoinKnowledgeSource_externalId_key" ON "BitcoinKnowledgeSource"("externalId");
+CREATE INDEX "BitcoinKnowledgeSource_score_creationDate_idx" ON "BitcoinKnowledgeSource"("score","creationDate");
+CREATE INDEX "BitcoinKnowledgeSource_tags_idx" ON "BitcoinKnowledgeSource" USING GIN ("tags");
