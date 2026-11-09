@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { stackExchange, cleanHtml } from "../../../../lib/bitcoin/stackexchange";
-import { bitcoinPrisma } from "../../../../lib/bitcoin/prisma";
+import { stackExchange, cleanHtml } from "../../../../../lib/bitcoin/stackexchange";
+import { bitcoinPrisma } from "../../../../../lib/bitcoin/prisma";
 
 export const runtime = "nodejs";
 export const maxDuration = 30;
