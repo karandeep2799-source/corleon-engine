@@ -11,6 +11,12 @@ function matches(left: string, right: string) {
   const b = Buffer.from(right);
   return a.length === b.length && timingSafeEqual(a, b);
 }
+function clearOAuthCookies(response: NextResponse) {
+  const options = { httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: "lax" as const, path: "/api/stocks/auth/callback", maxAge: 0 };
+  response.cookies.set("corleon_stocks_oauth_state", "", options);
+  response.cookies.set("corleon_stocks_pkce", "", options);
+  return response;
+}
 function redirectWithError(request: NextRequest, reason: string) {
   const response = NextResponse.redirect(new URL(`/stocks?error=${encodeURIComponent(reason)}`, request.url));
   response.cookies.delete("corleon_stocks_oauth_state");
