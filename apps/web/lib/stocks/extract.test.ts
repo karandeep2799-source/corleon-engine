@@ -23,7 +23,16 @@ describe("extractTradesFromEmail", () => {
     expect(trades[0]).toMatchObject({ type: "SELL", symbol: "TCS", quantity: 3, price: 4000, currency: "INR" });
   });
 
-  it("maps a broker contract-note row with an ISIN column", () => {
+
+  it("extracts ticker-first trade confirmation lines", () => {
+    const trades = extractTradesFromEmail({
+      ownerEmail: "investor@example.com", messageId: "message-ticker-first",
+      subject: "Trade confirmation", body: "INFY BUY QTY: 3 PRICE: INR 1500",
+      receivedAt,
+    });
+    expect(trades[0]).toMatchObject({ type: "BUY", symbol: "INFY", quantity: 3, price: 1500, currency: "INR" });
+  });
+\n  it("maps a broker contract-note row with an ISIN column", () => {
     const trades = extractTradesFromEmail({
       ownerEmail: "investor@example.com", messageId: "message-3",
       subject: "Contract note", body: "RELIANCE INE002A01018 B 10 2500.00 NSE",
