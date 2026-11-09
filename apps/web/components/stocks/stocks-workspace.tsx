@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 type Holding = { symbol: string; companyName: string | null; currency: string; quantity: number; costBasis: number; realizedPnl: number; averageCost: number };
@@ -41,6 +43,12 @@ export default function StocksWorkspace() {
   const [notice, setNotice] = useState("");
   const [reviewing, setReviewing] = useState("");
   const [disconnecting, setDisconnecting] = useState(false);
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const queryError = searchParams.get("error");
+  const queryConnected = searchParams.get("connected");
+  const visibleError = error || (queryError ? errors[queryError] ?? "Google connection failed." : "");
+  const visibleNotice = notice || (queryConnected ? "Gmail is connected. Run a mailbox scan to extract stock activity." : "");
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -55,12 +63,9 @@ export default function StocksWorkspace() {
   }, []);
 
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const queryError = params.get("error");
-    if (queryError) setError(errors[queryError] ?? "Google connection failed.");
-    if (params.get("connected")) setNotice("Gmail is connected. Run a mailbox scan to extract stock activity.");
     void load();
-  }, [load]);
+    if (queryError || queryConnected) router.replace("/stocks", { scroll: false });
+  }, [load, queryError, queryConnected, router]);
 
   async function syncMailbox() {
     setSyncing(true); setError(""); setNotice("");
@@ -108,8 +113,8 @@ export default function StocksWorkspace() {
   return (
     <main className="stocks-shell">
       <nav className="stocks-nav">
-        <a className="stocks-brand" href="/"><span className="stocks-mark">C</span> CORLEON <span>/ STOCK INTELLIGENCE</span></a>
-        <div><a href="/">Engine home</a><a href="/bitcoin">Bitcoin Knowledge</a></div>
+        <Link className="stocks-brand" href="/"><span className="stocks-mark">C</span> CORLEON <span>/ STOCK INTELLIGENCE</span></Link>
+        <div><Link href="/">Engine home</Link><a href="/bitcoin">Bitcoin Knowledge</a></div>
       </nav>
 
       <header className="stocks-hero">
@@ -126,8 +131,8 @@ export default function StocksWorkspace() {
         </div>
       </header>
 
-      {error && <div className="stocks-alert error" role="alert">{error}</div>}
-      {notice && <div className="stocks-alert" role="status">{notice}</div>}
+      {visibleError && <div className="stocks-alert error" role="alert">{visibleError}</div>}
+      {visibleNotice && <div className="stocks-alert" role="status">{visibleNotice}</div>}
 
       {!data.connected ? (
         <section className="stocks-connect">
@@ -138,7 +143,7 @@ export default function StocksWorkspace() {
             <p>Connect the Google account where your broker and depository emails arrive. Corleon requests Gmail read-only access; it cannot send, delete, archive or modify messages.</p>
           </div>
           <a className="stocks-button primary" href="/api/stocks/auth/google">Connect Gmail securely <span>→</span></a>
-          <p className="stocks-privacy">By selecting Connect Gmail, you authorize Corleon to search your mailbox for investment-related messages, read their content and supported CSV/text attachments, and save the extracted trade candidates, source details and short evidence excerpts in this private workspace until you disconnect and delete the data. Corleon does not change email, place trades, sell or advertise with Google data, or send Gmail content to AI models. <a href="/stocks/privacy" target="_blank" rel="noreferrer">Read the Google data use and privacy notice ↗</a></p>
+          <p className="stocks-privacy">By selecting Connect Gmail, you authorize Corleon to search your mailbox for investment-related messages, read their content and supported CSV/text attachments, and save the extracted trade candidates, source details and short evidence excerpts in this private workspace until you disconnect and delete the data. Corleon does not change email, place trades, sell or advertise with Google data, or send Gmail content to AI models. <Link href="/stocks/privacy">Read the Google data use and privacy notice ↗</Link></p>
         </section>
       ) : (
         <>
