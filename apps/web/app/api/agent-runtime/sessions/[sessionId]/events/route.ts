@@ -1,4 +1,5 @@
 import { NextRequest } from "next/server";
+import type { Prisma } from "@prisma/client";
 import { isAgentRuntimeAuthorized, unauthorizedResponse, runtimeDisabledResponse } from "@/src/lib/agent-runtime/auth";
 import { prisma } from "@/src/lib/agent-runtime/db";
 import { getAgentRuntimeProvider } from "@/src/lib/agent-runtime/providers";
@@ -7,7 +8,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const maxDuration = 300;
 
-type RuntimeEvent = { type?: string; event_id?: string; data?: Record<string, unknown> };
+type RuntimeEvent = { type?: string; event_id?: string; run_id?: string; data?: Record<string, unknown> };
 
 async function persistEvent(event: RuntimeEvent, jobId: string, sessionId: string, organizationId: string) {
   const data = event.data ?? {};
@@ -21,7 +22,7 @@ async function persistEvent(event: RuntimeEvent, jobId: string, sessionId: strin
         prisma.agentRuntimeApproval.create({
           data: {
             jobId, sessionId, organizationId, toolName,
-            request: { hitl_id: data.hitl_id, payload: data.payload ?? null, event_id: event.event_id ?? null },
+            request: { hitl_id: data.hitl_id, payload: data.payload ?? null, event_id: event.event_id ?? null } as Prisma.InputJsonValue,
           },
         }),
         prisma.agentRuntimeJob.updateMany({
