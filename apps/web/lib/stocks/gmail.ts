@@ -2,7 +2,7 @@ import { bitcoinPrisma } from "../bitcoin/prisma";
 import { decryptRefreshToken } from "./session";
 
 const GMAIL_API = "https://gmail.googleapis.com/gmail/v1/users/me";
-type GmailPart = { mimeType?: string; filename?: string; body?: { data?: string }; parts?: GmailPart[] };
+type GmailPart = { mimeType?: string; filename?: string; partId?: string; body?: { data?: string; attachmentId?: string; size?: number }; parts?: GmailPart[] };
 export type GmailMessage = {
   id: string; threadId?: string; internalDate?: string; snippet?: string;
   payload?: { headers?: Array<{ name: string; value: string }>; body?: { data?: string }; parts?: GmailPart[] };
@@ -66,15 +66,62 @@ function decodeBody(data?: string): string {
   if (!data) return "";
   return Buffer.from(data.replace(/-/g, "+").replace(/_/g, "/"), "base64").toString("utf8");
 }
-function walkParts(parts: GmailPart[] | undefined, output: { plain: string[]; html: string[]; attachments: Array<{ filename: string; mimeType: string }> }) {
+type AttachmentMetadata = { filename: string; mimeType: string; parsed: boolean };
+function collectParts(parts: GmailPart[] | undefined, output: { plain: string[]; html: string[]; attachments: GmailPart[] }) {
   for (const part of parts ?? []) {
-    if (part.filename) output.attachments.push({ filename: part.filename.slice(0, 180), mimeType: (part.mimeType || "application/octet-stream").slice(0, 120) });
+    if (part.filename) output.attachments.push(part);
     const decoded = decodeBody(part.body?.data);
     if (decoded && part.mimeType === "text/plain") output.plain.push(decoded);
     else if (decoded && part.mimeType === "text/html") output.html.push(decoded);
-    if (part.parts?.length) walkParts(part.parts, output);
+    if (part.parts?.length) collectParts(part.parts, output);
   }
 }
+async function getAttachmentText(messageId: string, part: GmailPart, accessToken: string): Promise<string | null> {
+  const fileName = (part.filename || "").toLowerCase();
+  const mime = (part.mimeType || "").toLowerCase();
+  if (!(fileName.endsWith(".csv") || fileName.endsWith(".txt") || fileName.endsWith(".tsv") || mime === "text/csv" || mime === "text/tab-separated-values" || mime === "text/plain")) return null;
+  if ((part.body?.size ?? 0) > 1_000_000) return null;
+  let encoded = part.body?.data;
+  if (!encoded && part.body?.attachmentId) {
+    try {
+      const attachment = await gmailFetch<{ data?: string; size?: number }>(`/messages/${encodeURIComponent(messageId)}/attachments/${encodeURIComponent(part.body.attachmentId)}`, accessToken);
+      if ((attachment.size ?? 0) > 1_000_000) return null;
+      encoded = attachment.data;
+    } catch {
+      return null;
+    }
+  }
+  const text = decodeBody(encoded);
+  return text && text.length <= 1_000_000 ? text : null;
+}
+export async function readMessageContent(message: GmailMessage, accessToken: string) {
+  const output = { plain: [] as string[], html: [] as string[], attachments: [] as GmailPart[] };
+  collectParts(message.payload?.parts, output);
+  const root = decodeBody(message.payload?.body?.data);
+  if (root && !output.plain.length && !output.html.length) output.plain.push(root);
+  const attachmentContent = await Promise.all(output.attachments.map((part) => getAttachmentText(message.id, part, accessToken)));
+  const csvAttachments = attachmentContent.flatMap((value, index) => value ? [{
+    filename: (output.attachments[index].filename || "statement.csv").slice(0, 180),
+    text: value,
+  }] : []);
+  const htmlText = output.html.join("\\n").replace(/<style[\\s\\S]*?<\\/style>/gi, " ").replace(/<script[\\s\\S]*?<\\/script>/gi, " ").replace(/<\\/(p|div|tr|li|h[1-6])>/gi, "\\n").replace(/<[^>]+>/g, " ").replace(/&nbsp;/gi, " ").replace(/&amp;/gi, "&").replace(/&lt;/gi, "<").replace(/&gt;/gi, ">").replace(/&quot;/gi, '"');
+  const body = [output.plain.join("\\n") || htmlText, ...csvAttachments.map((attachment) => `\\n[Attachment: ${attachment.filename}]\\n${attachment.text}`)].join("\\n").replace(/\\r/g, "").replace(/[ \\t]+/g, " ").replace(/\\n{3,}/g, "\\n\\n").slice(0, 60_000);
+  const headers = new Map((message.payload?.headers ?? []).map((header) => [header.name.toLowerCase(), header.value]));
+  const attachments: AttachmentMetadata[] = output.attachments.map((part, index) => ({
+    filename: (part.filename || "attachment").slice(0, 180),
+    mimeType: (part.mimeType || "application/octet-stream").slice(0, 120),
+    parsed: attachmentContent[index] !== null,
+  }));
+  return {
+    body,
+    csvAttachments,
+    subject: (headers.get("subject") || "(No subject)").slice(0, 500),
+    sender: (headers.get("from") || "").slice(0, 320),
+    attachments,
+    receivedAt: message.internalDate ? new Date(Number(message.internalDate)) : new Date(),
+  };
+}
+
 export function readMessageContent(message: GmailMessage) {
   const output = { plain: [] as string[], html: [] as string[], attachments: [] as Array<{ filename: string; mimeType: string }> };
   walkParts(message.payload?.parts, output);
