@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [main, fix/production-vercel-recovery]
+    branches: [main, fix/production-vercel-recovery, feat/sebi-regulatory-intelligence-v2]
   pull_request:
     branches: [main, feat/bitcoin-knowledge-platform]
 
