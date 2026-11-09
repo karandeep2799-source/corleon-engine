@@ -83,4 +83,25 @@ describe("extractTradesFromEmail", () => {
     expect(trades[0]).toMatchObject({ type: "BUY", symbol: "INFY", quantity: 12, price: 1450.5, currency: "INR", confidence: 92 });
     expect(trades[1]).toMatchObject({ type: "SELL", symbol: "TCS", quantity: 2, price: 3200, currency: "INR" });
   });
+
+  it("extracts ticker-first trade confirmation lines", () => {
+    const trades = extractTradesFromEmail({
+      ownerEmail: "investor@example.com", messageId: "message-ticker-first",
+      subject: "Trade confirmation", body: "INFY BUY QTY: 3 PRICE: INR 1500",
+      receivedAt,
+    });
+    expect(trades[0]).toMatchObject({ type: "BUY", symbol: "INFY", quantity: 3, price: 1500, currency: "INR" });
+  });
+
+  it("extracts trade rows from a tab-separated broker file", () => {
+    const trades = extractTradesFromCsv({
+      ownerEmail: "investor@example.com",
+      messageId: "message-tsv",
+      fileName: "tradebook.tsv",
+      text: "Symbol\tTrade Type\tQuantity\tAverage Price\tCurrency\nHDFCBANK\tBUY\t2\t1700\tINR",
+      receivedAt,
+    });
+    expect(trades).toHaveLength(1);
+    expect(trades[0]).toMatchObject({ type: "BUY", symbol: "HDFCBANK", quantity: 2, price: 1700, currency: "INR" });
+  });
 });
