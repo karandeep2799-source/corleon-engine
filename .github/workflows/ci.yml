@@ -4,7 +4,7 @@ on:
   push:
     branches: [main, fix/production-vercel-recovery]
   pull_request:
-    branches: [main]
+    branches: [main, feat/bitcoin-knowledge-platform]
 
 permissions:
   contents: read
