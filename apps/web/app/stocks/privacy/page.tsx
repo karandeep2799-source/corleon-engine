@@ -32,11 +32,11 @@ export default function StocksPrivacyPage() {
         <h2>What is not done?</h2>
         <p>Corleon does not modify, send, archive or delete Gmail messages. This module does not place trades, move money, access broker credentials, sell Google data, serve advertising based on Google data, or send Gmail content to AI/model providers. No trading or investment recommendation is produced.</p>
         <h2>Review and deletion controls</h2>
-        <p>New trade candidates are not included in confirmed positions until you approve them. From the Stock Intelligence workspace, choose Disconnect &amp; delete data to attempt to revoke the Google authorization and delete the connected mailbox's local connection, sync state, email evidence and imported transactions. If Google token revocation cannot be confirmed, the local records are still deleted; remove Corleon Engine from your Google Account's third-party access settings as well.</p>
+        <p>New trade candidates are not included in confirmed positions until you approve them. From the Stock Intelligence workspace, choose Disconnect &amp; delete data to attempt to revoke the Google authorization and delete the connected mailbox&apos;s local connection, sync state, email evidence and imported transactions. If Google token revocation cannot be confirmed, the local records are still deleted; remove Corleon Engine from your Google Account&apos;s third-party access settings as well.</p>
         <h2>Retention and sharing</h2>
         <p>Imported data is retained in the private workspace until you disconnect and delete it. The operator must finalize the service retention schedule, backup deletion window, subprocessors and lawful contact details before the application is opened to other users. Google user data is used only for the feature displayed in this application and must not be used for advertising, resale, unrelated analytics, or general AI model training.</p>
         <h2>Google OAuth verification</h2>
-        <p>The Gmail read-only scope is restricted. Public launch requires completion of Google's applicable OAuth verification and restricted-scope security assessment requirements. Users should not connect a production mailbox until those requirements have been satisfied.</p>
+        <p>The Gmail read-only scope is restricted. Public launch requires completion of Google&apos;s applicable OAuth verification and restricted-scope security assessment requirements. Users should not connect a production mailbox until those requirements have been satisfied.</p>
         <h2>Operator contact</h2>
         <p>Legal operator: [TO BE COMPLETED]</p>
         <p>Registered/business address: [TO BE COMPLETED]</p>
