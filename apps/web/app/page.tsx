@@ -1,4 +1,5 @@
 import { Button, Card } from '@corleon/ui';
+import Link from 'next/link';
 
 const capabilities = [
   ['AI orchestration', 'Route model workloads through governed provider and tool policies.'],
@@ -26,7 +27,7 @@ export default function Home() {
         <div className="actions">
           <a href="/api/health"><Button>Check platform health</Button></a>
           <a className="secondary" href="#architecture">Explore architecture</a>
-          <a className="secondary" href="/sebi">Open SEBI Intelligence →</a>
+          <Link className="secondary" href="/sebi">Open SEBI Intelligence →</Link>
         </div>
       </section>
 
