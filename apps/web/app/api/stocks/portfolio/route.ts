@@ -32,31 +32,35 @@ export async function GET() {
   const session = await getStockSession();
   if (!session) return NextResponse.json({ connected: false, holdings: [], transactions: [], sources: [] }, { headers: { "Cache-Control": "no-store" } });
   try {
-    const [connection, transactions, sources, syncState, pendingCount] = await Promise.all([
+    const [connection, transactions, confirmedTransactions, sources, syncState, pendingCount] = await Promise.all([
       bitcoinPrisma.gmailConnection.findUnique({ where: { email: session.email }, select: { email: true, displayName: true, picture: true, connectedAt: true } }),
       bitcoinPrisma.stockTransaction.findMany({
         where: { ownerEmail: session.email, reviewStatus: { not: "IGNORED" } },
         include: { evidence: { select: { gmailMessageId: true, subject: true, sender: true, receivedAt: true } } },
         orderBy: { executedAt: "desc" }, take: 250,
       }),
+      bitcoinPrisma.stockTransaction.findMany({
+        where: { ownerEmail: session.email, reviewStatus: "CONFIRMED" },
+        select: { symbol: true, companyName: true, currency: true, type: true, quantity: true, price: true, executedAt: true },
+        orderBy: { executedAt: "asc" },
+      }),
       bitcoinPrisma.stockEmailEvidence.findMany({ where: { ownerEmail: session.email }, orderBy: { receivedAt: "desc" }, take: 40 }),
       bitcoinPrisma.stockSyncState.findUnique({ where: { ownerEmail: session.email } }),
       bitcoinPrisma.stockTransaction.count({ where: { ownerEmail: session.email, reviewStatus: "NEEDS_REVIEW" } }),
     ]);
     if (!connection) return NextResponse.json({ connected: false, holdings: [], transactions: [], sources: [] }, { headers: { "Cache-Control": "no-store" } });
-    const confirmed = transactions.filter((item) => item.reviewStatus === "CONFIRMED");
     return NextResponse.json({
       connected: true,
       account: { email: connection.email, name: connection.displayName, picture: connection.picture, connectedAt: connection.connectedAt },
       summary: {
-        holdingsCount: buildPositions(confirmed).length,
+        holdingsCount: buildPositions(confirmedTransactions).length,
         pendingReview: pendingCount,
-        confirmedTransactions: confirmed.length,
+        confirmedTransactions: confirmedTransactions.length,
         scannedEmails: syncState?.scannedCount ?? 0,
         lastSyncedAt: syncState?.lastSyncedAt ?? null,
         scanComplete: syncState?.scanComplete ?? false,
       },
-      holdings: buildPositions(confirmed),
+      holdings: buildPositions(confirmedTransactions),
       transactions: transactions.map((item) => ({
         id: item.id, symbol: item.symbol, companyName: item.companyName, type: item.type,
         quantity: item.quantity.toString(), price: item.price.toString(), amount: item.amount?.toString() ?? null,
