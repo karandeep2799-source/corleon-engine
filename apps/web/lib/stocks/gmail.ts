@@ -37,7 +37,7 @@ async function gmailFetch<T>(path: string, accessToken: string): Promise<T> {
   return data;
 }
 export async function listStockEmailMessages(accessToken: string, pageToken?: string, maxResults = 100): Promise<{ messages: GmailMessage[]; nextPageToken?: string; resultSizeEstimate: number; failedMessages: number }> {
-  const query = '{ "contract note" "trade confirmation" "portfolio statement" holdings dividend demat equity shares stocks "consolidated account statement" "CAS statement" "trade book" "order executed" "capital gains" "tax P&L" NSDL CDSL }';
+  const query = '{ "contract note" "trade confirmation" "trade executed" "order executed" "buy order" "sell order" "trade book" "weekly statement" "retention statement" "funds & securities" "holding statement" "portfolio statement" "client master" "account opening form" "consolidated account statement" "CAS statement" "capital gains" "tax P&L" "stock ledger" holdings dividend demat "INDstocks" NSDL CDSL }';
   const params = new URLSearchParams({ q: query, maxResults: String(Math.min(100, Math.max(1, maxResults))) });
   if (pageToken) params.set("pageToken", pageToken);
   const page = await gmailFetch<{ messages?: Array<{ id: string; threadId: string }>; nextPageToken?: string; resultSizeEstimate?: number }>(`/messages?${params}`, accessToken);
