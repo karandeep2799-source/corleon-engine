@@ -11,7 +11,7 @@ export async function GET(request: NextRequest) {
   const page = Math.min(20, Math.max(1, Number(request.nextUrl.searchParams.get("page") ?? 1) || 1));
   try {
     const local = await bitcoinPrisma.bitcoinQuestion.findMany({
-      where: query ? { OR: [{ title: { contains: query, mode: "insensitive" } }, { body: { contains: query, mode: "insensitive" } }] } : { status: "PUBLISHED" },
+      where: { status: "PUBLISHED", ...(query ? { OR: [{ title: { contains: query, mode: "insensitive" } }, { body: { contains: query, mode: "insensitive" } }] } : {}) },
       orderBy: [{ score: "desc" }, { createdAt: "desc" }], take: 12,
       select: { id: true, title: true, body: true, authorName: true, tags: true, score: true, answerCount: true, createdAt: true }
     }).catch(() => []);
