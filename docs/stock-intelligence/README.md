@@ -118,3 +118,16 @@ For a controlled release, first back up PostgreSQL, review the migration, run it
 - [ ] Verify PDF/encrypted e-CAS files are visibly marked as unsupported rather than silently treated as imported holdings.
 - [ ] Verify disconnect revokes the Google grant and removes local data.
 - [ ] Complete Google's OAuth verification and any required security assessment before public launch.
+
+
+## Current delivery status
+
+This branch contains the initial private workspace and integration foundation. It is not production-ready until:
+- GitHub Actions lint, type-check, test and build all pass on the final branch head.
+- The migration is applied and verified in a disposable/staging PostgreSQL database.
+- Google OAuth settings are configured in a non-production environment and end-to-end consent, refresh, sync, approval and deletion tests pass.
+- Password-protected PDF statements (including broker weekly/retention statements and CDSL/NSDL CAS), image scans and XLS/XLSX are supported. These are not parsed by the current text/CSV extractor.
+- An ISIN-backed security master and reconciliation with authoritative holdings statements are implemented.
+- Google restricted-scope data retention is reviewed and approved, the privacy policy is completed, and required Google OAuth verification / security assessment is passed.
+
+A fresh Vercel preview must be generated after the project deployment build-rate limit resets. The earlier preview on this feature branch predates the follow-up lint fixes and is not evidence that the final source builds. Do not merge, apply production migrations or promote to production until these gates are satisfied.
