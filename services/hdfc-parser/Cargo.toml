@@ -1,0 +1,29 @@
+[package]
+name = "corleon-hdfc-parser"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[dependencies]
+anyhow = "1"
+axum = { version = "0.7", features = ["multipart"] }
+chrono = "0.4"
+clap = "4.1"
+csv = "1.3"
+euclid = "0.22"
+log = "0.4"
+pdf = { path = "../../vendor/hdfc-cc-parser-rs/pdf/pdf", features = ["euclid"] }
+pdf_encoding = "0.4"
+regex = "1"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+sha2 = "0.10"
+subtle = "2.6"
+tempfile = "3"
+tokio = { version = "1", features = ["macros", "rt-multi-thread", "net", "sync"] }
+
+[profile.release]
+strip = true
+opt-level = "z"
+lto = true
+codegen-units = 1

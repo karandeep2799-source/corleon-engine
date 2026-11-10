@@ -19,3 +19,5 @@ h2 { margin: 8px 0 10px; font-size: 24px; }
 .status pre { margin: 0; padding: 20px; border-radius: 12px; background: rgba(255,255,255,.08); overflow: auto; line-height: 1.7; }
 code { padding: 2px 6px; border-radius: 6px; background: rgba(0,0,0,.06); }
 @media (max-width: 720px) { .grid, .status { grid-template-columns: 1fr; } .shell { width: min(100% - 28px, 1120px); } }
+
+.home-links{display:flex;gap:18px;align-items:center;flex-wrap:wrap}.home-links a{font-size:14px;opacity:.72}
