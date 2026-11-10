@@ -12,7 +12,13 @@ export default function CreditCardsApp() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const summary = useMemo(() => summarize(rows), [rows]);
-  function exportCsv() {\n    const blob = new Blob([transactionsToCsv(rows)], { type: "text/csv;charset=utf-8" });\n    const url = URL.createObjectURL(blob);\n    const link = document.createElement("a"); link.href = url; link.download = "corleon-credit-card-transactions.csv"; link.click();\n    URL.revokeObjectURL(url);\n  }\n  async function upload() {
+  function exportCsv() {
+    const blob = new Blob([transactionsToCsv(rows)], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a"); link.href = url; link.download = "corleon-credit-card-transactions.csv"; link.click();
+    URL.revokeObjectURL(url);
+  }
+  async function upload() {
     if (!file || !token || !name.trim()) { setError("Add your access token, cardholder name and PDF statement."); return; }
     setBusy(true); setError("");
     try {
