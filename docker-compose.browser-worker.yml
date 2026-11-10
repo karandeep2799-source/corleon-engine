@@ -7,8 +7,8 @@ services:
     restart: unless-stopped
     read_only: true
     tmpfs:
-      - /tmp:size=32m,noexec,nosuid,nodev
-      - /var/spool/squid:size=64m
+      - /tmp:size=32m,noexec,nosuid,nodev,uid=13,gid=13
+      - /var/spool/squid:size=64m,uid=13,gid=13
     cap_drop: [ALL]
     security_opt:
       - no-new-privileges:true
@@ -17,7 +17,7 @@ services:
         ipv4_address: 172.31.0.2
       egress: {}
     healthcheck:
-      test: ["CMD-SHELL", "squidclient -h 127.0.0.1 -p 3128 mgr:5xx | grep -q '5xx' || exit 0"]
+      test: ["CMD-SHELL", "bash -c '</dev/tcp/127.0.0.1/3128'"]
       interval: 30s
       timeout: 5s
       retries: 3
@@ -43,7 +43,7 @@ services:
     shm_size: 512m
     depends_on:
       egress-proxy:
-        condition: service_started
+        condition: service_healthy
     networks:
       - browser-private
     environment:
