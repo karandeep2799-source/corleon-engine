@@ -73,7 +73,9 @@ export const CHROME_DEVTOOLS_TOOL_POLICY = Object.freeze({
 });
 
 export function getChromeDevToolsPolicyId(upstreamToolName) {
-  return CHROME_DEVTOOLS_TOOL_POLICY[upstreamToolName] ?? "browser.unknown";
+  return Object.hasOwn(CHROME_DEVTOOLS_TOOL_POLICY, upstreamToolName)
+    ? CHROME_DEVTOOLS_TOOL_POLICY[upstreamToolName]
+    : "browser.unknown";
 }
 
 export function authorizeChromeDevToolsTool(upstreamToolName, options = {}) {
@@ -87,8 +89,16 @@ export function authorizeChromeDevToolsTool(upstreamToolName, options = {}) {
 export function createChromeDevToolsMcpServerDefinition({
   configPath = "config/mcp/chrome-devtools-server.json",
 } = {}) {
-  if (typeof configPath !== "string" || configPath.length === 0 || configPath.startsWith("/")) {
-    throw new TypeError("configPath must be a non-empty repository-relative path.");
+  const segments = typeof configPath === "string" ? configPath.split("/") : [];
+  if (
+    segments.length === 0 ||
+    segments.some((segment) => !segment || segment === "." || segment === "..") ||
+    configPath.startsWith("/") ||
+    configPath.includes("\\") ||
+    /^[A-Za-z]:/.test(configPath) ||
+    configPath.includes("\0")
+  ) {
+    throw new TypeError("configPath must be a normalized repository-relative path.");
   }
 
   return Object.freeze({
