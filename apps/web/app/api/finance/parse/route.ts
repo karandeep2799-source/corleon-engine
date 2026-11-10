@@ -46,5 +46,15 @@ export async function POST(request: NextRequest) {
   if (!response.ok) return NextResponse.json({ error: "The parser could not process this statement. Check the PDF password and supported statement format." }, { status: 422 });
   const payload: unknown = await response.json().catch(() => null);
   if (!payload || typeof payload !== "object" || !Array.isArray((payload as { transactions?: unknown }).transactions)) return NextResponse.json({ error: "Parser returned an invalid response." }, { status: 502 });
+  const transactions = (payload as { transactions: unknown[] }).transactions;
+  if (transactions.length > 10000 || transactions.some((row) => {
+    if (!row || typeof row !== "object") return true;
+    const tx = row as Record<string, unknown>;
+    const validDate = typeof tx.date === "string" && Number.isFinite(Date.parse(tx.date));
+    const validDescription = typeof tx.description === "string" && tx.description.trim().length > 0 && tx.description.length <= 500;
+    const validAmount = (typeof tx.amount === "number" && Number.isFinite(tx.amount)) || (typeof tx.amount === "string" && tx.amount.length <= 32) || (typeof tx.amountPaise === "number" && Number.isSafeInteger(tx.amountPaise));
+    const validPoints = tx.rewardPoints === undefined || (typeof tx.rewardPoints === "number" && Number.isSafeInteger(tx.rewardPoints));
+    return !(validDate && validDescription && validAmount && validPoints);
+  })) return NextResponse.json({ error: "Parser returned invalid or excessive transaction data." }, { status: 502 });
   return NextResponse.json(payload, { headers: { "Cache-Control": "no-store, private" } });
 }
