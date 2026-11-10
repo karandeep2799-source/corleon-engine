@@ -3,7 +3,7 @@ import { createHmac, timingSafeEqual } from "node:crypto";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
-const MAX_BYTES = 15 * 1024 * 1024;
+const MAX_BYTES = 4 * 1024 * 1024;
 
 function authorized(request: NextRequest): boolean {
   const expected = process.env.FINANCE_API_TOKEN;
@@ -27,7 +27,7 @@ export async function POST(request: NextRequest) {
   const file = form.get("statement");
   const cardholderName = form.get("cardholderName");
   const password = form.get("pdfPassword");
-  if (!(file instanceof File) || file.size < 1 || file.size > MAX_BYTES) return NextResponse.json({ error: "Upload a PDF statement smaller than 15 MB." }, { status: 400 });
+  if (!(file instanceof File) || file.size < 1 || file.size > MAX_BYTES) return NextResponse.json({ error: "Upload a PDF statement smaller than 4 MB." }, { status: 400 });
   if (file.type !== "application/pdf" && !file.name.toLowerCase().endsWith(".pdf")) return NextResponse.json({ error: "Only PDF statements are accepted." }, { status: 415 });
   const bytes = new Uint8Array(await file.arrayBuffer());
   if (new TextDecoder().decode(bytes.slice(0, 5)) !== "%PDF-") return NextResponse.json({ error: "The uploaded file is not a valid PDF." }, { status: 415 });
@@ -52,7 +52,7 @@ export async function POST(request: NextRequest) {
     const tx = row as Record<string, unknown>;
     const validDate = typeof tx.date === "string" && Number.isFinite(Date.parse(tx.date));
     const validDescription = typeof tx.description === "string" && tx.description.trim().length > 0 && tx.description.length <= 500;
-    const validAmount = (typeof tx.amount === "number" && Number.isFinite(tx.amount)) || (typeof tx.amount === "string" && tx.amount.length <= 32) || (typeof tx.amountPaise === "number" && Number.isSafeInteger(tx.amountPaise));
+    const validAmount = (typeof tx.amount === "number" && Number.isFinite(tx.amount)) || (typeof tx.amount === "string" && /^-?\d{1,12}(?:\.\d{1,4})?$/.test(tx.amount)) || (typeof tx.amountPaise === "number" && Number.isSafeInteger(tx.amountPaise));
     const validPoints = tx.rewardPoints === undefined || (typeof tx.rewardPoints === "number" && Number.isSafeInteger(tx.rewardPoints));
     return !(validDate && validDescription && validAmount && validPoints);
   })) return NextResponse.json({ error: "Parser returned invalid or excessive transaction data." }, { status: 502 });
