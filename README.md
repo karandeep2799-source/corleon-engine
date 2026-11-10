@@ -56,15 +56,16 @@ packages/ui    Shared React UI primitives
 api/           Existing API and webhook implementations
 src/           Existing AI, cash-flow, and MCP modules
 prisma/        Existing Prisma schema
+services/      Isolated worker and network-egress service images
 docs/          Architecture and operating documentation
 config/mcp/    Committed, conservative MCP server configurations
 ```
 
 ## Chrome DevTools MCP
 
-Corleon includes a pinned local-development integration for Google's Chrome DevTools MCP. The default profile is headless and isolated, disables browser input and arbitrary JavaScript evaluation, redacts network headers, and maps upstream tools to Corleon authorization policies.
+Corleon includes a pinned local-development integration for Google's Chrome DevTools MCP plus a hardened, per-task container image and an isolated-network staging topology. The worker runs as a non-root user with a read-only root filesystem, temporary profile, resource limits, no Linux capabilities, and outbound traffic routed through a private-network proxy.
 
-See [Chrome DevTools MCP integration](docs/integrations/chrome-devtools-mcp.md). A production browser worker and gateway are not enabled by this change; browser execution must remain outside Vercel Functions and pass through tenant-aware authorization and approval controls.
+See [Chrome DevTools MCP integration](docs/integrations/chrome-devtools-mcp.md) and [browser worker operations](services/browser-worker/README.md). The worker image is not automatically deployed. A tenant-aware Corleon gateway/orchestrator, production VPC egress policy, durable approvals/audit storage, and actual hosting integration remain release gates. Do not expose the worker or Chrome DevTools Protocol directly.
 
 ## Release safety
 
