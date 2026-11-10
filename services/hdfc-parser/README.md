@@ -24,14 +24,14 @@ Generate a random token of at least 32 characters and inject it through your sec
 ```sh
 docker run --rm --name corleon-hdfc-parser \
   --read-only --cap-drop=ALL --security-opt=no-new-privileges \
-  --memory=512m --cpus=1 --pids-limit=64 \
+  --memory=1g --cpus=1 --pids-limit=64 \
   --tmpfs /tmp:rw,noexec,nosuid,nodev,size=64m \
   -p 127.0.0.1:8080:8080 \
   -e HDFC_PARSER_TOKEN \
   corleon-hdfc-parser
 ``
 
-The service has a two-request parser concurrency limit, a 15 MiB PDF limit, a 16 MiB request-body limit, strict multipart fields, a fixed transaction ceiling, and automatic temporary-file cleanup. It runs as a non-root user. Keep it on a private network; expose it only to the Corleon web server over TLS or a private service mesh. Do not publish port 8080 publicly.
+The service has a single-request parser concurrency limit, a 15 MiB PDF limit, a 100-page ceiling, a 16 MiB request-body limit, strict multipart fields, a fixed transaction ceiling, and automatic temporary-file cleanup. It runs as a non-root user. Keep it on a private network; expose it only to the Corleon web server over TLS or a private service mesh. Do not publish port 8080 publicly.
 
 ## API
 
