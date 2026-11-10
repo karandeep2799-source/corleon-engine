@@ -65,3 +65,45 @@ describe("Chrome DevTools MCP integration policy", () => {
     }
   });
 });
+
+import { readFileSync } from "node:fs";
+
+const workerConfig = JSON.parse(
+  readFileSync(new URL("../../../../config/mcp/chrome-devtools-worker.json", import.meta.url), "utf8"),
+) as Record<string, unknown>;
+const localConfig = JSON.parse(
+  readFileSync(new URL("../../../../config/mcp/chrome-devtools-server.json", import.meta.url), "utf8"),
+) as Record<string, unknown>;
+const egressPolicy = readFileSync(
+  new URL("../../../../services/egress-proxy/squid.conf", import.meta.url),
+  "utf8",
+);
+
+describe("Chrome DevTools browser network restrictions", () => {
+  it("disables file navigation in both profiles", () => {
+    expect(workerConfig.fileNavigations).toBe(false);
+    expect(localConfig.fileNavigations).toBe(false);
+  });
+
+  it("blocks loopback and metadata targets across schemes and non-default ports", () => {
+    const expected = [
+      "*://localhost:*/*",
+      "*://127.0.0.1:*/*",
+      "*://[::1]:*/*",
+      "*://169.254.169.254:*/*",
+      "*://169.254.170.2:*/*",
+      "*://metadata.google.internal:*/*",
+    ];
+    expect(workerConfig.blockedUrlPattern).toEqual(expected);
+    expect(localConfig.blockedUrlPattern).toEqual(expected);
+  });
+
+  it("keeps proxy ACLs closed to loopback, link-local and reserved destinations", () => {
+    expect(egressPolicy).toContain("http_access deny to_localhost");
+    expect(egressPolicy).toContain("http_access deny to_linklocal");
+    expect(egressPolicy).toContain("acl blocked_dst dst 100.64.0.0/10");
+    expect(egressPolicy).toContain("acl blocked_dst dst ::ffff:0:0/96");
+    expect(egressPolicy).toContain("http_access deny blocked_dst");
+    expect(egressPolicy).toContain("http_access deny all");
+  });
+});
