@@ -5,7 +5,6 @@
 mod upstream;
 
 use axum::{
-    body::Body,
     extract::{DefaultBodyLimit, Multipart, State},
     http::{header, HeaderMap, StatusCode},
     response::{IntoResponse, Response},
@@ -243,7 +242,7 @@ mod tests {
         let mut headers = HeaderMap::new();
         headers.insert(
             header::AUTHORIZATION,
-            HeaderValue::from_str(&format!("Bearer {token}")).unwrap(),
+            HeaderValue::try_from(format!("Bearer {token}")).unwrap(),
         );
         assert!(authorized(&headers, &digest));
         headers.insert(
@@ -260,7 +259,7 @@ mod tests {
         let mut headers = HeaderMap::new();
         headers.insert(
             header::AUTHORIZATION,
-            HeaderValue::from_str(&format!("Bearer {}", "x".repeat(513))).unwrap(),
+            HeaderValue::try_from(format!("Bearer {}", "x".repeat(513))).unwrap(),
         );
         assert!(!authorized(&headers, &digest));
     }
