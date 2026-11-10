@@ -1,6 +1,6 @@
 "use client";
 import { useMemo, useState } from "react";
-import { formatINR, summarize, type Transaction } from "../../lib/finance-engine";
+import { formatINR, summarize, transactionsToCsv, type Transaction } from "../../lib/finance-engine";
 
 export default function CreditCardsApp() {
   const [token, setToken] = useState("");
@@ -11,7 +11,7 @@ export default function CreditCardsApp() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const summary = useMemo(() => summarize(rows), [rows]);
-  async function upload() {
+  function exportCsv() {\n    const blob = new Blob([transactionsToCsv(rows)], { type: "text/csv;charset=utf-8" });\n    const url = URL.createObjectURL(blob);\n    const link = document.createElement("a"); link.href = url; link.download = "corleon-credit-card-transactions.csv"; link.click();\n    URL.revokeObjectURL(url);\n  }\n  async function upload() {
     if (!file || !token || !name.trim()) { setError("Add your access token, cardholder name and PDF statement."); return; }
     setBusy(true); setError("");
     try {
@@ -42,7 +42,7 @@ export default function CreditCardsApp() {
     <section className="finance-results"><div className="finance-section-head"><div><p className="finance-kicker">YOUR STATEMENT DATA</p><h2>Spending overview</h2></div><span>{rows.length} transactions</span></div>
       {rows.length===0?<div className="finance-empty">Your analytics will appear here after a successful import.</div>:<>
         <div className="finance-metrics"><article><span>Total spend</span><strong>{formatINR(summary.totalSpendPaise)}</strong></article><article><span>Refunds & credits</span><strong>{formatINR(summary.totalCreditsPaise)}</strong></article><article><span>Net spend</span><strong>{formatINR(summary.netSpendPaise)}</strong></article><article><span>Reward points</span><strong>{summary.totalRewardPoints.toLocaleString("en-IN")}</strong></article></div>
-        <h3>Monthly activity</h3>{summary.monthly.map(m=><div className="finance-month" key={m.month}><strong>{m.month}</strong><span>{m.transactionCount} items</span><b>{formatINR(m.netSpendPaise)}</b></div>)}
+        <button className="finance-export" onClick={exportCsv}>Export transactions CSV</button><h3>Monthly activity</h3>{summary.monthly.map(m=><div className="finance-month" key={m.month}><strong>{m.month}</strong><span>{m.transactionCount} items</span><b>{formatINR(m.netSpendPaise)}</b></div>)}
         <h3>Categories</h3>{Object.entries(summary.categoryTotals).sort((a,b)=>b[1]-a[1]).map(([cat,value])=><div className="finance-month" key={cat}><strong>{cat}</strong><b>{formatINR(value)}</b></div>)}
       </>}
     </section>
