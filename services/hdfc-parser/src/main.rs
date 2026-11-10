@@ -29,6 +29,7 @@ const MAX_PDF_BYTES: usize = 15 * 1024 * 1024;
 const MAX_NAME_BYTES: usize = 120;
 const MAX_PASSWORD_BYTES: usize = 256;
 const MAX_TRANSACTIONS: usize = 10_000;
+const MAX_PDF_PAGES: usize = 100;
 
 #[derive(Clone)]
 struct AppState {
@@ -155,6 +156,12 @@ async fn parse_statement(
         temp.write_all(&bytes)?;
         temp.flush()?;
         let path = temp.path().to_string_lossy().into_owned();
+        let preflight = pdf::file::File::<Vec<u8>>::open_password(path.clone(), password.as_bytes())?;
+        let page_count = preflight.pages().take(MAX_PDF_PAGES + 1).count();
+        drop(preflight);
+        if page_count > MAX_PDF_PAGES {
+            anyhow::bail!("PDF page limit exceeded");
+        }
         let (tx, rx) = mpsc::channel::<Vec<String>>();
         upstream::parse(path, name, password, &tx)?;
         drop(tx);
@@ -207,7 +214,7 @@ async fn main() -> anyhow::Result<()> {
     let digest: [u8; 32] = Sha256::digest(token.as_bytes()).into();
     let state = AppState {
         token_digest: Arc::new(digest),
-        parse_slots: Arc::new(Semaphore::new(2)),
+        parse_slots: Arc::new(Semaphore::new(1)),
     };
 
     let app = Router::new()
@@ -222,4 +229,39 @@ async fn main() -> anyhow::Result<()> {
     let listener = tokio::net::TcpListener::bind(address).await?;
     axum::serve(listener, app).await?;
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use axum::http::HeaderValue;
+
+    #[test]
+    fn bearer_token_authentication_accepts_only_matching_token() {
+        let token = "test-parser-token-with-at-least-32-characters";
+        let digest: [u8; 32] = Sha256::digest(token.as_bytes()).into();
+        let mut headers = HeaderMap::new();
+        headers.insert(
+            header::AUTHORIZATION,
+            HeaderValue::from_str(&format!("Bearer {token}")).unwrap(),
+        );
+        assert!(authorized(&headers, &digest));
+        headers.insert(
+            header::AUTHORIZATION,
+            HeaderValue::from_static("Bearer wrong-token"),
+        );
+        assert!(!authorized(&headers, &digest));
+    }
+
+    #[test]
+    fn bearer_token_authentication_rejects_missing_and_oversized_values() {
+        let digest: [u8; 32] = Sha256::digest(b"test-parser-token-with-at-least-32-characters").into();
+        assert!(!authorized(&HeaderMap::new(), &digest));
+        let mut headers = HeaderMap::new();
+        headers.insert(
+            header::AUTHORIZATION,
+            HeaderValue::from_str(&format!("Bearer {}", "x".repeat(513))).unwrap(),
+        );
+        assert!(!authorized(&headers, &digest));
+    }
 }
