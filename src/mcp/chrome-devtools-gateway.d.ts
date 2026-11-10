@@ -18,6 +18,14 @@ export interface ChromeDevToolsGatewayAuditEvent {
   policyReason?: string;
 }
 
+export interface ChromeDevToolsGatewayResponse {
+  jsonrpc?: string;
+  id?: string | number | null;
+  result?: { [key: string]: any };
+  error?: { code: number; message: string };
+  [key: string]: unknown;
+}
+
 export interface ChromeDevToolsGatewayWorker {
   request(message: Record<string, unknown>): Promise<Record<string, unknown> | null>;
   close(): Promise<void>;
@@ -48,6 +56,6 @@ export interface ChromeDevToolsGatewayOptions {
 
 export declare function createChromeDevToolsGateway(options: ChromeDevToolsGatewayOptions): {
   readonly identity: Readonly<ChromeDevToolsGatewayIdentity>;
-  handle(message: Record<string, unknown>): Promise<Record<string, unknown> | null>;
+  handle(message: Record<string, unknown>): Promise<ChromeDevToolsGatewayResponse | null>;
   close(): Promise<void>;
 };
