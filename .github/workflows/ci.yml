@@ -61,6 +61,8 @@ jobs:
     name: Build and test HDFC parser adapter
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    env:
+      CARGO_TERM_COLOR: always
     steps:
       - name: Checkout repository and pinned parser submodule
         uses: actions/checkout@v4
