@@ -11,6 +11,30 @@ export const TOOL_POLICY = Object.freeze({
   "deployment.production": "approval_required",
   "secrets.read": "deny",
   "production.db": "deny",
+
+  // Chrome DevTools MCP: read-only diagnostics are permitted in a scoped
+  // browser session; navigation and interaction require explicit approval.
+  "browser.pages.read": "allow",
+  "browser.snapshot.read": "allow",
+  "browser.screenshot.read": "allow",
+  "browser.console.read": "allow",
+  "browser.styles.read": "allow",
+  "browser.network.read": "allow",
+  "browser.performance.read": "allow",
+  "browser.pwa.read": "allow",
+  "browser.third_party.read": "deny",
+  "browser.webmcp.read": "deny",
+  "browser.navigation.navigate": "approval_required",
+  "browser.input.interact": "approval_required",
+  "browser.memory.inspect": "approval_required",
+  "browser.pwa.manage": "approval_required",
+  "browser.webauthn.manage": "approval_required",
+  "browser.file.upload": "deny",
+  "browser.script.evaluate": "deny",
+  "browser.extensions.read": "deny",
+  "browser.extensions.manage": "deny",
+  "browser.third_party.execute": "deny",
+  "browser.webmcp.execute": "deny",
 });
 
 export function assertToolAllowed(tool, { production = false } = {}) {

@@ -18,3 +18,18 @@ paths = [
   "codex/skills/vercel/SKILL.md",
   "codex/skills/security/SKILL.md"
 ]
+
+# Local developer MCP only. Production agents must use the Corleon MCP gateway.
+[mcp_servers.chrome-devtools]
+command = "npx"
+args = [
+  "--yes",
+  "chrome-devtools-mcp@1.12.0",
+  "--config=config/mcp/chrome-devtools-server.json",
+  "--no-javascript-evaluation",
+  "--no-usage-statistics",
+  "--no-update-checks",
+  "--no-performance-crux"
+]
+startup_timeout_ms = 20000
+tool_timeout_sec = 120

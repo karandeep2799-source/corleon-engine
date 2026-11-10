@@ -57,7 +57,14 @@ api/           Existing API and webhook implementations
 src/           Existing AI, cash-flow, and MCP modules
 prisma/        Existing Prisma schema
 docs/          Architecture and operating documentation
+config/mcp/    Committed, conservative MCP server configurations
 ```
+
+## Chrome DevTools MCP
+
+Corleon includes a pinned local-development integration for Google's Chrome DevTools MCP. The default profile is headless and isolated, disables browser input and arbitrary JavaScript evaluation, redacts network headers, and maps upstream tools to Corleon authorization policies.
+
+See [Chrome DevTools MCP integration](docs/integrations/chrome-devtools-mcp.md). A production browser worker and gateway are not enabled by this change; browser execution must remain outside Vercel Functions and pass through tenant-aware authorization and approval controls.
 
 ## Release safety
 
@@ -66,3 +73,4 @@ docs/          Architecture and operating documentation
 - Commission-release cron fails closed unless `CRON_SECRET` is configured in Vercel; do not configure it until commission release is explicitly approved.
 - Configure secrets only in Vercel's environment-variable manager; never commit populated environment files.
 - Merge and promote only after CI, preview route checks, and application smoke tests pass.
+- Do not publish production deployments, change production settings, or enable browser workers without explicit approval.

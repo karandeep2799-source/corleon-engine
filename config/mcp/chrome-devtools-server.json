@@ -1,0 +1,32 @@
+{
+  "headless": true,
+  "isolated": true,
+  "pageIdRouting": true,
+  "categoryInput": false,
+  "categoryNavigation": true,
+  "categoryEmulation": false,
+  "categoryPerformance": true,
+  "categoryNetwork": true,
+  "categoryDebugging": true,
+  "categoryExtensions": false,
+  "categoryExperimentalThirdParty": false,
+  "categoryMemory": false,
+  "categoryExperimentalWebmcp": false,
+  "categoryPwa": false,
+  "categoryWebauthn": false,
+  "experimentalDevtools": false,
+  "experimentalVision": false,
+  "memoryDebugging": false,
+  "experimentalStructuredContent": false,
+  "redactNetworkHeaders": true,
+  "acceptInsecureCerts": false,
+  "maxNavigationSaved": 3,
+  "blockedUrlPattern": [
+    "http://localhost/*",
+    "http://127.0.0.1/*",
+    "http://[::1]/*",
+    "http://169.254.169.254/*",
+    "http://169.254.170.2/*",
+    "http://metadata.google.internal/*"
+  ]
+}
