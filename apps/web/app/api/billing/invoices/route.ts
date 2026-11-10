@@ -23,7 +23,7 @@ export async function POST(request: NextRequest) {
     const items = body.items.map((item: unknown) => {
       const value = item as { description?: unknown; amount?: unknown };
       if (typeof value.description !== 'string' || !value.description.trim() ||
-          typeof value.amount !== 'number' || !Number.isFinite(value.amount) || value.amount <= 0 || !/^\\d+(?:\\.\\d{1,2})?$/.test(String(value.amount))) {
+          typeof value.amount !== 'number' || !Number.isFinite(value.amount) || value.amount <= 0 || !/^\d+(?:\.\d{1,2})?$/.test(String(value.amount))) {
         throw new Error('Each item requires a description and a positive INR amount with up to 2 decimal places.');
       }
       return { description: value.description.trim().slice(0, 500), amount: Math.round((value.amount as number) * 100) };
