@@ -11,6 +11,10 @@ export async function POST(request: NextRequest) {
   const denied = authorizeBillingRequest(request);
   if (denied) return denied;
   try {
+    const idempotencyKey = request.headers.get('idempotency-key');
+    if (!idempotencyKey || !/^[A-Za-z0-9._:-]{8,128}$/.test(idempotencyKey)) {
+      return NextResponse.json({ error: 'A valid Idempotency-Key header (8–128 characters) is required.' }, { status: 400 });
+    }
     const body = await request.json();
     if (typeof body.organizationId !== 'string' || typeof body.customerId !== 'string' ||
         !Array.isArray(body.items) || body.items.length < 1 || body.items.length > 50) {
@@ -30,6 +34,7 @@ export async function POST(request: NextRequest) {
       description: typeof body.description === 'string' ? body.description.slice(0, 500) : undefined,
       dueDays: Number.isInteger(body.dueDays) && body.dueDays >= 1 && body.dueDays <= 30 ? body.dueDays : 7,
       items,
+      idempotencyKey,
     });
     return NextResponse.json({ invoice: presentStripeInvoice(invoice) }, { status: 201, headers: { 'Cache-Control': 'no-store' } });
   } catch (error) {
