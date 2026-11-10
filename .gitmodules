@@ -1,0 +1,3 @@
+[submodule "vendor/hdfc-cc-parser-rs"]
+	path = vendor/hdfc-cc-parser-rs
+	url = https://github.com/joeirimpan/hdfc-cc-parser-rs.git

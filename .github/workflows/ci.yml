@@ -57,6 +57,40 @@ jobs:
           if-no-files-found: error
           retention-days: 7
 
+  hdfc-parser:
+    name: Build and test HDFC parser adapter
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout repository and pinned parser submodule
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          persist-credentials: false
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache Cargo dependencies
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: services/hdfc-parser
+
+      - name: Check adapter
+        run: cargo check --manifest-path services/hdfc-parser/Cargo.toml
+
+      - name: Test adapter
+        run: cargo test --manifest-path services/hdfc-parser/Cargo.toml
+
+      - name: Upload Cargo lockfile for review
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: hdfc-parser-cargo-lockfile
+          path: services/hdfc-parser/Cargo.lock
+          if-no-files-found: error
+          retention-days: 7
+
   commit-lockfile:
     name: Commit generated pnpm lockfile
     needs: validate
