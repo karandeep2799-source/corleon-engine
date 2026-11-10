@@ -212,7 +212,8 @@ export async function handleStripeWebhook(rawBody, signature) {
       await recordBillingEvent({
         organizationId, provider: 'stripe', externalId: event.id,
         type: event.type === 'invoice.payment_failed' ? 'PAYMENT_FAILED'
-          : object.billing_reason === 'subscription_create' ? 'SUBSCRIPTION_STARTED' : 'SUBSCRIPTION_RENEWED',
+          : !subscriptionExternalId ? 'PAYMENT'
+            : object.billing_reason === 'subscription_create' ? 'SUBSCRIPTION_STARTED' : 'SUBSCRIPTION_RENEWED',
         customerExternalId, customerEmail, customerName,
         orderExternalId: `stripe:invoice:${object.id}`,
         subscriptionExternalId,
@@ -226,7 +227,10 @@ export async function handleStripeWebhook(rawBody, signature) {
       await upsertCustomerFromStripe(stripe, object, organizationId);
     } else if (event.type === 'charge.refunded' || event.type === 'charge.dispute.created') {
       const paymentIntentId = object.payment_intent ? String(object.payment_intent) : null;
-      const orderExternalId = paymentIntentId ? `stripe:pi:${paymentIntentId}` : null;
+      const paymentIntent = paymentIntentId ? await stripe.paymentIntents.retrieve(paymentIntentId) : null;
+      const orderExternalId = paymentIntent?.metadata?.orderId
+        || object.metadata?.orderId
+        || (paymentIntentId ? `stripe:pi:${paymentIntentId}` : null);
       const order = orderExternalId
         ? await prisma.order.findFirst({ where: { organizationId, externalId: orderExternalId } })
         : null;
