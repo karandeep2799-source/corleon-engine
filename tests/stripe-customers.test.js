@@ -1,5 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+process.env.STRIPE_MODE = 'test';
+process.env.STRIPE_SECRET_KEY = 'sk_test_unit_test_only';
+
 import {
   formatInrMinorUnits,
   updateCorleonStripeCustomer
