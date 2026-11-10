@@ -26,11 +26,11 @@ All billing endpoints require `Authorization: Bearer <CORLEON_BILLING_API_KEY>`.
   "customerId": "customer_id",
   "description": "Corleon services",
   "dueDays": 7,
-  "items": [{ "description": "AI automation setup", "amount": 125000 }]
+  "items": [{ "description": "AI automation setup", "amount": 1250.00 }]
 }
 ```
 
-Amounts are integer paise (125000 = ₹1,250.00). Currency is fixed to INR. The invoice remains draft; it is not sent or charged automatically.
+Amounts are entered and returned in Indian rupees (₹), with up to two decimal places (1250.00 = ₹1,250.00). The service converts rupees to paise only internally when calling Stripe, because Stripe's INR API amounts use the smallest currency unit. Currency is fixed to INR. The invoice remains draft; it is not sent or charged automatically.
 
 ### List invoices
 `GET /api/billing/invoices?organizationId=...&customerId=...`
