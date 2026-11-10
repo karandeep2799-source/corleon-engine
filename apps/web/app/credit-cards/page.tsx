@@ -20,6 +20,7 @@ export default function CreditCardsApp() {
   }
   async function upload() {
     if (!file || !token || !name.trim()) { setError("Add your access token, cardholder name and PDF statement."); return; }
+    if (file.size > 4 * 1024 * 1024) { setError("Choose a PDF smaller than 4 MB for the web upload route."); return; }
     setBusy(true); setError("");
     try {
       const data = new FormData();
@@ -37,7 +38,7 @@ export default function CreditCardsApp() {
     <nav className="finance-nav"><Link href="/">← Corleon Engine</Link><span>PRIVATE FINANCE WORKSPACE</span></nav>
     <header className="finance-hero"><p className="finance-kicker">CORLEON · PERSONAL FINANCE</p><h1>Credit card clarity.</h1><p>Understand spending, refunds, rewards and monthly patterns from your own statements. Your PDFs are processed on request, not used to connect to your bank.</p></header>
     <section className="finance-panel">
-      <h2>Import an HDFC statement</h2><p>PDF only · up to 15 MB · password is forwarded only to the configured parser and cleared from the form after success.</p>
+      <h2>Import an HDFC statement</h2><p>PDF only · up to 4 MB · password is forwarded only to the configured parser and cleared from the form after success.</p>
       <label>Finance access token<input type="password" autoComplete="off" value={token} onChange={e=>setToken(e.target.value)} placeholder="Provided by your administrator"/></label>
       <label>Cardholder name<input value={name} onChange={e=>setName(e.target.value)} placeholder="As printed on statement"/></label>
       <label>PDF statement<input type="file" accept="application/pdf,.pdf" onChange={e=>setFile(e.target.files?.[0]??null)}/></label>
