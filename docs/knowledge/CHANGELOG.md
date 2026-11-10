@@ -48,7 +48,7 @@
 ### Verification notes
 
 - All saved release and feature claims were checked against official vendor changelogs, release pages, or specification repositories.
-- The Node.js November 11 security release is an announcement-only watch item. The patched Node 24.x version and CVEs were not yet available at the time of this run.
+- Vercel snapshot retention evidence was cross-checked against the official docs: default 30-day expiry, storage charges while retained, and region-bound snapshots. The Node.js November 11 security release is an announcement-only watch item. The patched Node 24.x version and CVEs were not yet available at the time of this run.
 - GitHub's Actions workflow-log secret scanning preview was excluded from the catalog because the announcement limits availability to eligible GitHub Enterprise Cloud customers with Secret Protection/Advanced Security; no access entitlement was verified for this repository.
 - Turborepo 2.11 was checked but not promoted to a knowledge entry: its September release is not a new coding-agent development for the current JavaScript/TypeScript-only workspace. Revisit if Corleon adds Rust/Python/Go worker packages.
 - No application runtime, dependency, schema, secret, infrastructure, payment, or deployment files were changed.
