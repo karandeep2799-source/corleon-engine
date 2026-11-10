@@ -18,15 +18,16 @@
   "experimentalVision": false,
   "memoryDebugging": false,
   "experimentalStructuredContent": false,
+  "fileNavigations": false,
   "redactNetworkHeaders": true,
   "acceptInsecureCerts": false,
   "maxNavigationSaved": 3,
   "blockedUrlPattern": [
-    "http://localhost/*",
-    "http://127.0.0.1/*",
-    "http://[::1]/*",
-    "http://169.254.169.254/*",
-    "http://169.254.170.2/*",
-    "http://metadata.google.internal/*"
+    "*://localhost:*/*",
+    "*://127.0.0.1:*/*",
+    "*://[::1]:*/*",
+    "*://169.254.169.254:*/*",
+    "*://169.254.170.2:*/*",
+    "*://metadata.google.internal:*/*"
   ]
 }
