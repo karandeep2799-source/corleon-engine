@@ -26,7 +26,7 @@ The local profile enables navigation, performance, network and debugging categor
 
 Both profiles disable click/fill/keyboard/drag input, arbitrary JavaScript evaluation, experimental DevTools target access, coordinate-based vision, third-party page tools, WebMCP execution, extensions, PWA mutations, WebAuthn and heap-snapshot inspection. Network headers are redacted; insecure TLS certificates are not accepted.
 
-The container profile starts Chromium headlessly with a temporary profile, requires page IDs for page-scoped calls, and routes Chrome traffic through `egress-proxy:3128`.
+The container profile starts Chromium headlessly with a temporary profile, requires page IDs for page-scoped calls, disables `file:` navigation, and routes Chrome traffic through `egress-proxy:3128`. Browser-side deny patterns cover loopback and cloud metadata hostnames across schemes and non-default ports; the proxy independently denies local, private, link-local, reserved, and translation-prefix destinations.
 
 ## Local setup
 
@@ -68,7 +68,7 @@ The compose file is a local/staging reference, not a production orchestrator. Ru
 | Extensions, third-party tools and WebMCP execution | `browser.*` | Deny |
 | Unknown upstream tool | `browser.unknown` | Deny |
 
-The policy mapping is not a security boundary if an agent can connect directly to the upstream server. Production calls must pass through a Corleon-controlled gateway that authenticates the actor, derives tenant/session ownership server-side, authorizes every tool invocation, validates approval, and records an audit receipt. Unknown upstream tools must remain denied.
+Explicit `deny` decisions remain denied in production; production mode only turns otherwise-allowed diagnostics into approval-required actions. Unknown tool names and JavaScript object prototype keys are denied. The local config-path helper rejects absolute paths, traversal segments, and malformed paths. These are policy-library safeguards, not proof that every call path is wired through a gateway. The policy mapping is not a security boundary if an agent can connect directly to the upstream server. Production calls must pass through a Corleon-controlled gateway that authenticates the actor, derives tenant/session ownership server-side, authorizes every tool invocation, validates approval, and records an audit receipt. Unknown upstream tools must remain denied.
 
 ## Production release gates
 
@@ -97,7 +97,7 @@ docker compose -f docker-compose.browser-worker.yml config
 docker compose -f docker-compose.browser-worker.yml build
 ```
 
-The existing CI validates the web workspace. Container build, live egress, real-Chrome and gateway orchestration tests must run in a Docker-enabled release pipeline before production activation.
+The existing CI validates the web workspace, Compose syntax, and image builds. Regression tests cover policy deny semantics, config path traversal, browser URL restrictions, and proxy ACL guardrails. These tests do not prove runtime network isolation. Container runtime, live egress, real-Chrome, DNS-rebinding, cross-tenant and gateway orchestration tests must run in a Docker-enabled release pipeline before production activation.
 
 ## Rollback
 
