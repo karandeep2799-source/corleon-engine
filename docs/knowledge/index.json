@@ -1,0 +1,636 @@
+{
+  "schema_version": "1.0.0",
+  "catalog": "Corleon Engine Engineering Knowledge",
+  "generated_at": "2026-11-10",
+  "checked_at": "2026-11-10",
+  "source_policy": "Primary sources first; vendor release notes, official documentation, standards, advisories, and authoritative repositories. Secondary sources are supporting context only.",
+  "deduplication_policy": "Canonical URL SHA-256 + normalized-title SHA-256 + semantic comparison. Mirrors, reposts, paraphrases, and near-duplicates are not new entries.",
+  "entries": [
+    {
+      "id": "K-9122A5763F76",
+      "slug": "vercel-workflow-sdk-websocket-writes",
+      "title": "Vercel Workflow SDK moves event and stream writes to WebSockets",
+      "status": "verified",
+      "priority": "P1",
+      "topics": [
+        "vercel",
+        "durable-workflows",
+        "streaming",
+        "agent-orchestration",
+        "observability"
+      ],
+      "canonical_url": "https://vercel.com/changelog/workflow-writes-now-use-websockets-on-vercel",
+      "source_urls": [
+        "https://vercel.com/changelog/workflow-writes-now-use-websockets-on-vercel"
+      ],
+      "source_publication_date": "2026-11-09",
+      "checked_date": "2026-11-10",
+      "relevant_versions": [
+        "workflow >=5.2.0",
+        "Vercel Workflows"
+      ],
+      "maturity": "Available platform behavior documented in the Vercel changelog; not labelled preview in the announcement.",
+      "verified_facts": [
+        "Workflow SDK 5.2.0 or later sends event writes and stream writes to Vercel Workflows over a WebSocket by default.",
+        "This replaces one HTTP request per event write, or per write group for streams.",
+        "Existing streaming code requires no source change beyond upgrading the SDK.",
+        "New runs use the upgraded deployment; in-flight runs finish on the deployment on which they started."
+      ],
+      "analysis": "This can reduce transport overhead for high-frequency agent events and token streams. The source does not publish independent latency or throughput benchmarks, so the benefit for Corleon must be measured rather than assumed.",
+      "corleon_relevance": "high",
+      "repository_evidence": [
+        "package.json does not currently declare the workflow package.",
+        "docs/openai-developers-architecture.md describes an inspect-plan-implement-test-review lifecycle but no durable workflow dependency."
+      ],
+      "recommendation": "Prototype workflow@5.2.0+ for long-running agent orchestration behind an adapter. Benchmark event throughput, streaming, retry behavior, and resume semantics before adopting it.",
+      "security_considerations": [
+        "WebSocket transport does not replace application authorization.",
+        "Keep tenant and user authorization checks inside each workflow step.",
+        "Use idempotency keys for externally visible side effects and do not replay writes solely because a stream disconnected."
+      ],
+      "estimated_effort": "2-3 engineering days for an isolated spike and benchmark",
+      "acceptance_criteria": [
+        "A paused or interrupted test run resumes without losing committed step state.",
+        "Repeated event delivery does not duplicate an external side effect.",
+        "Record p50/p95 event-write latency and stream throughput against the current transport baseline."
+      ],
+      "deduplication_result": "new",
+      "deduplication_fingerprint": "9122a5763f76dcecbb3b2021ffbe011c6e758e30ad6aa621897fe2d5a785de3e",
+      "normalized_title_fingerprint": "b9effe2cd69af285f7874023554b84d31f083e2ec55abe482396983a38b1c809"
+    },
+    {
+      "id": "K-756B395AEDD8",
+      "slug": "vercel-sandbox-snapshot-acceleration",
+      "title": "Vercel Sandbox snapshot creation and restore become substantially faster",
+      "status": "verified",
+      "priority": "P1",
+      "topics": [
+        "vercel",
+        "sandboxing",
+        "resumability",
+        "agent-execution",
+        "performance"
+      ],
+      "canonical_url": "https://vercel.com/changelog/vercel-sandbox-snapshot-creation-is-now-up-to-10x-faster",
+      "source_urls": [
+        "https://vercel.com/changelog/vercel-sandbox-snapshot-creation-is-now-up-to-10x-faster",
+        "https://vercel.com/docs/sandbox/concepts/snapshots"
+      ],
+      "source_publication_date": "2026-11-09",
+      "checked_date": "2026-11-10",
+      "relevant_versions": [
+        "Vercel Sandbox",
+        "Vercel Hive Snapshot (VHS) format"
+      ],
+      "maturity": "Platform rollout described as active and automatic for new snapshots; no opt-in configuration is required.",
+      "verified_facts": [
+        "Vercel reports median snapshot creation below 0.4 seconds, down from 4.4 seconds, described as up to 10x faster.",
+        "Snapshot restore p50 is reported at 250 ms, down from 500 ms.",
+        "The new VHS format reuses frames and improves indexing so more read/write operations can run in parallel.",
+        "Persistent sandboxes, the default, automatically snapshot when a session stops and resume from the latest snapshot.",
+        "The new behavior applies to new snapshots; existing snapshots retain the previous format.",
+        "Vercel's snapshot documentation says snapshots expire 30 days after last use by default, incur storage charges while retained, and are available only in their source region (with failover behavior as documented)."
+      ],
+      "analysis": "Faster snapshots make checkpoint-heavy agent execution more practical, particularly when tasks pause for approval or need to recover after worker interruption. The performance numbers are vendor-reported and should be validated with Corleon's repository and workload. Snapshot retention and regional constraints affect cost and recovery design: Corleon should explicitly bound retained snapshots and keep region placement consistent with the worker.",
+      "corleon_relevance": "high",
+      "repository_evidence": [
+        "The current package manifests do not declare @vercel/sandbox.",
+        "The existing architecture documentation calls for preview-first, approval-gated execution but does not define a persistent sandbox adapter."
+      ],
+      "recommendation": "When implementing isolated coding workers, evaluate persistent Vercel Sandbox sessions and snapshot-based resume. Keep run metadata and approval state in PostgreSQL; treat the sandbox filesystem as recoverable workspace state, not the system of record. Configure snapshotExpiration and keepLastSnapshots so repeated stops do not create unbounded storage; verify region availability and storage charges in the chosen Vercel plan.",
+      "security_considerations": [
+        "Use one isolated sandbox per tenant/run and short-lived credentials.",
+        "Never inject production database credentials, payment secrets, or long-lived GitHub tokens into the sandbox.",
+        "Reapply network and filesystem policy on resume; a snapshot must not silently widen privileges.",
+        "Snapshots can contain repository files and installed packages; set retention deliberately, delete expired/unneeded snapshots, and respect data-residency/region requirements."
+      ],
+      "estimated_effort": "2-4 engineering days for a sandbox persistence proof of concept",
+      "acceptance_criteria": [
+        "A test workspace survives stop/resume with expected files and permissions.",
+        "A resumed run cannot access another tenant's workspace.",
+        "Measure snapshot and restore p50/p95 for a representative Corleon repository.",
+        "Snapshot retention is bounded (for example, by a tested keepLastSnapshots policy) and storage cost is estimated for the expected run volume."
+      ],
+      "deduplication_result": "new",
+      "deduplication_fingerprint": "756b395aedd8b82e71f41cdb1f548d23956c6fa1e1caa56e046a3a1e39de0174",
+      "normalized_title_fingerprint": "407c7a7b99030d81c2c8ca0a4f2085013beae7ff608ca8e9f7724b938ddc2483"
+    },
+    {
+      "id": "K-8D603FAF83B5",
+      "slug": "gemini-cli-v0-67-cancellation-filesystem-safety",
+      "title": "Gemini CLI 0.67.0 strengthens cancellation, filesystem safety, and MCP permission context",
+      "status": "verified",
+      "priority": "P1",
+      "topics": [
+        "gemini-cli",
+        "agent-cancellation",
+        "sandboxing",
+        "filesystem-security",
+        "mcp",
+        "ide-integration"
+      ],
+      "canonical_url": "https://github.com/google-gemini/gemini-cli/releases/tag/v0.67.0",
+      "source_urls": [
+        "https://github.com/google-gemini/gemini-cli/releases/tag/v0.67.0",
+        "https://github.com/google-gemini/gemini-cli/blob/main/docs/changelogs/latest.md"
+      ],
+      "source_publication_date": "2026-11-04",
+      "checked_date": "2026-11-10",
+      "relevant_versions": [
+        "Gemini CLI v0.67.0"
+      ],
+      "maturity": "Stable tagged CLI release; individual changes are release-note items, not a claim that every downstream IDE or sandbox integration is universally available.",
+      "verified_facts": [
+        "The release handles termination signals and prevents tool execution after cancellation in non-interactive mode.",
+        "It stops continuation-stream processing and automatic nudges after request cancellation.",
+        "Atomic writeTextFile handling now respects read-only files and hard links.",
+        "Relative file paths are resolved against the active IDE workspace root.",
+        "MCP server and tool metadata is included in permission requests.",
+        "The IDE companion can be bridged into container sandboxes over exec stdio."
+      ],
+      "analysis": "The strongest transferable lesson is that cancellation must be terminal for the current execution turn, and filesystem authorization must use the resolved workspace root and actual destination. Permission prompts should carry enough MCP metadata for a human to understand the requested capability.",
+      "corleon_relevance": "high",
+      "repository_evidence": [
+        "Corleon has a single MCP policy module at src/mcp/policy.js.",
+        "The current policy allows repo reads and tests, requires approval for repository/database writes, and denies secrets and production database access."
+      ],
+      "recommendation": "Add cancellation propagation and filesystem-policy regression tests to the agent worker design. Include MCP server name, tool name, annotations, tenant, and normalized resource scope in approval records.",
+      "security_considerations": [
+        "Do not rely on a client-side cancellation flag while background tools continue running.",
+        "Resolve symlinks and hard links before applying protected-path rules.",
+        "Bind all relative paths to the selected repository/worktree root.",
+        "Treat IDE and MCP metadata as untrusted display context, not authorization proof."
+      ],
+      "estimated_effort": "2-3 engineering days for tests and policy design",
+      "acceptance_criteria": [
+        "After cancellation, no new tool invocation begins for that turn.",
+        "Read-only files and hard-linked protected files cannot be overwritten by an agent.",
+        "A relative path cannot escape the active workspace root.",
+        "Approval UI records identify the MCP server and exact tool requested."
+      ],
+      "deduplication_result": "new",
+      "deduplication_fingerprint": "8d603faf83b5cd3544c0c91da3a91acec383a4bd6b9f7bf69469de81e3cb46c3",
+      "normalized_title_fingerprint": "2fe5de7463d5781208f95f7ebaad5bfa78cdcb5be862b1a289a12a5ac075ae1b"
+    },
+    {
+      "id": "K-B8DDB6DB7E02",
+      "slug": "codex-cli-v0-167-agent-command-center",
+      "title": "Codex CLI 0.167.0 adds agent command-center, cross-backend continuity, and stronger execution governance",
+      "status": "verified",
+      "priority": "P1",
+      "topics": [
+        "openai-codex",
+        "multi-agent",
+        "session-continuity",
+        "mcp",
+        "approvals",
+        "context-management",
+        "observability"
+      ],
+      "canonical_url": "https://github.com/openai/codex/releases/tag/rust-v0.167.0",
+      "source_urls": [
+        "https://github.com/openai/codex/releases/tag/rust-v0.167.0"
+      ],
+      "source_publication_date": "2026-11-06",
+      "checked_date": "2026-11-10",
+      "relevant_versions": [
+        "Codex CLI 0.167.0"
+      ],
+      "maturity": "Stable GitHub release; some onboarding options mentioned in the release remain explicitly feature-flagged or experimental.",
+      "verified_facts": [
+        "The release adds the agent command center through codex agents --no-daemon and unread-result indicators in the command center and session picker.",
+        "The terminal session picker can switch connected backends while retaining drafts.",
+        "Saved chats remain visible across provider changes; when a chat cannot resume, its transcript remains readable and an editable prompt can continue in a new chat.",
+        "The release adds per-chat leases for shared MCP connections and richer tool/annotation metadata in MCP approval prompts.",
+        "It adds managed command checkpoints that require fresh human approval and direct Guardian review of recorded execution calls.",
+        "It records additional context counts, sizes, and truncation metrics."
+      ],
+      "analysis": "This is a useful reference architecture for Corleon: conversations should outlive individual model/provider sessions, MCP connections should be leased to a run or chat, and approval decisions should be tied to the exact recorded command. Context metrics should be first-class run telemetry.",
+      "corleon_relevance": "high",
+      "repository_evidence": [
+        "The root package includes @openai/agents ^0.17.0.",
+        "docs/openai-developers-architecture.md describes architect, coder, and reviewer agents plus an approval-gated lifecycle."
+      ],
+      "recommendation": "Prioritize a provider-neutral conversation/session record, per-run MCP connection leases, fresh approval checkpoints for privileged commands, and context/truncation telemetry. Preserve transcript access even when a backend cannot resume.",
+      "security_considerations": [
+        "A model/provider switch must not inherit broader permissions.",
+        "Approval must bind to the exact command, arguments, working directory, and policy version.",
+        "MCP connection leases must be tenant-scoped and released on completion, cancellation, or timeout.",
+        "Context metrics must not log secrets or full sensitive source files."
+      ],
+      "estimated_effort": "4-6 engineering days for a focused control-plane design and first implementation slice",
+      "acceptance_criteria": [
+        "A conversation can switch providers without losing its transcript or draft.",
+        "A privileged command cannot execute after a stale approval or with changed arguments.",
+        "Two chats cannot reuse another chat's authenticated MCP lease.",
+        "Each run reports input/output token counts, truncation, retries, and provider transitions."
+      ],
+      "deduplication_result": "new",
+      "deduplication_fingerprint": "b8ddb6db7e02a2ca1f760b7c140167129122796da355a70d76d8d2171d216a0f",
+      "normalized_title_fingerprint": "36e3101a344745a597da60410c03a9132bfa6f90e2d4ebb56de1df06960a947b"
+    },
+    {
+      "id": "K-ACE31F3B0BB1",
+      "slug": "claude-code-v2-1-321-fable-5-2-security-fixes",
+      "title": "Claude Code 2.1.321/2.1.322 adds Fable 5.2 and fixes MCP OAuth and sandbox permission bugs",
+      "status": "verified",
+      "priority": "P0",
+      "topics": [
+        "claude-code",
+        "mcp-oauth",
+        "sandboxing",
+        "tool-permissions",
+        "model-routing",
+        "data-retention"
+      ],
+      "canonical_url": "https://github.com/anthropics/claude-code/releases/tag/v2.1.321",
+      "source_urls": [
+        "https://github.com/anthropics/claude-code/releases/tag/v2.1.321",
+        "https://github.com/anthropics/claude-code/releases/tag/v2.1.322",
+        "https://www.anthropic.com/claude-fable-and-mythos-5-2",
+        "https://vercel.com/changelog/claude-fable-5-2-now-available-on-ai-gateway"
+      ],
+      "source_publication_date": "2026-11-09",
+      "checked_date": "2026-11-10",
+      "relevant_versions": [
+        "Claude Code v2.1.321 (2026-11-09)",
+        "Claude Code v2.1.322 (2026-11-10)",
+        "Claude Fable 5.2"
+      ],
+      "maturity": "Claude Code releases and Fable 5.2 are available. Gateway-specific retention statements apply to the Vercel AI Gateway route and should not be generalized to every provider route.",
+      "verified_facts": [
+        "Claude Code v2.1.321 adds Claude Fable 5.2 as the default Fable model, with a 1M-token context window.",
+        "The same release fixes MCP OAuth requests leaking refresh-token-like secrets to another host after a server redirect.",
+        "It fixes cases where read-only Bash commands or writes outside the expected sandbox/path could avoid a permission prompt, and fixes protected-file checks for cp and mv destinations.",
+        "Claude Code v2.1.322 adds Fable fast mode on Vertex in global, US, and EU regions, with standard-speed fallback when Vertex refuses fast mode.",
+        "Anthropic describes Fable 5.2 as the safeguarded generally available variant of the same underlying model family as Mythos 5.2.",
+        "Vercel AI Gateway documents that Fable 5.2 does not support Zero Data Retention on that route and that prompts and completions are retained for 30 days."
+      ],
+      "analysis": "The most actionable development is the security regression surface, not simply the new model. OAuth redirect handling and canonical path checks are direct test cases for any MCP gateway or coding-agent sandbox. Fable 5.2 is a strong candidate for long-horizon coding evaluations, but the retention constraint may disqualify it for sensitive repositories.",
+      "corleon_relevance": "high",
+      "repository_evidence": [
+        "Corleon has src/mcp/policy.js but no verified MCP OAuth implementation was found in the inspected paths.",
+        "The root package currently uses @openai/agents and Prisma 6.16; no Claude Code runtime dependency is declared."
+      ],
+      "recommendation": "Add regression tests for OAuth issuer/host binding across redirects, protected destination paths for cp/mv equivalents, and read-only command execution. Evaluate Fable 5.2 only against a data-classified test repository and compare verified task success, latency, and total cost.",
+      "security_considerations": [
+        "Never forward OAuth authorization codes, access tokens, or refresh tokens to a different host after redirect without strict issuer/resource validation.",
+        "Canonicalize the final destination path and resolve symlinks before permission checks.",
+        "Do not send confidential source code through a route without approved retention terms; Vercel AI Gateway explicitly lacks ZDR for this model.",
+        "Model safety classifiers can refuse some requests; fallback behavior must be observable and policy-compatible."
+      ],
+      "estimated_effort": "2-4 engineering days for security regression tests; 1-2 additional days for a model evaluation",
+      "acceptance_criteria": [
+        "An OAuth redirect to an untrusted host receives no bearer token or refresh token.",
+        "Protected files remain protected through copy/move operations and path normalization.",
+        "Read-only commands outside the sandbox are blocked or require explicit approval.",
+        "Fable evaluation records data route, retention setting, pass rate, latency, and cost."
+      ],
+      "deduplication_result": "new",
+      "deduplication_fingerprint": "ace31f3b0bb1b6f07ef93a70e921fede0960c848287ce911677409ebd0b28f56",
+      "normalized_title_fingerprint": "727e9fdbfb8545e53c856edd7abdb5f4883d27c21493eb8768fe44296b3259a7"
+    },
+    {
+      "id": "K-757A175D1806",
+      "slug": "muse-ember-ai-gateway-subagent-model",
+      "title": "Muse Ember becomes available on Vercel AI Gateway for bounded multimodal agent subtasks",
+      "status": "verified",
+      "priority": "P2",
+      "topics": [
+        "model-routing",
+        "subagents",
+        "multimodal",
+        "ai-gateway",
+        "cost-evaluation"
+      ],
+      "canonical_url": "https://vercel.com/changelog/muse-ember-now-available-on-ai-gateway",
+      "source_urls": [
+        "https://vercel.com/changelog/muse-ember-now-available-on-ai-gateway"
+      ],
+      "source_publication_date": "2026-11-09",
+      "checked_date": "2026-11-10",
+      "relevant_versions": [
+        "AI Gateway model ID meta/muse-ember"
+      ],
+      "maturity": "Available through Vercel AI Gateway; no independent benchmark or price comparison was included in the announcement.",
+      "verified_facts": [
+        "Muse Ember is described as a lightweight reasoning model for repeated bounded tasks such as coding subtasks, tool calls, and document analysis.",
+        "The model accepts text, image, and video input with a stated 1M-token context window.",
+        "Tool calling is supported and reasoning effort is adjustable from minimal to max.",
+        "The Vercel AI Gateway model identifier is meta/muse-ember."
+      ],
+      "analysis": "A bounded-task model may be useful for high-volume subagents, but a large context window alone does not establish code quality, cost efficiency, or safe tool use. Corleon should evaluate it on narrow tasks with deterministic verification.",
+      "corleon_relevance": "medium-high",
+      "repository_evidence": [
+        "The current architecture includes multiple agent roles but no measured model-routing policy in the inspected documentation."
+      ],
+      "recommendation": "Add Muse Ember as an evaluation-only provider candidate for summarization, small helper functions, and document triage. Route no privileged tool or final code change to it until task-level evals show acceptable verified quality.",
+      "security_considerations": [
+        "Apply the same tool allowlist and tenant boundary as every other model.",
+        "Confirm provider and gateway retention settings before sending repository content.",
+        "Do not treat multimodal input or long context as permission to ingest unrelated files."
+      ],
+      "estimated_effort": "1-2 engineering days for a bounded benchmark",
+      "acceptance_criteria": [
+        "Evaluate at least 30 bounded tasks across three runs each.",
+        "Compare verified pass rate, latency, token use, and cost per accepted result against the current subagent baseline.",
+        "No direct write-capable tool is granted during the first evaluation."
+      ],
+      "deduplication_result": "new",
+      "deduplication_fingerprint": "757a175d1806fffbd1f797149b2075aac9922d05028858175e402bb4a85723ee",
+      "normalized_title_fingerprint": "1abaecaa4debebb27a2565fce4d7150e9b896b5f3fc731a7eb82b64c30c99b61"
+    },
+    {
+      "id": "K-57756F89CB81",
+      "slug": "mcp-2026-07-28-stateless-spec-and-sdk-skills",
+      "title": "MCP 2026-07-28 makes Streamable HTTP stateless; TypeScript SDK 2.4.0 adds Skills over MCP",
+      "status": "verified",
+      "priority": "P1",
+      "topics": [
+        "mcp",
+        "protocol-versioning",
+        "typescript-sdk",
+        "skills-registry",
+        "oauth",
+        "caching"
+      ],
+      "canonical_url": "https://github.com/modelcontextprotocol/modelcontextprotocol/releases/tag/2026-07-28",
+      "source_urls": [
+        "https://github.com/modelcontextprotocol/modelcontextprotocol/releases/tag/2026-07-28",
+        "https://github.com/modelcontextprotocol/modelcontextprotocol/blob/main/docs/specification/2026-07-28/changelog.mdx",
+        "https://github.com/modelcontextprotocol/typescript-sdk/releases/tag/v2.4.0",
+        "https://github.com/modelcontextprotocol/typescript-sdk"
+      ],
+      "source_publication_date": "2026-07-28",
+      "checked_date": "2026-11-10",
+      "relevant_versions": [
+        "MCP specification 2026-07-28",
+        "MCP TypeScript SDK v2.4.0 released 2026-10-23",
+        "@modelcontextprotocol/server 2.4.0",
+        "@modelcontextprotocol/client 2.4.0"
+      ],
+      "maturity": "The 2026-07-28 protocol revision and TypeScript SDK v2 are stable. In SDK 2.4.0, SkillsClient is available, while SkillsExtension.attach is explicitly experimental.",
+      "verified_facts": [
+        "The 2026-07-28 revision removes protocol-level Streamable HTTP sessions and the Mcp-Session-Id header, and removes the initialize/initialized handshake.",
+        "Requests carry protocol version and client capabilities in metadata; servers must implement server/discover.",
+        "The revision adds subscriptions/listen and removes SSE Last-Event-ID resumability; interrupted in-flight requests must be reissued with new request IDs.",
+        "Multi Round-Trip Requests replace the previous server-initiated request pattern for several interactions, and tasks move to an official extension.",
+        "Cacheable list/read results carry ttlMs and cacheScope; the specification also tightens OAuth issuer validation and credential binding to the issuing authorization server.",
+        "TypeScript SDK v2.4.0 adds Skills over MCP: SkillsClient can list, read, and verify skill digests; server-side SkillsExtension.attach remains experimental.",
+        "The TypeScript SDK repository states that v1.x continues to receive bug fixes and security updates for at least six months after v2 shipped."
+      ],
+      "analysis": "Corleon's existing policy file is not a protocol implementation. The new spec is a breaking architectural change for any future HTTP MCP gateway, especially if it assumes a connection-scoped session or resumable SSE stream. Skills over MCP provides a concrete way to distribute and verify skill artifacts, but the experimental server attachment API should be isolated behind an adapter.",
+      "corleon_relevance": "high",
+      "repository_evidence": [
+        "src/mcp/policy.js is the only file listed under src/mcp in the inspected main branch.",
+        "package.json does not declare @modelcontextprotocol/* packages.",
+        "docs/openai-developers-architecture.md describes a least-privilege MCP gateway and approval-gated repository/database writes."
+      ],
+      "recommendation": "Design a version-aware MCP adapter before adopting SDK v2. Support explicit protocol discovery, request-scoped capabilities, opaque server-minted state handles where needed, and cache scope enforcement. Evaluate SkillsClient digest verification; keep experimental server attachment isolated and non-production until stable.",
+      "security_considerations": [
+        "Bind OAuth credentials to the issuing authorization server and validate issuer/resource on redirects.",
+        "Do not reuse credentials across authorization servers.",
+        "Treat cacheScope=private as non-shareable across tenants.",
+        "Do not depend on SSE resumability for correctness; reissue idempotent requests with fresh request IDs.",
+        "Keep tool authorization deterministic and separate from model-provided metadata."
+      ],
+      "estimated_effort": "4-6 engineering days for a compatibility spike and contract tests",
+      "acceptance_criteria": [
+        "Contract tests cover both 2025-11-25 and 2026-07-28 protocol behavior.",
+        "A stateless client can discover server capabilities and make an authorized tool call without a session ID.",
+        "A skill digest mismatch is rejected and recorded.",
+        "Private MCP results are never shared across tenants.",
+        "OAuth redirect tests prove credentials cannot cross issuer boundaries."
+      ],
+      "deduplication_result": "new",
+      "deduplication_fingerprint": "57756f89cb81b4500ca041d2db854ec0bdb34159906d0e5db1b1ca5e90296029",
+      "normalized_title_fingerprint": "b5bf84d9773c2ab0b1eda046bc571ec53b75a67445c15dd2df3154e48d31ce14"
+    },
+    {
+      "id": "K-1CAC63A3C060",
+      "slug": "pnpm-12-18-agent-skill-approvals",
+      "title": "pnpm 12.18.0 adds per-skill approval and explicit agent-directory linking",
+      "status": "verified",
+      "priority": "P1",
+      "topics": [
+        "pnpm",
+        "monorepo",
+        "agent-skills",
+        "supply-chain-security",
+        "workspace"
+      ],
+      "canonical_url": "https://pnpm.io/blog/releases/12.18.0",
+      "source_urls": [
+        "https://pnpm.io/blog/releases/12.18.0"
+      ],
+      "source_publication_date": "2026-11-05",
+      "checked_date": "2026-11-10",
+      "relevant_versions": [
+        "pnpm 12.18.0",
+        "Corleon currently pins pnpm 12.4.0"
+      ],
+      "maturity": "Stable pnpm release.",
+      "verified_facts": [
+        "pnpm 12.18.0 adds per-skill approval when a dependency package ships agent skills.",
+        "pnpm approve can record the selected skills per package under permissions.<package>.skills and the selected agent directories under skills.dirs.",
+        "Nested skills up to three directory levels below skills/ can be linked.",
+        "Skill name collisions are resolved with a package-qualified prefix rather than failing installation.",
+        "The release also adds pnpm store add for offline installation from downloaded package tarballs."
+      ],
+      "analysis": "This creates a package-manager-level approval boundary for agent skills. It is more precise than trusting every skill shipped by an installed dependency and is relevant to Corleon's planned skills registry and pnpm workspace.",
+      "corleon_relevance": "high",
+      "repository_evidence": [
+        "Root package.json and apps/web/package.json pin pnpm@12.4.0.",
+        "The repository has a codex/skills directory, but the inspected manifests do not yet use pnpm-managed package skills."
+      ],
+      "recommendation": "Evaluate pnpm 12.18.0 in a separate dependency PR. If skills are distributed through workspace packages, approve only reviewed skill names and explicitly select the target agent directories. Keep the current Codex skill directory until a tested mapping is defined.",
+      "security_considerations": [
+        "Do not blanket-approve all skills from a package.",
+        "Pin and review the package source and transitive dependencies before approving a skill.",
+        "Treat skill instructions as untrusted input and keep them separate from deterministic policy.",
+        "Use frozen-lockfile CI to make skill/package resolution reproducible."
+      ],
+      "estimated_effort": "1-2 engineering days for a workspace proof of concept",
+      "acceptance_criteria": [
+        "A fixture package with two skills can have only one approved and linked.",
+        "An unapproved skill is not linked into an agent directory.",
+        "The chosen skill set is reproducible in a clean frozen-lockfile install.",
+        "Conflicting skill names resolve deterministically."
+      ],
+      "deduplication_result": "new",
+      "deduplication_fingerprint": "1cac63a3c060451d1d746b21c95f75493a4b4ed1156dbdef9fe369b255d57534",
+      "normalized_title_fingerprint": "1f55675b92d3a0c2236c43edc895a0472311bd825f4202d1707a9e60a0118c97"
+    },
+    {
+      "id": "K-979601F2CA1A",
+      "slug": "prisma-chatgpt-plugin-orm8-rc30",
+      "title": "Prisma launches its ChatGPT/Codex plugin while Prisma ORM 8 remains release-candidate software",
+      "status": "verified",
+      "priority": "P2",
+      "topics": [
+        "prisma",
+        "postgresql",
+        "chatgpt",
+        "codex",
+        "database-workflows",
+        "environment-isolation"
+      ],
+      "canonical_url": "https://www.prisma.io/changelog/2026-11-04",
+      "source_urls": [
+        "https://www.prisma.io/changelog/2026-11-04",
+        "https://www.prisma.io/docs/orm/release-status"
+      ],
+      "source_publication_date": "2026-11-04",
+      "checked_date": "2026-11-10",
+      "relevant_versions": [
+        "Prisma ORM 8.0.0-rc.30 released 2026-11-03",
+        "@prisma/composer-prisma-cloud 0.36.0",
+        "Corleon currently declares Prisma 6.16.x"
+      ],
+      "maturity": "The ChatGPT plugin is available. Prisma ORM 8.0.0-rc.30 is explicitly a release candidate, not a stable production upgrade.",
+      "verified_facts": [
+        "The official Prisma plugin connects ChatGPT and Codex to Prisma ORM, Prisma Postgres, and Prisma Compute.",
+        "Prisma ORM 8.0.0-rc.30 was released on November 3, 2026 and remains release-candidate software.",
+        "In this RC, Composer environments use --environment instead of --stage; the old flag fails.",
+        "The Composer CLI and cloud extension must be kept on matching versions, and Prisma's Console-generated workflow still uses --stage for non-default branches at the time of the changelog.",
+        "For Prisma dev environments, required missing secrets now cause startup to stop; optional secrets remain unset rather than receiving placeholder values."
+      ],
+      "analysis": "The plugin is a useful ChatGPT/Codex workflow integration, but it is not a reason to move Corleon's existing Vercel-hosted PostgreSQL architecture to Prisma Compute. The RC command and extension changes make an unplanned Prisma 8 upgrade risky, especially for preview/staging workflows.",
+      "corleon_relevance": "medium",
+      "repository_evidence": [
+        "Root package.json declares prisma and @prisma/client at ^6.16.0.",
+        "The existing architecture documentation targets Vercel and PostgreSQL rather than Prisma Compute."
+      ],
+      "recommendation": "Keep Prisma 6.16.x unchanged in the current architecture. Evaluate the Prisma plugin as a developer-only workflow, and run any Prisma 8 RC experiments in a disposable environment with no production database or credentials.",
+      "security_considerations": [
+        "Do not let a plugin provision or deploy production resources without explicit approval.",
+        "Keep development-only secrets out of configuration files that a deploy command loads.",
+        "Use separate dev/test/staging environments and never assume an unset secret is safe to replace with a placeholder.",
+        "Do not use prisma@latest in CI while Prisma 8 remains an RC."
+      ],
+      "estimated_effort": "1 engineering day for a non-production plugin and migration-impact review",
+      "acceptance_criteria": [
+        "No production database, schema, or deployment is modified during evaluation.",
+        "The current Prisma 6.16 lockfile and build remain unchanged.",
+        "Any Prisma 8 test uses a disposable database and records CLI/extension compatibility."
+      ],
+      "deduplication_result": "new",
+      "deduplication_fingerprint": "979601f2ca1a60ca09f80ba0852e35d009dc984a1ad6c92f80d73ccf844b6bb5",
+      "normalized_title_fingerprint": "9c2727d2a3e2d1643f6d31f3756167493dbd64f5481cac8d4974b1fd1c264f52"
+    },
+    {
+      "id": "K-04146EFF0A70",
+      "slug": "github-actions-lockfiles-and-pull-request-target-policy",
+      "title": "GitHub Actions workflow lockfiles are GA; pull_request_target becomes blocked by default in public repositories",
+      "status": "verified",
+      "priority": "P1",
+      "topics": [
+        "github-actions",
+        "supply-chain-security",
+        "ci",
+        "untrusted-pull-requests",
+        "policy"
+      ],
+      "canonical_url": "https://github.blog/changelog/2026-10-28-github-actions-workflow-lockfiles-are-generally-available/",
+      "source_urls": [
+        "https://github.blog/changelog/2026-10-28-github-actions-workflow-lockfiles-are-generally-available/",
+        "https://github.blog/changelog/2026-11-02-pull_request_target-blocked-by-default-december-2/",
+        "https://docs.github.com/en/actions"
+      ],
+      "source_publication_date": "2026-10-28",
+      "checked_date": "2026-11-10",
+      "relevant_versions": [
+        "GitHub Actions workflow lockfiles GA 2026-10-28",
+        "pull_request_target default policy enforcement 2026-12-02"
+      ],
+      "maturity": "Workflow lockfiles are generally available on GitHub Free, Team, and Enterprise Cloud. The pull_request_target rule is in evaluate mode until the announced enforcement date, with scheduled brownouts.",
+      "verified_facts": [
+        "The gh actions-lock extension generates .github/workflows/actions.lock with exact commits for actions and their transitive dependencies.",
+        "Dependabot can update the matching lockfile entry in the same pull request as an action version update; CI can check for stale lockfiles.",
+        "GitHub explicitly warns that lockfiles pin dependencies but do not determine whether a dependency is safe.",
+        "Starting December 2, 2026, pull_request_target events are blocked by default in public repositories unless an applicable Actions event policy explicitly allows them.",
+        "GitHub scheduled brownouts for November 9 and November 16, 2026, 16:00-18:00 UTC.",
+        "The inspected Corleon workflows use push and pull_request events and do not use pull_request_target."
+      ],
+      "analysis": "Corleon's workflows currently reference actions by mutable major tags and have no actions.lock. Lockfiles offer a practical supply-chain hardening step. The pull_request_target change does not currently break the inspected workflows, but it is a useful guardrail for future automation that handles fork pull requests.",
+      "corleon_relevance": "high",
+      "repository_evidence": [
+        "The inspected .github/workflows/ci.yml uses actions/checkout@v4, pnpm/action-setup@v4, actions/setup-node@v4, and upload/download-artifact@v4.",
+        "The inspected .github/workflows directory contains ci.yml and notion-sync.yml; neither declares pull_request_target.",
+        "No .github/workflows/actions.lock was present in the inspected repository tree."
+      ],
+      "recommendation": "Open a separate security-focused PR to generate and review actions.lock, add a stale-lockfile CI check, and pin all transitive action dependencies. Keep pull_request for untrusted PR validation; do not add pull_request_target unless a narrow, reviewed workflow genuinely requires base-repository secrets.",
+      "security_considerations": [
+        "Review action source and transitive dependencies before locking them; pinning is not a safety certification.",
+        "Keep workflow permissions minimal and persist-credentials false where write access is unnecessary.",
+        "Never execute fork-controlled code in a pull_request_target job with secrets or write tokens.",
+        "If a future workflow needs the event, scope the policy exception to the exact workflow and avoid checking out or executing untrusted head code."
+      ],
+      "estimated_effort": "1-2 engineering days for lockfile adoption and CI verification",
+      "acceptance_criteria": [
+        "Every third-party action and transitive dependency in the workflows is represented in actions.lock.",
+        "A CI check fails when the lockfile is stale.",
+        "All current PR validation continues to use pull_request, not pull_request_target.",
+        "Workflow permissions remain least-privilege."
+      ],
+      "deduplication_result": "new",
+      "deduplication_fingerprint": "04146eff0a70f84d802afbec07cfcc10365056698027cc46905603e575fea7d6",
+      "normalized_title_fingerprint": "e9c775d0461e53597b59049cb2ec079050326a94b6bcd6f856e7e3b43e1ebbbc"
+    },
+    {
+      "id": "K-130D9BC72A1A",
+      "slug": "nodejs-24-november-11-security-release-watch",
+      "title": "Node.js announces a November 11 security release with HIGH severity fixes on the 24.x line",
+      "status": "watch",
+      "priority": "P0",
+      "topics": [
+        "nodejs",
+        "security",
+        "runtime",
+        "ci",
+        "release-management"
+      ],
+      "canonical_url": "https://nodejs.org/en/blog/vulnerability/november-2026-security-releases",
+      "source_urls": [
+        "https://nodejs.org/en/blog/vulnerability/november-2026-security-releases",
+        "https://nodejs.org/en/blog/release/v24.22.2"
+      ],
+      "source_publication_date": "2026-11-03",
+      "checked_date": "2026-11-10",
+      "relevant_versions": [
+        "Node.js 24.x LTS",
+        "Node.js 24.22.2 LTS published 2026-10-28",
+        "scheduled security release 2026-11-11"
+      ],
+      "maturity": "Announcement only as of 2026-11-10. The patched release versions and CVE details were not yet published in the checked announcement.",
+      "verified_facts": [
+        "The Node.js project announced new releases on or shortly after November 11, 2026 for 26.x, 24.x, and 22.x.",
+        "The announcement states that the highest severity issue fixed on each of those release lines is HIGH.",
+        "Node.js 24.22.2 LTS was published on October 28, 2026 and includes V8 backports plus a stream async-context fix.",
+        "Corleon's root package allows Node >=22 <25 and the inspected CI workflow uses Node 24."
+      ],
+      "analysis": "This is a time-sensitive maintenance watch, not a claim about a specific vulnerability. Corleon should wait for the official patched 24.x release, then update the runtime patch and verify CI and Vercel compatibility promptly.",
+      "corleon_relevance": "high",
+      "repository_evidence": [
+        "package.json declares engines.node as >=22 <25.",
+        ".github/workflows/ci.yml configures node-version: 24."
+      ],
+      "recommendation": "On the next run after November 11, verify the actual Node.js 24.x security release and CVEs, then recommend a patch-level runtime update in a separate change. Do not guess the CVE, affected component, or patched version before publication.",
+      "security_considerations": [
+        "Do not deploy a speculative or unofficial Node binary.",
+        "Verify release signatures/checksums and official release notes.",
+        "Run the complete CI suite and a staging smoke test after the patch update.",
+        "Do not change production runtime configuration without explicit approval."
+      ],
+      "estimated_effort": "Less than one engineering day after the official patched release is published",
+      "acceptance_criteria": [
+        "The official 24.x patched version and CVEs are recorded.",
+        "CI reports the patched Node version explicitly.",
+        "Build, tests, typecheck, and staging smoke tests pass before any production promotion."
+      ],
+      "deduplication_result": "new",
+      "deduplication_fingerprint": "130d9bc72a1a0f48649a0bf11fa18461afd053fe8c4b029d9153099e507309e4",
+      "normalized_title_fingerprint": "c7c4900a0813652e410d8073d04c421a01bd100b466b87b238436d46846a2279"
+    }
+  ]
+}
