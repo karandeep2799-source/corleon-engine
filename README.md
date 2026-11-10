@@ -65,7 +65,7 @@ config/mcp/    Committed, conservative MCP server configurations
 
 Corleon includes a pinned local-development integration for Google's Chrome DevTools MCP plus a hardened, per-task container image and an isolated-network staging topology. The worker runs as a non-root user with a read-only root filesystem, temporary profile, resource limits, no Linux capabilities, and outbound traffic routed through a private-network proxy.
 
-See [Chrome DevTools MCP integration](docs/integrations/chrome-devtools-mcp.md) and [browser worker operations](services/browser-worker/README.md). The worker image is not automatically deployed. A tenant-aware Corleon gateway/orchestrator, production VPC egress policy, durable approvals/audit storage, and actual hosting integration remain release gates. Do not expose the worker or Chrome DevTools Protocol directly.
+See [Chrome DevTools MCP integration](docs/integrations/chrome-devtools-mcp.md) and [browser worker operations](services/browser-worker/README.md). The repository includes a policy-enforcing gateway core, but the worker image is not automatically deployed. Production still requires platform-specific authentication/session, isolated worker provisioning, atomic approval and durable audit adapters, VPC egress policy, and hosting integration. Do not expose the worker or Chrome DevTools Protocol directly.
 
 ## Release safety
 
