@@ -34,7 +34,7 @@ export async function POST(request: NextRequest) {
   if (typeof cardholderName !== "string" || cardholderName.trim().length < 2 || cardholderName.length > 120) return NextResponse.json({ error: "Enter the cardholder name as printed on the statement." }, { status: 400 });
   if (typeof password !== "string" || password.length > 256) return NextResponse.json({ error: "Invalid PDF password." }, { status: 400 });
   const upstream = new FormData();
-  upstream.set("statement", new Blob([bytes], { type: "application/pdf" }), "statement.pdf");
+  upstream.set("statement", new Blob([bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength) as ArrayBuffer], { type: "application/pdf" }), "statement.pdf");
   upstream.set("cardholderName", cardholderName.trim());
   upstream.set("pdfPassword", password);
   let response: Response;
