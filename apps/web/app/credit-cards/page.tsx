@@ -1,5 +1,6 @@
 "use client";
 import { useMemo, useState } from "react";
+import Link from "next/link";
 import { formatINR, summarize, transactionsToCsv, type Transaction } from "../../lib/finance-engine";
 
 export default function CreditCardsApp() {
@@ -27,7 +28,7 @@ export default function CreditCardsApp() {
     finally { setBusy(false); }
   }
   return <main className="finance-shell">
-    <nav className="finance-nav"><a href="/">← Corleon Engine</a><span>PRIVATE FINANCE WORKSPACE</span></nav>
+    <nav className="finance-nav"><Link href="/">← Corleon Engine</Link><span>PRIVATE FINANCE WORKSPACE</span></nav>
     <header className="finance-hero"><p className="finance-kicker">CORLEON · PERSONAL FINANCE</p><h1>Credit card clarity.</h1><p>Understand spending, refunds, rewards and monthly patterns from your own statements. Your PDFs are processed on request, not used to connect to your bank.</p></header>
     <section className="finance-panel">
       <h2>Import an HDFC statement</h2><p>PDF only · up to 15 MB · password is forwarded only to the configured parser and cleared from the form after success.</p>
