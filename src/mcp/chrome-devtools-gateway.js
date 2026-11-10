@@ -34,9 +34,10 @@ function rpcError(id, code, message) {
   return { jsonrpc: JSON_RPC_VERSION, id: id ?? null, error: { code, message } };
 }
 
-function toolError(message) {
+function toolError(id, message) {
   return {
     jsonrpc: JSON_RPC_VERSION,
+    id,
     result: {
       content: [{ type: "text", text: message }],
       isError: true,
@@ -186,7 +187,7 @@ export function createChromeDevToolsGateway({
         actionDigest: digest,
         policyReason: decision.reason ?? "Denied by policy.",
       }).catch(() => {});
-      return toolError("This browser tool is disabled by Corleon security policy.");
+      return toolError(message.id, "This browser tool is disabled by Corleon security policy.");
     }
 
     if (decision.requiresApproval) {
@@ -212,7 +213,7 @@ export function createChromeDevToolsGateway({
           actionDigest: digest,
           policyReason: "A valid, unexpired, single-use approval was not supplied.",
         }).catch(() => {});
-        return toolError("This browser action requires a valid, single-use Corleon approval.");
+        return toolError(message.id, "This browser action requires a valid, single-use Corleon approval.");
       }
     }
 
@@ -225,7 +226,7 @@ export function createChromeDevToolsGateway({
         approvalRequired: decision.requiresApproval,
       });
     } catch {
-      return toolError("The browser action was blocked because its audit record could not be persisted.");
+      return toolError(message.id, "The browser action was blocked because its audit record could not be persisted.");
     }
 
     // The approval token is gateway-only metadata and is never forwarded upstream.
@@ -240,7 +241,7 @@ export function createChromeDevToolsGateway({
         toolName,
         actionDigest: digest,
       });
-      return validResult ? result : toolError("Browser worker returned an invalid or oversized response.");
+      return validResult ? result : toolError(message.id, "Browser worker returned an invalid or oversized response.");
     } catch {
       await writeAudit({
         action: "browser.tool.failed",
@@ -248,7 +249,7 @@ export function createChromeDevToolsGateway({
         toolName,
         actionDigest: digest,
       }).catch(() => {});
-      return toolError("The browser worker could not complete this action.");
+      return toolError(message.id, "The browser worker could not complete this action.");
     }
   }
 
