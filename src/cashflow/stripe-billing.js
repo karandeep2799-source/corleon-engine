@@ -122,6 +122,7 @@ export async function createCorleonCheckout(input) {
       corleonPlatform: 'corleon',
     },
   }, { idempotencyKey: customerKey });
+  await stripe().customers.update(customer.id, { email, ...(name ? { name } : {}) });
 
   await prisma.customer.upsert({
     where: { organizationId_externalId: { organizationId, externalId: customer.id } },
