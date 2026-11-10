@@ -1,5 +1,6 @@
 # Corleon Engine Codex project configuration
 # Keep credentials in the Codex/OpenAI connection, never in source control.
+# The active project-scoped Codex config is .codex/config.toml.
 
 [project]
 name = "corleon-engine"
@@ -31,5 +32,25 @@ args = [
   "--no-update-checks",
   "--no-performance-crux"
 ]
-startup_timeout_ms = 20000
+startup_timeout_sec = 20
 tool_timeout_sec = 120
+default_tools_approval_mode = "prompt"
+enabled_tools = [
+  "list_pages",
+  "take_snapshot",
+  "take_screenshot",
+  "list_console_messages",
+  "get_console_message",
+  "get_css_styles",
+  "list_network_requests",
+  "get_network_request",
+  "performance_analyze_insight",
+  "performance_start_trace",
+  "performance_stop_trace",
+  "lighthouse_audit",
+  "navigate_page",
+  "new_page",
+  "close_page",
+  "select_page",
+  "wait_for"
+]
