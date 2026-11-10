@@ -26,9 +26,12 @@ docker compose -f docker-compose.browser-worker.yml build
 ```
 
 The worker speaks MCP over container stdin/stdout. Use it only under a trusted
-Corleon gateway that owns the process stdin/stdout pipes. The compose file is a
-local/staging topology reference; it does not implement tenant authentication,
-session orchestration, approvals, durable audit storage or a public MCP endpoint.
+Corleon gateway that owns the process stdin/stdout pipes. The repository provides
+a policy-enforcing gateway core in `src/mcp/chrome-devtools-gateway.js`, but the
+compose topology remains a local/staging reference; it does not implement tenant
+authentication, session orchestration, approval storage, durable audit storage or
+a public MCP endpoint. A trusted hosting adapter must create the gateway with
+server-derived identity and a fresh worker for each task.
 
 ## Production orchestrator requirements
 
