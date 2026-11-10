@@ -1,0 +1,4 @@
+import { NextResponse } from 'next/server';
+const NETWORKS=[{chainId:11155111,name:'Ethereum Sepolia',rpcConfigured:Boolean(process.env.SEPOLIA_RPC_URL),mode:'testnet'},{chainId:84532,name:'Base Sepolia',rpcConfigured:Boolean(process.env.BASE_SEPOLIA_RPC_URL),mode:'testnet'}] as const;
+export const dynamic='force-dynamic';
+export async function GET(){return NextResponse.json({product:'Corleon Swap',environment:'testnet',executionEnabled:false,liveNetworksEnabled:false,networks:NETWORKS,integrations:{uniswap:{enabled:false,reason:'Requires reviewed chain-specific router configuration and API credentials.'},corleonAmm:{enabled:false,reason:'Contracts must be audited and deployed to testnet before activation.'}},safety:['No transaction signing endpoint is exposed.','No private keys are stored by this service.','Mainnet execution is disabled.']},{headers:{'Cache-Control':'no-store'}});}

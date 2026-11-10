@@ -12,7 +12,7 @@ export default function Home() {
     <main className="shell">
       <nav className="nav">
         <strong>Corleon Engine</strong>
-        <a href="/api/health">API health</a>
+        <div style={{display:"flex",gap:18}}><a href="/swap">Corleon Swap</a><a href="/api/health">API health</a></div>
       </nav>
 
       <section className="hero">
