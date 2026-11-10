@@ -176,7 +176,7 @@ Copy the endpoint's signing secret into `STRIPE_WEBHOOK_SECRET` in the matching 
 
 The current integration collects billing addresses and can collect customer tax IDs, but it does not enable `automatic_tax`. Stripe Tax only calculates and collects tax where the business has an active registration recorded in Stripe. Confirm GST registration and applicable tax treatment with a qualified tax advisor before enabling automatic tax. Recording a registration in Stripe does not register the business with the tax authority. INR pricing and Stripe payment-method availability also depend on the merchant account's country, capabilities, and the payment method's eligibility.
 
-## Remaining inputs before sandbox end-to-end testing
+## Current account eligibility blocker\n\nThe connected `kar sandbox` account currently reports country `CH`, default currency `CHF`, `charges_enabled=false`, `payouts_enabled=false`, and `details_submitted=false`. The implementation enforces INR Prices, but this account cannot validate INR charges or payouts in its current state. Do not create test Prices or claim INR payment readiness against this account. Connect an India-registered Stripe merchant account/sandbox with the appropriate payment capabilities before INR end-to-end testing.\n\n## Remaining inputs before sandbox end-to-end testing
 
 - Add a sandbox restricted API key to Vercel.
 - Generate a high-entropy `CORLEON_BILLING_API_TOKEN` and add it to Vercel.
