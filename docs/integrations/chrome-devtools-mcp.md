@@ -1,58 +1,65 @@
 # Chrome DevTools MCP integration
 
-**Status:** Local development integration; production worker not enabled  
+**Status:** Local integration + hardened per-task worker packaging; production activation gated  
 **Upstream:** https://github.com/ChromeDevTools/chrome-devtools-mcp  
 **Upstream package:** `chrome-devtools-mcp@1.12.0`  
 **Reviewed:** 2026-11-10
 
 ## Purpose
 
-Chrome DevTools MCP gives Corleon agents browser diagnostics and automation through the official Chrome DevTools Model Context Protocol server. Corleon consumes it as an external stdio MCP server; it does not embed Chromium in Next.js or run a browser inside a Vercel Function.
+Chrome DevTools MCP gives Corleon agents browser diagnostics and automation through the official Chrome DevTools Model Context Protocol server. Corleon consumes it as an external stdio MCP server; Chromium does not run inside Next.js or a Vercel Function.
 
-The integration is intentionally split into:
+The implementation is split into:
 
-- `config/mcp/chrome-devtools-server.json`: conservative upstream server configuration.
-- `src/mcp/chrome-devtools.js`: pinned server definition and mapping from upstream tool names to Corleon policy IDs.
+- `config/mcp/chrome-devtools-server.json`: conservative local developer profile.
+- `config/mcp/chrome-devtools-worker.json`: container profile with the egress proxy.
+- `src/mcp/chrome-devtools.js`: pinned server definition and upstream-tool to Corleon-policy mapping.
 - `src/mcp/policy.js`: default-deny/approval policy.
-- `apps/web/lib/mcp/chrome-devtools-policy.test.ts`: policy and configuration regression tests.
+- `services/browser-worker/`: non-root, read-only worker image.
+- `services/egress-proxy/`: outbound proxy with private/link-local destination ACLs.
+- `docker-compose.browser-worker.yml`: local/staging network topology reference.
+- `apps/web/lib/mcp/chrome-devtools-policy.test.ts`: policy regression tests.
 
-## Enabled capabilities
+## Capabilities and defaults
 
-The default profile enables navigation, performance, network and debugging categories, with browser input disabled. It supports page discovery, snapshots, screenshots, console/network inspection and performance diagnostics.
+The local profile enables navigation, performance, network and debugging categories, with browser input disabled. It supports page discovery, snapshots, screenshots, console/network inspection and performance diagnostics.
 
-The default profile disables:
+Both profiles disable click/fill/keyboard/drag input, arbitrary JavaScript evaluation, experimental DevTools target access, coordinate-based vision, third-party page tools, WebMCP execution, extensions, PWA mutations, WebAuthn and heap-snapshot inspection. Network headers are redacted; insecure TLS certificates are not accepted.
 
-- Click, fill, keyboard, drag and other input tools.
-- Arbitrary JavaScript evaluation.
-- Experimental DevTools target access and coordinate-based vision.
-- Third-party page tools and WebMCP execution.
-- Browser extensions, PWA mutations, WebAuthn and heap-snapshot inspection.
-- Insecure TLS certificate acceptance.
-
-Network headers are redacted. Browser sessions are headless and isolated, and page IDs are required for page-scoped tools.
+The container profile starts Chromium headlessly with a temporary profile, requires page IDs for page-scoped calls, and routes Chrome traffic through `egress-proxy:3128`.
 
 ## Local setup
 
-Requirements: Node.js 22.12+ (Corleon uses Node.js 24), npm/npx, and a supported Google Chrome or Chrome for Testing installation.
+Requirements: Node.js 24, npm/npx, Docker Engine and the Docker Compose plugin.
 
-The repository Codex project configuration declares the pinned MCP server. From a trusted developer workstation:
+For a trusted developer workstation:
 
 ```bash
 npx --yes chrome-devtools-mcp@1.12.0 --config=config/mcp/chrome-devtools-server.json --no-javascript-evaluation --no-usage-statistics --no-update-checks --no-performance-crux
 ```
 
-The MCP client should launch this command using stdio transport. Do not expose the process over an unauthenticated HTTP endpoint.
+The MCP client launches this command over stdio. Do not expose the process over an unauthenticated HTTP endpoint.
 
-For local testing of `localhost`, create a separate developer-only config outside the committed default profile and explicitly remove the loopback block only for that trusted local test. Never relax metadata-service blocks or production egress controls.
+## Worker image and isolated network
+
+Build the worker and proxy images:
+
+```bash
+docker compose -f docker-compose.browser-worker.yml build
+```
+
+The worker container joins only the internal `browser-private` network. The proxy is the only service attached to both that network and the external egress bridge. Squid denies loopback, RFC1918, link-local, carrier-grade NAT, benchmark, multicast, reserved and IPv6 local destinations. The worker has no published ports, no Linux capabilities, a read-only root filesystem, non-root execution, bounded CPU/memory/PIDs and ephemeral writable mounts.
+
+The compose file is a local/staging reference, not a production orchestrator. Run one worker container per tenant/task, bind its stdio only to the authenticated Corleon gateway, and destroy the container/profile on completion, timeout, disconnect or cancellation.
+
+**Important:** Squid and Chrome URL patterns are defense-in-depth, not a complete SSRF boundary. Production must enforce equivalent or stricter cloud VPC/firewall egress rules after DNS resolution, including IPv4/IPv6, redirects, DNS rebinding, CONNECT tunnels, metadata endpoints and internal DNS zones. Pin production images by digest, scan them, and patch Chromium promptly.
 
 ## Corleon policy mapping
 
-Upstream tool names are mapped to stable Corleon policy IDs in `src/mcp/chrome-devtools.js`.
-
 | Tool class | Corleon policy | Default |
 |---|---|---|
-| Page list, snapshots, screenshots | `browser.*.read` | Allow |
-| Console, styles, network, performance diagnostics | `browser.*.read` | Allow |
+| Page list, snapshots, screenshots | `browser.*.read` | Allow in non-production |
+| Console, styles, network, performance diagnostics | `browser.*.read` | Allow in non-production |
 | Navigation and page lifecycle | `browser.navigation.navigate` | Approval required |
 | Click, fill, keyboard and drag | `browser.input.interact` | Approval required |
 | Heap snapshots | `browser.memory.inspect` | Approval required |
@@ -61,38 +68,37 @@ Upstream tool names are mapped to stable Corleon policy IDs in `src/mcp/chrome-d
 | Extensions, third-party tools and WebMCP execution | `browser.*` | Deny |
 | Unknown upstream tool | `browser.unknown` | Deny |
 
-**Important:** the policy mapping is a Corleon authorization contract, not a security boundary when a developer connects directly to the upstream server. Production calls must pass through a Corleon-controlled MCP gateway that authenticates the actor, resolves tenant/session ownership, applies `authorizeChromeDevToolsTool`, enforces approval, and records audit receipts. Do not give production agents direct access to the upstream server.
+The policy mapping is not a security boundary if an agent can connect directly to the upstream server. Production calls must pass through a Corleon-controlled gateway that authenticates the actor, derives tenant/session ownership server-side, authorizes every tool invocation, validates approval, and records an audit receipt. Unknown upstream tools must remain denied.
 
-## Production architecture requirements
+## Production release gates
 
-Before enabling a browser worker:
+Before enabling customers:
 
-1. Run Chrome DevTools MCP in a separately deployed, isolated container/worker, never in a Next.js request handler or Vercel Function.
-2. Allocate one browser context per tenant/task; do not reuse profiles or cookies across users.
-3. Keep Chromium sandboxing enabled. Do not add `--no-sandbox`.
-4. Enforce network egress restrictions outside Chrome. Block loopback, RFC1918, link-local, cloud metadata, internal DNS zones and unapproved destinations, including redirects and subresources. The committed URL patterns are defense-in-depth only, not a complete SSRF control.
-5. Keep the MCP config and its parent directory read-only to the agent. The upstream documentation warns that writable config can change executable paths and URL restrictions.
-6. Put any authenticated browser credentials in a managed secret store; never place cookies, tokens, WebSocket endpoints or browser profiles in Git, prompts or audit events.
-7. Require a human approval bound to the exact target and action digest for navigation to sensitive destinations, input, account changes and transactions.
-8. Apply CPU, memory, process, request, response, navigation and wall-clock limits. Support cancellation and guaranteed context cleanup.
-9. Treat page content, console output and network response bodies as untrusted data; never interpret them as agent instructions.
-10. Record actor, tenant, session, tool, policy decision, approval ID, target origin, duration and outcome. Redact headers, bodies, secrets and personal data.
+1. Deploy the gateway/orchestrator separately from Vercel. It must create one isolated worker per task and proxy MCP messages over stdio.
+2. Authenticate users/services and derive tenant identity server-side; never trust a request-body tenant ID.
+3. Bind approvals to tenant, actor, session, exact tool, canonical target/action digest, expiry and one-time nonce. Reject replay and stale approvals.
+4. Persist append-only audit receipts with redaction. Never log cookies, authorization headers, page bodies, tokens or screenshots by default.
+5. Enforce per-tenant concurrency, request/response size, navigation, CPU, memory, wall-clock and output limits. Kill workers on timeout, disconnect, cancellation or revocation.
+6. Apply VPC-level egress controls and monitor blocked connection attempts.
+7. Keep Chromium sandboxing enabled; never add `--no-sandbox`. Keep worker config root-owned and read-only.
+8. Complete real-Chrome smoke, cross-tenant isolation, SSRF/DNS-rebinding, prompt-injection, cancellation, resource-exhaustion and incident-response tests.
+9. Pin deployment images by digest and maintain a Chromium patch/roll-forward process.
 
-The upstream server can inspect and modify browser data. Only connect it to browser sessions whose content the agent is authorized to access. Do not connect a personal browser profile or an already authenticated session by default.
+No browser worker, gateway endpoint, environment variable, database migration, Vercel setting or production deployment is enabled by this PR.
 
 ## Validation
 
-From the repository root:
-
 ```bash
+pnpm --filter @corleon/web lint
 pnpm --filter @corleon/web typecheck
 pnpm --filter @corleon/web test
-pnpm --filter @corleon/web lint
 pnpm --filter @corleon/web build
+docker compose -f docker-compose.browser-worker.yml config
+docker compose -f docker-compose.browser-worker.yml build
 ```
 
-The policy tests validate the local integration contract. A real-Chrome worker integration test, egress-control test, tenant-isolation test, cancellation test and gateway authorization contract test are still mandatory before production activation.
+The existing CI validates the web workspace. Container build, live egress, real-Chrome and gateway orchestration tests must run in a Docker-enabled release pipeline before production activation.
 
 ## Rollback
 
-Disable the `chrome-devtools` MCP server entry in the client/gateway configuration and stop the browser worker. No database migration or production environment variable is required by this local integration. Keep the policy mapping and audit records for incident review.
+Stop and remove the task worker container; revoke its gateway session; discard its temporary profile. Disable the `chrome-devtools` MCP server entry if rolling back local use. Preserve redacted audit receipts for incident review.
