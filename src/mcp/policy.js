@@ -12,8 +12,8 @@ export const TOOL_POLICY = Object.freeze({
   "secrets.read": "deny",
   "production.db": "deny",
 
-  // Chrome DevTools MCP: read-only diagnostics are permitted in a scoped
-  // browser session; navigation and interaction require explicit approval.
+  // Chrome DevTools MCP: diagnostics are permitted only in scoped,
+  // non-production sessions; actions require explicit approval.
   "browser.pages.read": "allow",
   "browser.snapshot.read": "allow",
   "browser.screenshot.read": "allow",
@@ -38,13 +38,17 @@ export const TOOL_POLICY = Object.freeze({
 });
 
 export function assertToolAllowed(tool, { production = false } = {}) {
-  const policy = TOOL_POLICY[tool] || "deny";
-  if (production && policy !== "approval_required") {
-    return { allowed: false, requiresApproval: true, reason: "Production access is explicitly gated." };
+  // Deny is absolute: production mode must never upgrade a denied capability
+  // into an approval-gated capability.
+  const policy = Object.hasOwn(TOOL_POLICY, tool) ? TOOL_POLICY[tool] : "deny";
+  if (policy === "deny") {
+    return { allowed: false, requiresApproval: false, reason: "Tool is not enabled by policy." };
   }
-  return {
-    allowed: policy === "allow",
-    requiresApproval: policy === "approval_required",
-    reason: policy === "deny" ? "Tool is not enabled by policy." : undefined,
-  };
+  if (policy === "approval_required") {
+    return { allowed: false, requiresApproval: true, reason: "Explicit approval is required." };
+  }
+  if (production) {
+    return { allowed: false, requiresApproval: true, reason: "Production access requires explicit approval." };
+  }
+  return { allowed: true, requiresApproval: false };
 }
