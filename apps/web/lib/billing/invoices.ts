@@ -59,6 +59,7 @@ export async function createInvoice(input: {
   description?: string;
   dueDays?: number;
   items: Array<{ description: string; amount: number }>;
+  idempotencyKey: string;
 }) {
   const stripe = getStripe();
   const customer = await prisma.customer.findFirst({
@@ -73,7 +74,7 @@ export async function createInvoice(input: {
     const created = await stripe.customers.create({
       email: customer.email,
       name: customer.name ?? undefined,
-      metadata: { corleonOrganizationId: input.organizationId, corleonCustomerId: customer.id },
+      metadata: { organizationId: input.organizationId, customerId: customer.id, customerEmail: customer.email, corleonOrganizationId: input.organizationId, corleonCustomerId: customer.id },
     }, { idempotencyKey: `corleon-customer-${customer.id}` });
     stripeCustomerId = created.id;
     await prisma.customer.update({ where: { id: customer.id }, data: { stripeCustomerId } });
@@ -88,11 +89,14 @@ export async function createInvoice(input: {
     auto_advance: false,
     description: input.description,
     metadata: {
+      organizationId: input.organizationId,
+      customerId: customer.id,
+      customerEmail: customer.email,
       corleonOrganizationId: input.organizationId,
       corleonCustomerId: customer.id,
       corleonSource: 'corleon-engine',
     },
-  }, { idempotencyKey: `corleon-invoice-${input.organizationId}-${input.customerId}-${crypto.randomUUID()}` });
+  }, { idempotencyKey: `corleon-invoice-${input.idempotencyKey}` });
 
   for (const item of input.items) {
     await stripe.invoiceItems.create({
