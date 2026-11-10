@@ -23,8 +23,8 @@ Checked date: 2026-11-10. This report distinguishes primary-source facts from Co
 ### 2. Vercel Sandbox snapshots are faster
 
 - **Verified facts:** Published 2026-11-09. Vercel reports snapshot median below 0.4s (from 4.4s) and restore p50 250ms (from 500ms). Persistent sandboxes automatically snapshot on stop and resume from the latest snapshot; existing snapshots retain the old format.
-- **Maturity/limits:** Platform rollout; performance figures are vendor-reported. Corleon does not currently declare `@vercel/sandbox`.
-- **Analysis/recommendation:** High relevance to pause/resume and isolated coding workers. Keep PostgreSQL as the run-state system of record and benchmark a representative repository.
+- **Maturity/limits:** Platform rollout; performance figures are vendor-reported. Corleon does not currently declare `@vercel/sandbox`. The official snapshot docs add important limits: snapshots expire 30 days after last use by default, retained snapshots incur storage charges, and snapshots are region-bound.
+- **Analysis/recommendation:** High relevance to pause/resume and isolated coding workers. Keep PostgreSQL as the run-state system of record, bound snapshot retention with `snapshotExpiration`/`keepLastSnapshots`, respect region placement, and benchmark a representative repository.
 - **Source:** https://vercel.com/changelog/vercel-sandbox-snapshot-creation-is-now-up-to-10x-faster
 - **Knowledge ID:** K-756B395AEDD8.
 
