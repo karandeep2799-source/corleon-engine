@@ -106,6 +106,7 @@ export async function updateCorleonStripeCustomer({
   updates,
   idempotencyKey
 }) {
+  assertTestMode();
   if (!prisma?.customer?.findFirst || !prisma?.customer?.update) {
     throw new TypeError('A Prisma client with customer.findFirst/update is required.');
   }
