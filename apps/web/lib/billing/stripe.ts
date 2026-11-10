@@ -5,8 +5,8 @@ let stripeClient: Stripe | undefined;
 export function getStripe(): Stripe {
   const secret = process.env.STRIPE_SECRET_KEY;
   if (!secret) throw new Error('STRIPE_SECRET_KEY is not configured.');
-  if (!secret.startsWith('sk_test_') && process.env.STRIPE_LIVE_PAYMENTS_ENABLED !== 'true') {
-    throw new Error('Live Stripe keys are blocked until STRIPE_LIVE_PAYMENTS_ENABLED=true.');
+  if (!secret.startsWith('sk_test_')) {
+    throw new Error('This release accepts Stripe sandbox keys only. Live keys are blocked in code.');
   }
   if (!stripeClient) stripeClient = new Stripe(secret);
   return stripeClient;
