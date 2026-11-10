@@ -74,7 +74,7 @@
       "canonical_url": "https://vercel.com/changelog/vercel-sandbox-snapshot-creation-is-now-up-to-10x-faster",
       "source_urls": [
         "https://vercel.com/changelog/vercel-sandbox-snapshot-creation-is-now-up-to-10x-faster",
-        "https://vercel.com/docs/sandbox/snapshots"
+        "https://vercel.com/docs/sandbox/concepts/snapshots"
       ],
       "source_publication_date": "2026-11-09",
       "checked_date": "2026-11-10",
@@ -88,25 +88,28 @@
         "Snapshot restore p50 is reported at 250 ms, down from 500 ms.",
         "The new VHS format reuses frames and improves indexing so more read/write operations can run in parallel.",
         "Persistent sandboxes, the default, automatically snapshot when a session stops and resume from the latest snapshot.",
-        "The new behavior applies to new snapshots; existing snapshots retain the previous format."
+        "The new behavior applies to new snapshots; existing snapshots retain the previous format.",
+        "Vercel's snapshot documentation says snapshots expire 30 days after last use by default, incur storage charges while retained, and are available only in their source region (with failover behavior as documented)."
       ],
-      "analysis": "Faster snapshots make checkpoint-heavy agent execution more practical, particularly when tasks pause for approval or need to recover after worker interruption. The performance numbers are vendor-reported and should be validated with Corleon's repository and workload.",
+      "analysis": "Faster snapshots make checkpoint-heavy agent execution more practical, particularly when tasks pause for approval or need to recover after worker interruption. The performance numbers are vendor-reported and should be validated with Corleon's repository and workload. Snapshot retention and regional constraints affect cost and recovery design: Corleon should explicitly bound retained snapshots and keep region placement consistent with the worker.",
       "corleon_relevance": "high",
       "repository_evidence": [
         "The current package manifests do not declare @vercel/sandbox.",
         "The existing architecture documentation calls for preview-first, approval-gated execution but does not define a persistent sandbox adapter."
       ],
-      "recommendation": "When implementing isolated coding workers, evaluate persistent Vercel Sandbox sessions and snapshot-based resume. Keep run metadata and approval state in PostgreSQL; treat the sandbox filesystem as recoverable workspace state, not the system of record.",
+      "recommendation": "When implementing isolated coding workers, evaluate persistent Vercel Sandbox sessions and snapshot-based resume. Keep run metadata and approval state in PostgreSQL; treat the sandbox filesystem as recoverable workspace state, not the system of record. Configure snapshotExpiration and keepLastSnapshots so repeated stops do not create unbounded storage; verify region availability and storage charges in the chosen Vercel plan.",
       "security_considerations": [
         "Use one isolated sandbox per tenant/run and short-lived credentials.",
         "Never inject production database credentials, payment secrets, or long-lived GitHub tokens into the sandbox.",
-        "Reapply network and filesystem policy on resume; a snapshot must not silently widen privileges."
+        "Reapply network and filesystem policy on resume; a snapshot must not silently widen privileges.",
+        "Snapshots can contain repository files and installed packages; set retention deliberately, delete expired/unneeded snapshots, and respect data-residency/region requirements."
       ],
       "estimated_effort": "2-4 engineering days for a sandbox persistence proof of concept",
       "acceptance_criteria": [
         "A test workspace survives stop/resume with expected files and permissions.",
         "A resumed run cannot access another tenant's workspace.",
-        "Measure snapshot and restore p50/p95 for a representative Corleon repository."
+        "Measure snapshot and restore p50/p95 for a representative Corleon repository.",
+        "Snapshot retention is bounded (for example, by a tested keepLastSnapshots policy) and storage cost is estimated for the expected run volume."
       ],
       "deduplication_result": "new",
       "deduplication_fingerprint": "756b395aedd8b82e71f41cdb1f548d23956c6fa1e1caa56e046a3a1e39de0174",
