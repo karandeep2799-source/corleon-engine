@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
-import { createChromeDevToolsGateway } from "../../../../src/mcp/chrome-devtools-gateway.js";
+import { createChromeDevToolsGateway, type ChromeDevToolsGatewayOptions } from "../../../../src/mcp/chrome-devtools-gateway.js";
 
-function createHarness(options: Record<string, unknown> = {}) {
+function createHarness(options: Partial<ChromeDevToolsGatewayOptions> = {}) {
   const requests: Record<string, unknown>[] = [];
   const events: Record<string, unknown>[] = [];
   const worker = {
