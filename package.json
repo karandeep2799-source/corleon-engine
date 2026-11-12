@@ -5,7 +5,7 @@
   "type": "module",
   "packageManager": "pnpm@12.4.0",
   "engines": {
-    "node": ">=22 <25"
+    "node": ">=24.22.3 <25"
   },
   "scripts": {
     "postinstall": "prisma generate",
