@@ -93,14 +93,20 @@ export async function POST(request: NextRequest) {
   const client = clientFor(request);
   if (client instanceof NextResponse) return client;
 
-  const contentLength = Number(request.headers.get("content-length") ?? "0");
-  if (contentLength > 32 * 1024) {
+  let rawBody: string;
+  try {
+    rawBody = await request.text();
+  } catch {
+    return NextResponse.json({ error: "Unable to read request body." }, { status: 400 });
+  }
+
+  if (new TextEncoder().encode(rawBody).byteLength > 32 * 1024) {
     return NextResponse.json({ error: "Request body exceeds the 32 KB limit." }, { status: 413 });
   }
 
   let body: unknown;
   try {
-    body = await request.json();
+    body = JSON.parse(rawBody);
   } catch {
     return NextResponse.json({ error: "Invalid JSON request body." }, { status: 400 });
   }
