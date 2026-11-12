@@ -1,7 +1,7 @@
 import { timingSafeEqual } from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
-import { WeeglooMcpClient, WeeglooMcpError, resolveWeeglooEndpoint } from "@/lib/weegloo/mcp-client";
-import { isReadOnlyToolAllowed, parseReadOnlyToolAllowlist } from "@/lib/weegloo/policy";
+import { WeeglooMcpClient, WeeglooMcpError, resolveWeeglooEndpoint } from "../../../../lib/weegloo/mcp-client";
+import { isReadOnlyToolAllowed, parseReadOnlyToolAllowlist } from "../../../../lib/weegloo/policy";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
