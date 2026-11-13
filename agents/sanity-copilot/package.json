@@ -1,0 +1,25 @@
+{
+  "name": "@corleon/sanity-copilot",
+  "version": "0.1.0",
+  "private": true,
+  "license": "MIT",
+  "type": "module",
+  "engines": {
+    "node": "24.x"
+  },
+  "scripts": {
+    "build": "eve build",
+    "dev": "eve dev",
+    "start": "eve start",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@vercel/connect": "2.5.5",
+    "ai": "^7.0.150",
+    "eve": "^0.83.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24.3.0",
+    "typescript": "^5.9.2"
+  }
+}
