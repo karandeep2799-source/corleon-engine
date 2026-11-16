@@ -1,7 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { detectGooglePageLicenses, formatGoogleAttribution, isReleaseBlocked, validateManifest, validateSourceRecord } from "../dist/index.js";
-
 const source = {
   id: "google-mlkit-guides", title: "Google ML Kit Guides",
   sourceUrl: "https://developers.google.com/ml-kit/guides", publisher: "Google",
@@ -9,7 +8,6 @@ const source = {
   licenseEvidence: "Footer identifies CC BY 4.0", reviewed: true,
   attributionRequired: true, reviewedOn: "2026-11-16"
 };
-
 test("accepts reviewed CC BY documentation", () => assert.deepEqual(validateSourceRecord(source), []));
 test("rejects HTTP sources and disabled attribution", () => {
   const issues = validateSourceRecord({ ...source, sourceUrl: "http://example.com", attributionRequired: false });
@@ -34,8 +32,8 @@ test("rejects duplicate manifest ids", () => {
 });
 test("formats Google attribution with policy, license and source links", () => {
   const output = formatGoogleAttribution(source.sourceUrl, "modified");
-  assert.match(output, /modifications based on work/);
-  assert.match(output, /developers.google.com\\/readme\\/policies/);
-  assert.match(output, /creativecommons.org\\/licenses\\/by\\/4\\.0/);
-  assert.match(output, /developers.google.com\\/ml-kit\\/guides/);
+  assert.ok(output.includes("modifications based on work"));
+  assert.ok(output.includes("developers.google.com/readme/policies"));
+  assert.ok(output.includes("creativecommons.org/licenses/by/4.0"));
+  assert.ok(output.includes("developers.google.com/ml-kit/guides"));
 });
