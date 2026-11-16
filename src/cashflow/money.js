@@ -1,6 +1,6 @@
 const ZERO_DECIMAL_CURRENCIES = new Set([
   "BIF", "CLP", "DJF", "GNF", "JPY", "KMF", "KRW", "MGA",
-  "PYG", "RWF", "UGX", "VND", "VUV", "XAF", "XOF", "XPF",
+  "PYG", "RWF", "VND", "VUV", "XAF", "XOF", "XPF",
 ]);
 
 export function normalizeCurrency(value) {
@@ -14,6 +14,9 @@ export function normalizeCurrency(value) {
 function exponentFor(currency) {
   return ZERO_DECIMAL_CURRENCIES.has(normalizeCurrency(currency)) ? 0 : 2;
 }
+
+// Stripe requires whole-unit amounts for these legacy/special payout currencies.
+const WHOLE_UNIT_PAYOUT_CURRENCIES = new Set(["ISK", "HUF", "TWD", "UGX"]);
 
 /** Convert Stripe's integer minor-unit amount to an exact decimal string. */
 export function stripeMinorToMajor(amount, currency) {
@@ -52,6 +55,10 @@ export function stripeMajorToMinor(amount, currency) {
   const normalizedFraction = fraction.slice(0, exponent).padEnd(exponent, "0");
   const minor = BigInt(match[2]) * (10n ** BigInt(exponent)) + BigInt(normalizedFraction || "0");
   if (minor <= 0n) throw new Error("Payout amount must be greater than zero.");
+  const normalizedCurrency = normalizeCurrency(currency);
+  if (WHOLE_UNIT_PAYOUT_CURRENCIES.has(normalizedCurrency) && minor % 100n !== 0n) {
+    throw new Error("Payout amount must be a whole " + normalizedCurrency + " unit.");
+  }
   if (minor > BigInt(Number.MAX_SAFE_INTEGER)) {
     throw new Error("Payout amount exceeds the supported provider limit.");
   }
