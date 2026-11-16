@@ -113,7 +113,7 @@ export async function getAtlassianAdminResource(
     url.searchParams.set("limit", String(options.limit));
   }
 
-  const headers: HeadersInit = {
+  const headers: Record<string, string> = {
     Authorization: `Bearer ${apiKey}`,
     Accept: "application/json",
   };
