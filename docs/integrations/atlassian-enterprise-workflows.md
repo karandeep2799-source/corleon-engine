@@ -44,7 +44,7 @@ Each workflow defines states, allowed transitions, risk tier and transition gate
 
 1. Deny by default if actor, tenant, resource, scope, policy or risk metadata is missing.
 2. Read-only access is the initial integration mode. Mutations require an explicit allowlisted operation.
-3. Critical and production actions require a human approval bound to a canonical action digest, target, arguments and expiry.
+3. Critical administrative, access, data-export and production-change actions require a human approval bound to a canonical action digest, target, arguments and expiry. Incident containment and recovery must not be blocked by an approval queue; instead, require a named incident commander, evidence capture and post-incident review.
 4. Requesters cannot approve their own requests. At least two distinct approvers are required for production changes and selected high-risk governance actions.
 5. An approval expires when its action arguments, target resource, deployment artifact or risk classification changes.
 6. No workflow automation may deploy, publish, revoke access, alter org settings, change billing, delete data or create privileged credentials.
