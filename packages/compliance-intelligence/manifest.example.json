@@ -1,0 +1,29 @@
+{
+  "version": 1,
+  "sources": [
+    {
+      "id": "google-site-policies",
+      "title": "Google Developers Site Policies",
+      "sourceUrl": "https://developers.google.com/terms/site-policies",
+      "publisher": "Google",
+      "materialKind": "documentation",
+      "license": "CC-BY-4.0",
+      "licenseEvidence": "The policy describes the default notice used on many Google Developers pages. Verify the actual source page footer before reuse.",
+      "reviewed": true,
+      "attributionRequired": true,
+      "reviewedOn": "2026-11-16",
+      "notes": "The policy page is guidance; check each individual source page and exceptions."
+    },
+    {
+      "id": "google-code-sample-template",
+      "title": "Google code sample template; replace with actual page",
+      "sourceUrl": "https://developers.google.com/",
+      "publisher": "Google",
+      "materialKind": "code-sample",
+      "license": "unknown",
+      "licenseEvidence": "Template only; exact sample page has not been reviewed.",
+      "reviewed": false,
+      "notes": "Do not treat this record as proof of Apache 2.0."
+    }
+  ]
+}
