@@ -1,9 +1,13 @@
 import { describe, expect, it, vi } from "vitest";
-import { createChromeDevToolsGateway, type ChromeDevToolsGatewayOptions } from "../../../../src/mcp/chrome-devtools-gateway.js";
+import {
+  createChromeDevToolsGateway,
+  type ChromeDevToolsGatewayAuditEvent,
+  type ChromeDevToolsGatewayOptions,
+} from "../../../../src/mcp/chrome-devtools-gateway.js";
 
 function createHarness(options: Partial<ChromeDevToolsGatewayOptions> = {}) {
   const requests: Record<string, unknown>[] = [];
-  const events: Record<string, unknown>[] = [];
+  const events: ChromeDevToolsGatewayAuditEvent[] = [];
   const worker = {
     async request(message: Record<string, unknown>) {
       requests.push(message);
@@ -28,7 +32,7 @@ function createHarness(options: Partial<ChromeDevToolsGatewayOptions> = {}) {
   const gateway = createChromeDevToolsGateway({
     identity: { tenantId: "tenant-a", actorId: "user-a", sessionId: "session-a" },
     worker,
-    audit: async (event: Record<string, unknown>) => { events.push(event); },
+    audit: async (event: ChromeDevToolsGatewayAuditEvent) => { events.push(event); },
     consumeApproval: async () => false,
     production: false,
     ...options,
