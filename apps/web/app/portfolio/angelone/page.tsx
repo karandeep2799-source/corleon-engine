@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import type { FormEvent } from "react";
 
 type Holding = {
   tradingsymbol: string;
@@ -35,7 +36,7 @@ export default function AngelOnePortfolioPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  async function loadPortfolio(event: React.FormEvent<HTMLFormElement>) {
+  async function loadPortfolio(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError("");
     setPortfolio(null);
