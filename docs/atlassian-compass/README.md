@@ -25,6 +25,7 @@ it to `compass.yaml`.
 - Lifecycle: `Active`
 - Repository and documentation links
 - Labels for catalog discovery
+- Monorepo flag enabled so repository-wide CI/deployment/PR activity is not incorrectly attributed as a single component's metrics
 - Empty dependency relationships until real Compass component IDs/slugs exist
 
 No credentials, API tokens, customer data, deployment secrets, or production
@@ -49,6 +50,10 @@ endpoints are stored in the component definition.
    `ownerId` to that exact ARI.
 8. Confirm the component's owner, tier, lifecycle, links, and repository
    association in Compass.
+
+## Monorepo metrics
+
+The repository is a Turborepo monorepo, so `fields.isMonorepoProject` is set to `true`. Atlassian documents that this prevents automatic build, deployment, and pull-request metric processing for the component. If component-level metrics are needed, emit appropriately scoped events and metrics through the Compass APIs rather than attributing all repository activity to the platform component.
 
 ## Security and governance
 
