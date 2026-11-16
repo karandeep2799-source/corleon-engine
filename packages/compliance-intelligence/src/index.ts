@@ -5,19 +5,10 @@
  */
 export type MaterialKind = "documentation" | "code-sample" | "brand-feature" | "image" | "audio" | "video" | "third-party-link" | "other";
 export type LicenseId = "CC-BY-4.0" | "Apache-2.0" | "Google-brand-guidelines" | "third-party-review-required" | "unknown";
-
 export interface SourceRecord {
-  id: string;
-  title: string;
-  sourceUrl: string;
-  publisher: string;
-  materialKind: MaterialKind;
-  license: LicenseId;
-  licenseEvidence: string;
-  reviewed: boolean;
-  attributionRequired?: boolean;
-  reviewedOn?: string;
-  notes?: string;
+  id: string; title: string; sourceUrl: string; publisher: string;
+  materialKind: MaterialKind; license: LicenseId; licenseEvidence: string;
+  reviewed: boolean; attributionRequired?: boolean; reviewedOn?: string; notes?: string;
 }
 export interface ValidationIssue { path: string; message: string }
 export interface Manifest { version: 1; sources: SourceRecord[] }
@@ -37,7 +28,7 @@ export function validateSourceRecord(record: SourceRecord): ValidationIssue[] {
   if (!licenses.has(record.license)) issues.push({ path: "license", message: "Unsupported license identifier." });
   if (record.license === "CC-BY-4.0" && record.attributionRequired === false) issues.push({ path: "attributionRequired", message: "CC BY 4.0 requires attribution." });
   if (record.materialKind === "brand-feature" && record.license === "CC-BY-4.0") issues.push({ path: "license", message: "Google brand features are excluded from the documentation license." });
-  if (record.reviewedOn && !/^\\d{4}-\\d{2}-\\d{2}$/.test(record.reviewedOn)) issues.push({ path: "reviewedOn", message: "Must use YYYY-MM-DD." });
+  if (record.reviewedOn && !/^\d{4}-\d{2}-\d{2}$/.test(record.reviewedOn)) issues.push({ path: "reviewedOn", message: "Must use YYYY-MM-DD." });
   return issues;
 }
 
@@ -55,8 +46,8 @@ export function validateManifest(manifest: Manifest): ValidationIssue[] {
 }
 
 export function detectGooglePageLicenses(pageText: string): { documentation: "CC-BY-4.0" | "unknown"; codeSamples: "Apache-2.0" | "unknown"; evidence: string[] } {
-  const cc = /Creative Commons Attribution 4\\.0 License/i.test(pageText) || /creativecommons\\.org\\/licenses\\/by\\/4\\.0/i.test(pageText);
-  const apache = /code samples are licensed under the Apache 2\\.0 License/i.test(pageText) || /apache\\.org\\/licenses\\/LICENSE-2\\.0/i.test(pageText);
+  const cc = /Creative Commons Attribution 4\.0 License/i.test(pageText) || /creativecommons\.org\/licenses\/by\/4\.0/i.test(pageText);
+  const apache = /code samples are licensed under the Apache 2\.0 License/i.test(pageText) || /apache\.org\/licenses\/LICENSE-2\.0/i.test(pageText);
   const evidence: string[] = [];
   if (cc) evidence.push("Page notice identifies Creative Commons Attribution 4.0.");
   if (apache) evidence.push("Page notice identifies Apache 2.0 for code samples.");
