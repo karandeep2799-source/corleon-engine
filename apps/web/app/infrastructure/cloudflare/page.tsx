@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 const isConfigured = Boolean(
   process.env.CLOUDFLARE_API_TOKEN &&
   process.env.CLOUDFLARE_ZONE_ID &&
@@ -28,7 +30,7 @@ export default function CloudflareInfrastructurePage() {
   return (
     <main className="shell">
       <nav className="nav">
-        <a href="/"><strong>Corleon Engine</strong></a>
+        <Link href="/"><strong>Corleon Engine</strong></Link>
         <a href="/api/health">API health</a>
       </nav>
 
