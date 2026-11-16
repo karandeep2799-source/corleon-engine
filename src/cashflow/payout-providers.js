@@ -1,8 +1,9 @@
 import Stripe from 'stripe';
+import { stripeMajorToMinor } from './money.js';
 
 function requireEnv(name) {
   const value = process.env[name];
-  if (!value) throw new Error(`${name} is required`);
+  if (!value) throw new Error(name + ' is required');
   return value;
 }
 
@@ -12,11 +13,11 @@ export class StripePayoutProvider {
   }
 
   async send({ amount, currency, destination, metadata = {} }) {
-    // Stripe Connect transfers move funds from the platform to a connected account.
     if (!destination) throw new Error('Stripe connected account destination is required');
+    const normalizedCurrency = String(currency).trim().toUpperCase();
     const transfer = await this.stripe.transfers.create({
-      amount: Math.round(Number(amount) * 100),
-      currency: currency.toLowerCase(),
+      amount: stripeMajorToMinor(amount, normalizedCurrency),
+      currency: normalizedCurrency.toLowerCase(),
       destination,
       metadata
     }, {
@@ -29,7 +30,7 @@ export class StripePayoutProvider {
 export class ManualPayoutProvider {
   async send({ amount, currency, metadata = {} }) {
     return {
-      externalId: `manual:${metadata.payoutId}`,
+      externalId: 'manual:' + metadata.payoutId,
       status: 'PENDING_REVIEW',
       amount,
       currency
@@ -44,6 +45,6 @@ export function getPayoutProvider(method) {
     case 'PAYPAL': throw new Error('PayPal provider not configured');
     case 'WISE': throw new Error('Wise provider not configured');
     case 'BANK_TRANSFER': throw new Error('Bank-transfer provider not configured');
-    default: throw new Error(`Unsupported payout method: ${method}`);
+    default: throw new Error('Unsupported payout method: ' + method);
   }
 }
