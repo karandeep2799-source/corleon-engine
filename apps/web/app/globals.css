@@ -19,3 +19,9 @@ h2 { margin: 8px 0 10px; font-size: 24px; }
 .status pre { margin: 0; padding: 20px; border-radius: 12px; background: rgba(255,255,255,.08); overflow: auto; line-height: 1.7; }
 code { padding: 2px 6px; border-radius: 6px; background: rgba(0,0,0,.06); }
 @media (max-width: 720px) { .grid, .status { grid-template-columns: 1fr; } .shell { width: min(100% - 28px, 1120px); } }
+
+.card { padding: 28px; border: 1px solid rgba(17,24,39,.10); border-radius: 18px; background: white; }
+.card p:not(.eyebrow) { margin: 0; line-height: 1.6; opacity: .68; }
+.status ul { padding-left: 18px; }
+.status li span { display: inline-block; margin-top: 6px; font-size: 12px; font-weight: 700; opacity: .8; }
+.status code { overflow-wrap: anywhere; background: rgba(255,255,255,.12); }
