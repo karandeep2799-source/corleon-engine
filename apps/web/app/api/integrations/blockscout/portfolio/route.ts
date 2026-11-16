@@ -11,6 +11,7 @@ const hits = new Map<string, { count: number; resetAt: number }>();
 function rateLimited(request: NextRequest): boolean {
   const forwarded = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown';
   const now = Date.now();
+  if (hits.size > 10_000) { for (const [key, value] of hits) if (value.resetAt <= now) hits.delete(key); }
   const current = hits.get(forwarded);
   if (!current || current.resetAt <= now) {
     hits.set(forwarded, { count: 1, resetAt: now + WINDOW_MS });
