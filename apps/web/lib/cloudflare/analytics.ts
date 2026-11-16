@@ -103,12 +103,13 @@ function finiteNumber(value: unknown): number {
   return typeof value === 'number' && Number.isFinite(value) && value >= 0 ? value : 0;
 }
 
-function breakdown<T extends { count?: number | null; dimensions?: Record<string, unknown> | null }>(
+function breakdown<T extends { count?: number | null; dimensions?: object | null }>(
   rows: T[] | undefined,
   dimension: string,
 ): Array<{ status: string; requests: number }> {
   return (rows ?? []).map((row) => {
-    const raw = row.dimensions?.[dimension];
+    const dimensions = row.dimensions as Record<string, unknown> | null | undefined;
+    const raw = dimensions?.[dimension];
     const status = raw === null || raw === undefined || raw === '' ? 'unknown' : String(raw);
     return { status, requests: finiteNumber(row.count) };
   });
