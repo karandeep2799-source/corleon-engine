@@ -7,12 +7,10 @@
       "sourceUrl": "https://developers.google.com/terms/site-policies",
       "publisher": "Google",
       "materialKind": "documentation",
-      "license": "CC-BY-4.0",
-      "licenseEvidence": "The policy describes the default notice used on many Google Developers pages. Verify the actual source page footer before reuse.",
-      "reviewed": true,
-      "attributionRequired": true,
-      "reviewedOn": "2026-11-16",
-      "notes": "The policy page is guidance; check each individual source page and exceptions."
+      "license": "unknown",
+      "licenseEvidence": "Policy describes notices used on many documentation pages; no license conclusion recorded for this page.",
+      "reviewed": false,
+      "notes": "Verify the exact source page footer and exceptions before reuse."
     },
     {
       "id": "google-code-sample-template",
