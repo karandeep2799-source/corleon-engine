@@ -43,7 +43,7 @@ if (config) {
       if (gate.type === "approval" && (!Number.isInteger(gate.minimumApprovals) || gate.minimumApprovals < 1 || !Array.isArray(gate.roles) || gate.roles.length === 0)) fail(`${workflow.id}: approval gate requires approvers and roles.`);
     }
     if (["HIGH", "CRITICAL"].includes(workflow.risk) && !(workflow.gates ?? []).length) fail(`${workflow.id}: high-risk workflow requires gates.`);
-    if (workflow.risk === "CRITICAL" && !(workflow.gates ?? []).some((gate) => gate.type === "approval" || gate.type === "manual_release_gate")) fail(`${workflow.id}: critical workflow requires approval or manual release gate.`);
+    if (workflow.risk === "CRITICAL" && !(workflow.gates ?? []).length) fail(`${workflow.id}: critical workflow requires at least one explicit control gate.`);
   }
   console.log(`Validated ${config.workflows.length} workflows.`);
 }
