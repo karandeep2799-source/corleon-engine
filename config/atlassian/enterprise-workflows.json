@@ -1,0 +1,902 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "schemaVersion": "1.0.0",
+  "product": "Corleon Engine",
+  "integration": "Atlassian Cloud Enterprise",
+  "status": "DESIGN_ONLY_REQUIRES_ADMIN_REVIEW",
+  "defaults": {
+    "timezone": "Asia/Kolkata",
+    "projectKey": "COR",
+    "automationEnabled": false,
+    "externalWritesEnabled": false,
+    "requireHumanApprovalForHighRisk": true,
+    "denyByDefault": true
+  },
+  "governance": {
+    "roles": [
+      "CORLEON_ORG_ADMIN",
+      "CORLEON_WORKFLOW_OWNER",
+      "CORLEON_SECURITY_REVIEWER",
+      "CORLEON_APPROVER",
+      "CORLEON_AUDITOR",
+      "CORLEON_OPERATOR"
+    ],
+    "separationOfDuties": {
+      "requesterCannotApproveOwnRequest": true,
+      "workflowOwnerCannotApproveOwnProductionChange": true
+    },
+    "audit": {
+      "requiredEvents": [
+        "workflow.created",
+        "workflow.transitioned",
+        "approval.requested",
+        "approval.decided",
+        "policy.denied",
+        "automation.executed",
+        "integration.call.started",
+        "integration.call.completed",
+        "integration.call.failed",
+        "release.authorized",
+        "release.completed"
+      ],
+      "appendOnly": true,
+      "includeActorAndTimestamp": true,
+      "redactSecrets": true
+    }
+  },
+  "workflows": [
+    {
+      "id": "ENT-GOV",
+      "name": "Enterprise governance and policy change",
+      "system": "Jira",
+      "projectKey": "COR",
+      "issueType": "Governance Change",
+      "states": [
+        "Draft",
+        "Submitted",
+        "Risk Review",
+        "Approval Pending",
+        "Approved",
+        "Scheduled",
+        "Implemented",
+        "Verified",
+        "Closed",
+        "Rejected",
+        "Cancelled"
+      ],
+      "transitions": [
+        [
+          "Draft",
+          "Submitted"
+        ],
+        [
+          "Submitted",
+          "Risk Review"
+        ],
+        [
+          "Risk Review",
+          "Approval Pending"
+        ],
+        [
+          "Approval Pending",
+          "Approved"
+        ],
+        [
+          "Approval Pending",
+          "Rejected"
+        ],
+        [
+          "Approved",
+          "Scheduled"
+        ],
+        [
+          "Scheduled",
+          "Implemented"
+        ],
+        [
+          "Implemented",
+          "Verified"
+        ],
+        [
+          "Verified",
+          "Closed"
+        ],
+        [
+          "Draft",
+          "Cancelled"
+        ],
+        [
+          "Submitted",
+          "Cancelled"
+        ]
+      ],
+      "gates": [
+        {
+          "from": "Risk Review",
+          "to": "Approval Pending",
+          "type": "required_fields",
+          "fields": [
+            "owner",
+            "impact",
+            "riskTier",
+            "rollbackPlan",
+            "evidence"
+          ]
+        },
+        {
+          "from": "Approval Pending",
+          "to": "Approved",
+          "type": "approval",
+          "minimumApprovals": 2,
+          "roles": [
+            "CORLEON_ORG_ADMIN",
+            "CORLEON_SECURITY_REVIEWER"
+          ],
+          "separationOfDuties": true
+        },
+        {
+          "from": "Implemented",
+          "to": "Verified",
+          "type": "evidence",
+          "fields": [
+            "implementationEvidence",
+            "verificationResult"
+          ]
+        }
+      ],
+      "risk": "HIGH"
+    },
+    {
+      "id": "ENT-IAM",
+      "name": "Identity and access lifecycle",
+      "system": "Jira Service Management",
+      "projectKey": "COR",
+      "issueType": "Access Request",
+      "states": [
+        "Requested",
+        "Identity Verified",
+        "Manager Review",
+        "Security Review",
+        "Approved",
+        "Provisioning",
+        "Active",
+        "Review Due",
+        "Revoked",
+        "Rejected"
+      ],
+      "transitions": [
+        [
+          "Requested",
+          "Identity Verified"
+        ],
+        [
+          "Identity Verified",
+          "Manager Review"
+        ],
+        [
+          "Manager Review",
+          "Security Review"
+        ],
+        [
+          "Security Review",
+          "Approved"
+        ],
+        [
+          "Security Review",
+          "Rejected"
+        ],
+        [
+          "Approved",
+          "Provisioning"
+        ],
+        [
+          "Provisioning",
+          "Active"
+        ],
+        [
+          "Active",
+          "Review Due"
+        ],
+        [
+          "Review Due",
+          "Active"
+        ],
+        [
+          "Review Due",
+          "Revoked"
+        ]
+      ],
+      "gates": [
+        {
+          "from": "Manager Review",
+          "to": "Security Review",
+          "type": "required_fields",
+          "fields": [
+            "subject",
+            "businessJustification",
+            "resource",
+            "requestedRole",
+            "expiry"
+          ]
+        },
+        {
+          "from": "Security Review",
+          "to": "Approved",
+          "type": "approval",
+          "minimumApprovals": 1,
+          "roles": [
+            "CORLEON_SECURITY_REVIEWER"
+          ],
+          "separationOfDuties": true
+        },
+        {
+          "from": "Active",
+          "to": "Review Due",
+          "type": "scheduled_review",
+          "days": 90
+        }
+      ],
+      "risk": "CRITICAL"
+    },
+    {
+      "id": "ENT-AI",
+      "name": "AI agent onboarding and governance",
+      "system": "Jira",
+      "projectKey": "COR",
+      "issueType": "AI Agent Change",
+      "states": [
+        "Proposed",
+        "Use Case Review",
+        "Data & Security Review",
+        "Evaluation",
+        "Approval Pending",
+        "Approved",
+        "Pilot",
+        "Active",
+        "Suspended",
+        "Retired",
+        "Rejected"
+      ],
+      "transitions": [
+        [
+          "Proposed",
+          "Use Case Review"
+        ],
+        [
+          "Use Case Review",
+          "Data & Security Review"
+        ],
+        [
+          "Data & Security Review",
+          "Evaluation"
+        ],
+        [
+          "Evaluation",
+          "Approval Pending"
+        ],
+        [
+          "Approval Pending",
+          "Approved"
+        ],
+        [
+          "Approval Pending",
+          "Rejected"
+        ],
+        [
+          "Approved",
+          "Pilot"
+        ],
+        [
+          "Pilot",
+          "Active"
+        ],
+        [
+          "Active",
+          "Suspended"
+        ],
+        [
+          "Suspended",
+          "Pilot"
+        ],
+        [
+          "Active",
+          "Retired"
+        ]
+      ],
+      "gates": [
+        {
+          "from": "Data & Security Review",
+          "to": "Evaluation",
+          "type": "required_fields",
+          "fields": [
+            "owner",
+            "dataClasses",
+            "tools",
+            "scopes",
+            "modelProviders",
+            "retention",
+            "humanOversight"
+          ]
+        },
+        {
+          "from": "Evaluation",
+          "to": "Approval Pending",
+          "type": "evaluation_threshold",
+          "minimumPassRate": 0.95,
+          "requiredSuites": [
+            "safety",
+            "prompt-injection",
+            "tenant-isolation",
+            "tool-authorization"
+          ]
+        },
+        {
+          "from": "Approval Pending",
+          "to": "Approved",
+          "type": "approval",
+          "minimumApprovals": 2,
+          "roles": [
+            "CORLEON_SECURITY_REVIEWER",
+            "CORLEON_WORKFLOW_OWNER"
+          ],
+          "separationOfDuties": true
+        },
+        {
+          "from": "Pilot",
+          "to": "Active",
+          "type": "evidence",
+          "fields": [
+            "pilotResults",
+            "incidentRunbook",
+            "killSwitchVerified"
+          ]
+        }
+      ],
+      "risk": "CRITICAL"
+    },
+    {
+      "id": "ENT-SDLC",
+      "name": "Software delivery and code review",
+      "system": "Jira + GitHub",
+      "projectKey": "COR",
+      "issueType": "Engineering Work",
+      "states": [
+        "Backlog",
+        "Ready",
+        "In Progress",
+        "Code Review",
+        "Security Review",
+        "QA",
+        "Release Ready",
+        "Done",
+        "Blocked"
+      ],
+      "transitions": [
+        [
+          "Backlog",
+          "Ready"
+        ],
+        [
+          "Ready",
+          "In Progress"
+        ],
+        [
+          "In Progress",
+          "Code Review"
+        ],
+        [
+          "Code Review",
+          "Security Review"
+        ],
+        [
+          "Security Review",
+          "QA"
+        ],
+        [
+          "QA",
+          "Release Ready"
+        ],
+        [
+          "Release Ready",
+          "Done"
+        ],
+        [
+          "In Progress",
+          "Blocked"
+        ],
+        [
+          "Blocked",
+          "In Progress"
+        ]
+      ],
+      "gates": [
+        {
+          "from": "Code Review",
+          "to": "Security Review",
+          "type": "required_fields",
+          "fields": [
+            "pullRequest",
+            "reviewer",
+            "tests"
+          ]
+        },
+        {
+          "from": "Security Review",
+          "to": "QA",
+          "type": "security_checks",
+          "checks": [
+            "dependency-scan",
+            "secret-scan",
+            "sast"
+          ]
+        },
+        {
+          "from": "QA",
+          "to": "Release Ready",
+          "type": "evidence",
+          "fields": [
+            "testResults",
+            "acceptanceEvidence"
+          ]
+        }
+      ],
+      "risk": "HIGH"
+    },
+    {
+      "id": "ENT-CHG",
+      "name": "Production change and release control",
+      "system": "Jira Service Management",
+      "projectKey": "COR",
+      "issueType": "Production Change",
+      "states": [
+        "Draft",
+        "Impact Assessment",
+        "Security Review",
+        "CAB Approval",
+        "Approved",
+        "Scheduled",
+        "Executing",
+        "Post-Change Verification",
+        "Completed",
+        "Rolled Back",
+        "Rejected"
+      ],
+      "transitions": [
+        [
+          "Draft",
+          "Impact Assessment"
+        ],
+        [
+          "Impact Assessment",
+          "Security Review"
+        ],
+        [
+          "Security Review",
+          "CAB Approval"
+        ],
+        [
+          "CAB Approval",
+          "Approved"
+        ],
+        [
+          "CAB Approval",
+          "Rejected"
+        ],
+        [
+          "Approved",
+          "Scheduled"
+        ],
+        [
+          "Scheduled",
+          "Executing"
+        ],
+        [
+          "Executing",
+          "Post-Change Verification"
+        ],
+        [
+          "Post-Change Verification",
+          "Completed"
+        ],
+        [
+          "Executing",
+          "Rolled Back"
+        ]
+      ],
+      "gates": [
+        {
+          "from": "Impact Assessment",
+          "to": "Security Review",
+          "type": "required_fields",
+          "fields": [
+            "service",
+            "environment",
+            "impact",
+            "riskTier",
+            "maintenanceWindow",
+            "rollbackPlan",
+            "testEvidence"
+          ]
+        },
+        {
+          "from": "CAB Approval",
+          "to": "Approved",
+          "type": "approval",
+          "minimumApprovals": 2,
+          "roles": [
+            "CORLEON_WORKFLOW_OWNER",
+            "CORLEON_SECURITY_REVIEWER"
+          ],
+          "separationOfDuties": true
+        },
+        {
+          "from": "Scheduled",
+          "to": "Executing",
+          "type": "manual_release_gate",
+          "requiresExplicitReleaseAuthorization": true
+        },
+        {
+          "from": "Post-Change Verification",
+          "to": "Completed",
+          "type": "evidence",
+          "fields": [
+            "healthCheck",
+            "smokeTest",
+            "changeOutcome"
+          ]
+        }
+      ],
+      "risk": "CRITICAL"
+    },
+    {
+      "id": "ENT-INC",
+      "name": "Security and service incident response",
+      "system": "Jira Service Management",
+      "projectKey": "COR",
+      "issueType": "Incident",
+      "states": [
+        "Detected",
+        "Triaged",
+        "Assigned",
+        "Containment",
+        "Investigation",
+        "Recovery",
+        "Monitoring",
+        "Resolved",
+        "Postmortem",
+        "Closed"
+      ],
+      "transitions": [
+        [
+          "Detected",
+          "Triaged"
+        ],
+        [
+          "Triaged",
+          "Assigned"
+        ],
+        [
+          "Assigned",
+          "Containment"
+        ],
+        [
+          "Containment",
+          "Investigation"
+        ],
+        [
+          "Investigation",
+          "Recovery"
+        ],
+        [
+          "Recovery",
+          "Monitoring"
+        ],
+        [
+          "Monitoring",
+          "Resolved"
+        ],
+        [
+          "Resolved",
+          "Postmortem"
+        ],
+        [
+          "Postmortem",
+          "Closed"
+        ]
+      ],
+      "gates": [
+        {
+          "from": "Triaged",
+          "to": "Assigned",
+          "type": "required_fields",
+          "fields": [
+            "severity",
+            "affectedServices",
+            "incidentCommander"
+          ]
+        },
+        {
+          "from": "Containment",
+          "to": "Investigation",
+          "type": "evidence",
+          "fields": [
+            "containmentActions",
+            "evidencePreservation"
+          ]
+        },
+        {
+          "from": "Postmortem",
+          "to": "Closed",
+          "type": "required_fields",
+          "fields": [
+            "rootCause",
+            "customerImpact",
+            "correctiveActions"
+          ]
+        }
+      ],
+      "risk": "CRITICAL"
+    },
+    {
+      "id": "ENT-KNOW",
+      "name": "Enterprise knowledge and policy publishing",
+      "system": "Confluence",
+      "projectKey": "COR",
+      "issueType": "Knowledge Change",
+      "states": [
+        "Draft",
+        "Peer Review",
+        "Security & Legal Review",
+        "Approved",
+        "Published",
+        "Review Due",
+        "Archived",
+        "Rejected"
+      ],
+      "transitions": [
+        [
+          "Draft",
+          "Peer Review"
+        ],
+        [
+          "Peer Review",
+          "Security & Legal Review"
+        ],
+        [
+          "Security & Legal Review",
+          "Approved"
+        ],
+        [
+          "Security & Legal Review",
+          "Rejected"
+        ],
+        [
+          "Approved",
+          "Published"
+        ],
+        [
+          "Published",
+          "Review Due"
+        ],
+        [
+          "Review Due",
+          "Published"
+        ],
+        [
+          "Review Due",
+          "Archived"
+        ]
+      ],
+      "gates": [
+        {
+          "from": "Peer Review",
+          "to": "Security & Legal Review",
+          "type": "required_fields",
+          "fields": [
+            "contentOwner",
+            "sourceReferences",
+            "classification",
+            "reviewDate"
+          ]
+        },
+        {
+          "from": "Security & Legal Review",
+          "to": "Approved",
+          "type": "approval",
+          "minimumApprovals": 1,
+          "roles": [
+            "CORLEON_SECURITY_REVIEWER"
+          ],
+          "separationOfDuties": true
+        }
+      ],
+      "risk": "MEDIUM"
+    },
+    {
+      "id": "ENT-VENDOR",
+      "name": "Marketplace app and vendor intake",
+      "system": "Jira",
+      "projectKey": "COR",
+      "issueType": "Vendor Intake",
+      "states": [
+        "Requested",
+        "Business Review",
+        "Architecture Review",
+        "Security & Privacy Review",
+        "Commercial Review",
+        "Approved",
+        "Pilot",
+        "Accepted",
+        "Rejected",
+        "Renewal Review",
+        "Offboarded"
+      ],
+      "transitions": [
+        [
+          "Requested",
+          "Business Review"
+        ],
+        [
+          "Business Review",
+          "Architecture Review"
+        ],
+        [
+          "Architecture Review",
+          "Security & Privacy Review"
+        ],
+        [
+          "Security & Privacy Review",
+          "Commercial Review"
+        ],
+        [
+          "Commercial Review",
+          "Approved"
+        ],
+        [
+          "Commercial Review",
+          "Rejected"
+        ],
+        [
+          "Approved",
+          "Pilot"
+        ],
+        [
+          "Pilot",
+          "Accepted"
+        ],
+        [
+          "Accepted",
+          "Renewal Review"
+        ],
+        [
+          "Renewal Review",
+          "Accepted"
+        ],
+        [
+          "Renewal Review",
+          "Offboarded"
+        ]
+      ],
+      "gates": [
+        {
+          "from": "Security & Privacy Review",
+          "to": "Commercial Review",
+          "type": "required_fields",
+          "fields": [
+            "dataAccess",
+            "oauthScopes",
+            "hostingRegion",
+            "subprocessors",
+            "securityEvidence",
+            "deletionPolicy"
+          ]
+        },
+        {
+          "from": "Commercial Review",
+          "to": "Approved",
+          "type": "approval",
+          "minimumApprovals": 2,
+          "roles": [
+            "CORLEON_ORG_ADMIN",
+            "CORLEON_SECURITY_REVIEWER"
+          ],
+          "separationOfDuties": true
+        }
+      ],
+      "risk": "HIGH"
+    },
+    {
+      "id": "ENT-DATA",
+      "name": "Data access, export and retention exception",
+      "system": "Jira Service Management",
+      "projectKey": "COR",
+      "issueType": "Data Exception",
+      "states": [
+        "Requested",
+        "Classification Review",
+        "Privacy Review",
+        "Security Review",
+        "Approval Pending",
+        "Approved",
+        "Executed",
+        "Verified",
+        "Expired",
+        "Rejected"
+      ],
+      "transitions": [
+        [
+          "Requested",
+          "Classification Review"
+        ],
+        [
+          "Classification Review",
+          "Privacy Review"
+        ],
+        [
+          "Privacy Review",
+          "Security Review"
+        ],
+        [
+          "Security Review",
+          "Approval Pending"
+        ],
+        [
+          "Approval Pending",
+          "Approved"
+        ],
+        [
+          "Approval Pending",
+          "Rejected"
+        ],
+        [
+          "Approved",
+          "Executed"
+        ],
+        [
+          "Executed",
+          "Verified"
+        ],
+        [
+          "Verified",
+          "Expired"
+        ]
+      ],
+      "gates": [
+        {
+          "from": "Classification Review",
+          "to": "Privacy Review",
+          "type": "required_fields",
+          "fields": [
+            "dataOwner",
+            "dataClass",
+            "purpose",
+            "subjectScope",
+            "destination",
+            "retention"
+          ]
+        },
+        {
+          "from": "Approval Pending",
+          "to": "Approved",
+          "type": "approval",
+          "minimumApprovals": 2,
+          "roles": [
+            "CORLEON_SECURITY_REVIEWER",
+            "CORLEON_ORG_ADMIN"
+          ],
+          "separationOfDuties": true
+        },
+        {
+          "from": "Executed",
+          "to": "Verified",
+          "type": "evidence",
+          "fields": [
+            "accessReceipt",
+            "deletionOrExpiryDate"
+          ]
+        }
+      ],
+      "risk": "CRITICAL"
+    }
+  ]
+}
