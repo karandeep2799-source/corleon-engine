@@ -3,6 +3,8 @@ lockfileVersion: '9.0'
 
 importers:
 
+  packages/compliance-intelligence: {}
+
   .:
     configDependencies: {}
     packageManagerDependencies:
