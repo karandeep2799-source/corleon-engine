@@ -191,6 +191,7 @@ model Organization {
   programs Program[]
   affiliates Affiliate[]
   customers Customer[]
+  stripeInvoices StripeInvoice[]
   orders Order[]
   subscriptions Subscription[]
   billingEvents BillingEvent[]
@@ -326,9 +327,11 @@ model Customer {
   email String?
   name String?
   metadata Json?
+  stripeCustomerId String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  stripeInvoices StripeInvoice[]
   orders Order[]
   subscriptions Subscription[]
   attributions Attribution[]
@@ -689,4 +692,52 @@ model AuditLog {
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   @@index([organizationId, createdAt])
   @@index([entityType, entityId])
+}
+
+
+enum StripeInvoiceStatus {
+  DRAFT
+  OPEN
+  PAID
+  VOID
+  UNCOLLECTIBLE
+}
+
+model StripeInvoice {
+  id                 String             @id @default(cuid())
+  organizationId     String
+  customerId         String
+  stripeInvoiceId    String             @unique
+  number             String?
+  status             StripeInvoiceStatus @default(DRAFT)
+  currency           String             @default("inr")
+  subtotal           BigInt             @default(0)
+  total              BigInt             @default(0)
+  amountDue          BigInt             @default(0)
+  amountPaid         BigInt             @default(0)
+  hostedInvoiceUrl   String?
+  invoicePdf         String?
+  dueDate            DateTime?
+  finalizedAt        DateTime?
+  paidAt             DateTime?
+  metadata           Json?
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+  organization       Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  customer           Customer           @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, number])
+  @@index([organizationId, status, createdAt])
+  @@index([customerId, createdAt])
+}
+
+model StripeWebhookReceipt {
+  id          String   @id @default(cuid())
+  eventId     String   @unique
+  eventType   String
+  livemode    Boolean  @default(false)
+  processedAt DateTime @default(now())
+  createdAt   DateTime @default(now())
+
+  @@index([eventType, createdAt])
 }
