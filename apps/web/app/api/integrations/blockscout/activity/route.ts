@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getAddressTransactions, getSupportedChains, validateAddress } from '@/lib/blockscout/client';
+import { getAddressTransactions, getSupportedChains, validateAddress } from '../../../../../lib/blockscout/client';
 
 export const runtime = 'nodejs';
 
