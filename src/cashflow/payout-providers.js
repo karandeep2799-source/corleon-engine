@@ -23,7 +23,7 @@ export class StripePayoutProvider {
     }, {
       idempotencyKey: metadata.idempotencyKey
     });
-    return { externalId: transfer.id, status: 'PAID', raw: transfer };
+    return { externalId: transfer.id, status: 'PROCESSING', raw: transfer };
   }
 }
 
