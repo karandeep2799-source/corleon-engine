@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { DEFAULT_WALLET_ADDRESS, getChainPortfolio, getSupportedChains, validateAddress } from '@/lib/blockscout/client';
+import { DEFAULT_WALLET_ADDRESS, getChainPortfolio, getSupportedChains, validateAddress } from '../../../../../lib/blockscout/client';
 
 export const runtime = 'nodejs';
 export const maxDuration = 60;
