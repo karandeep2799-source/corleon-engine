@@ -4,6 +4,5 @@
   "private": true,
   "type": "module",
   "exports": { ".": { "types": "./dist/index.d.ts", "import": "./dist/index.js" } },
-  "scripts": { "build": "tsc -p tsconfig.json", "test": "pnpm build && node --test test/*.test.mjs" },
-  "devDependencies": { "typescript": "^5.9.2" }
+  "scripts": { "build": "tsc -p tsconfig.json", "test": "pnpm build && node --test test/*.test.mjs" }
 }
