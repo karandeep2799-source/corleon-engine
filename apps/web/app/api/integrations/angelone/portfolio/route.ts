@@ -8,7 +8,11 @@ import {
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const headers = { "Cache-Control": "private, no-store, max-age=0" };
+const headers = {
+  "Cache-Control": "private, no-store, max-age=0",
+  Pragma: "no-cache",
+  Vary: "Authorization",
+};
 
 export async function GET(request: Request) {
   if (process.env.ANGELONE_PRIVATE_API_ENABLED !== "true") {
