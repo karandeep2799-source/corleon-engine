@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getSupportedChains } from '@/lib/blockscout/client';
+import { getSupportedChains } from '../../../../../lib/blockscout/client';
 
 export const runtime = 'nodejs';
 export const revalidate = 300;
