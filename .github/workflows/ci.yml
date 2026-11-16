@@ -45,6 +45,12 @@ jobs:
       - name: Run web workspace tests
         run: pnpm test
 
+      - name: Build compliance intelligence package
+        run: pnpm exec tsc -p packages/compliance-intelligence/tsconfig.json
+
+      - name: Test compliance intelligence package
+        run: node --test packages/compliance-intelligence/test/*.test.mjs
+
       - name: Build web workspace
         run: pnpm build
 
