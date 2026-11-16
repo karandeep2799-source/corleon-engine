@@ -117,6 +117,14 @@ export async function getChainPortfolio(chain: Chain, addressInput: string): Pro
 export async function getAddressTransactions(chain: Chain, addressInput: string, page?: string): Promise<unknown> {
   const address = validateAddress(addressInput);
   const params = new URLSearchParams();
-  if (page) params.set('cursor', page);
+  if (page) {
+    let decoded: unknown;
+    try { decoded = JSON.parse(page); } catch { throw new Error('Invalid transaction pagination cursor.'); }
+    if (!decoded || typeof decoded !== 'object' || Array.isArray(decoded)) throw new Error('Invalid transaction pagination cursor.');
+    const allowed = new Set(['block_number', 'index', 'items_count', 'fee', 'hash', 'inserted_at', 'value', 'filter']);
+    for (const [key, value] of Object.entries(decoded as Record<string, unknown>)) {
+      if (allowed.has(key) && (typeof value === 'string' || typeof value === 'number')) params.set(key, String(value));
+    }
+  }
   return getEndpoint(chain, `addresses/${address}/transactions${params.size ? `?${params}` : ''}`);
 }
