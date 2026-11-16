@@ -1,5 +1,3 @@
-import 'server-only';
-
 export const DEFAULT_WALLET_ADDRESS = '0xd6eCCeBC1a33f10b432cd5896554182411D840dF';
 const PRO_BASE = (process.env.BLOCKSCOUT_PRO_API_BASE_URL || 'https://api.blockscout.com').replace(/\/$/, '');
 const CONFIG_URL = `${PRO_BASE}/api/json/config`;
