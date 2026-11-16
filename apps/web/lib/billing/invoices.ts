@@ -17,6 +17,7 @@ export async function syncStripeInvoice(invoice: Stripe.Invoice) {
   const organizationId = invoice.metadata?.corleonOrganizationId;
   const customerId = invoice.metadata?.corleonCustomerId;
   if (!organizationId || !customerId) return null;
+  if (!invoice.id) throw new Error('Stripe invoice payload is missing its invoice ID.');
 
   return prisma.stripeInvoice.upsert({
     where: { stripeInvoiceId: invoice.id },
@@ -97,18 +98,20 @@ export async function createInvoice(input: {
       corleonSource: 'corleon-engine',
     },
   }, { idempotencyKey: `corleon-invoice-${input.idempotencyKey}` });
+  if (!invoice.id) throw new Error('Stripe created an invoice without returning its invoice ID.');
+  const stripeInvoiceId = invoice.id;
 
-  for (const item of input.items) {
+  for (const [index, item] of input.items.entries()) {
     await stripe.invoiceItems.create({
       customer: stripeCustomerId,
-      invoice: invoice.id,
+      invoice: stripeInvoiceId,
       currency,
       amount: item.amount,
       description: item.description,
-    }, { idempotencyKey: `corleon-item-${invoice.id}-${input.items.indexOf(item)}` });
+    }, { idempotencyKey: `corleon-item-${stripeInvoiceId}-${index}` });
   }
 
-  const refreshed = await stripe.invoices.retrieve(invoice.id);
+  const refreshed = await stripe.invoices.retrieve(stripeInvoiceId);
   await syncStripeInvoice(refreshed);
   return refreshed;
 }
