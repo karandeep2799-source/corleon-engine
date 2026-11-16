@@ -1,0 +1,148 @@
+{
+  "schemaVersion": "1.0.0",
+  "status": "BLUEPRINTS_NOT_INSTALLED_OR_ENABLED",
+  "note": "These are implementation blueprints for manual recreation in Atlassian Automation. They are deliberately not represented as Atlassian's native export/import format.",
+  "rules": [
+    {
+      "id": "AUTO-001",
+      "name": "Governance request intake",
+      "product": "Jira",
+      "trigger": "Issue created",
+      "scope": "Governance Change",
+      "conditions": [
+        "Required intake fields are present"
+      ],
+      "actions": [
+        "Set status to Submitted",
+        "Assign workflow owner group",
+        "Add audit comment with request key and timestamp",
+        "Notify governance queue"
+      ],
+      "writes": "Issue fields/comments/notifications",
+      "approvalRequired": false
+    },
+    {
+      "id": "AUTO-002",
+      "name": "Critical access request escalation",
+      "product": "Jira Service Management",
+      "trigger": "Issue transitioned to Security Review",
+      "scope": "Access Request",
+      "conditions": [
+        "Requested role is privileged OR resource classification is Restricted"
+      ],
+      "actions": [
+        "Set priority to Highest",
+        "Assign security reviewer group",
+        "Require expiry and business justification",
+        "Notify security queue"
+      ],
+      "writes": "Issue fields/assignment/notifications",
+      "approvalRequired": false
+    },
+    {
+      "id": "AUTO-003",
+      "name": "AI agent evaluation gate",
+      "product": "Jira",
+      "trigger": "Issue transitioned to Evaluation",
+      "scope": "AI Agent Change",
+      "conditions": [
+        "Agent manifest and tool inventory attached"
+      ],
+      "actions": [
+        "Create linked evaluation task",
+        "Require security, prompt-injection and tenant-isolation evidence",
+        "Block approval transition until evidence reviewed"
+      ],
+      "writes": "Linked issue/comments",
+      "approvalRequired": true
+    },
+    {
+      "id": "AUTO-004",
+      "name": "Release readiness evidence check",
+      "product": "Jira",
+      "trigger": "Issue transitioned to Release Ready",
+      "scope": "Engineering Work",
+      "conditions": [
+        "Pull request merged",
+        "Required CI checks successful",
+        "Security scan evidence attached"
+      ],
+      "actions": [
+        "Record linked commit and CI run",
+        "Assign release reviewer",
+        "Notify release queue"
+      ],
+      "writes": "Issue fields/comments/notifications",
+      "approvalRequired": true
+    },
+    {
+      "id": "AUTO-005",
+      "name": "Production change approval routing",
+      "product": "Jira Service Management",
+      "trigger": "Issue transitioned to CAB Approval",
+      "scope": "Production Change",
+      "conditions": [
+        "Risk tier is High or Critical"
+      ],
+      "actions": [
+        "Assign two distinct approver groups",
+        "Record approval request and expiry",
+        "Do not trigger deployment or external release"
+      ],
+      "writes": "Approval request/issue metadata",
+      "approvalRequired": true
+    },
+    {
+      "id": "AUTO-006",
+      "name": "Incident response orchestration",
+      "product": "Jira Service Management",
+      "trigger": "Incident created or severity changed",
+      "scope": "Incident",
+      "conditions": [
+        "Severity is SEV-1 or SEV-2"
+      ],
+      "actions": [
+        "Assign incident commander",
+        "Create linked investigation and communications tasks",
+        "Notify on-call channel using approved integration",
+        "Start post-incident review task on resolution"
+      ],
+      "writes": "Issues/tasks/notifications",
+      "approvalRequired": false
+    },
+    {
+      "id": "AUTO-007",
+      "name": "Knowledge review expiry",
+      "product": "Confluence + Jira",
+      "trigger": "Scheduled daily",
+      "scope": "Published policies and runbooks",
+      "conditions": [
+        "Review date is due or overdue"
+      ],
+      "actions": [
+        "Create knowledge review task",
+        "Notify content owner",
+        "Mark page metadata as review due"
+      ],
+      "writes": "Review task/page metadata",
+      "approvalRequired": false
+    },
+    {
+      "id": "AUTO-008",
+      "name": "Vendor renewal and offboarding reminder",
+      "product": "Jira",
+      "trigger": "Scheduled daily",
+      "scope": "Vendor Intake",
+      "conditions": [
+        "Renewal date within 45 days OR approved vendor marked for offboarding"
+      ],
+      "actions": [
+        "Create renewal/offboarding task",
+        "Notify business and security owners",
+        "Require human approval before access revocation"
+      ],
+      "writes": "Issues/notifications",
+      "approvalRequired": true
+    }
+  ]
+}
