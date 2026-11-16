@@ -9,7 +9,7 @@ ownerId: null
 fields:
   tier: 1
   lifecycle: Active
-  isMonorepoProject: false
+  isMonorepoProject: true
 labels:
   - corleon
   - platform
