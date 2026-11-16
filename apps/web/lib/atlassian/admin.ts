@@ -48,7 +48,7 @@ export function isAuthorizedAtlassianRequest(request: Request): boolean {
 
 function safeSegment(value: string, name: string): string {
   const trimmed = value.trim();
-  if (!trimmed || trimmed.length > 200 || /[/?#]/.test(trimmed)) {
+  if (!trimmed || trimmed === "." || trimmed === ".." || trimmed.length > 200 || /[/?#]/.test(trimmed)) {
     throw new AtlassianAdminError(`Invalid ${name}.`, 400);
   }
   return encodeURIComponent(trimmed);
@@ -103,7 +103,7 @@ export async function getAtlassianAdminResource(
 ): Promise<unknown> {
   const apiKey = requiredEnv("ATLASSIAN_ADMIN_API_KEY");
   const path = buildAtlassianAdminPath(resource, options);
-  const url = new URL(path, ATLASSIAN_ADMIN_BASE_URL);
+  const url = new URL(`${ATLASSIAN_ADMIN_BASE_URL}${path}`);
 
   if (options.cursor) url.searchParams.set("cursor", options.cursor);
   if (options.limit !== undefined) {
