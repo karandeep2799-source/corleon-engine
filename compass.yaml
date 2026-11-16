@@ -1,0 +1,26 @@
+configVersion: 1
+name: Corleon Engine
+slug: corleon-engine
+description: >-
+  Corleon Engine is the primary AI and automation platform. This Compass
+  component represents the deployable platform boundary and its monorepo.
+typeId: SERVICE
+ownerId: null
+fields:
+  tier: 1
+  lifecycle: Active
+  isMonorepoProject: false
+labels:
+  - corleon
+  - platform
+  - production
+  - ai
+links:
+  - name: Corleon Engine repository
+    type: REPOSITORY
+    url: https://github.com/karandeep2799-source/corleon-engine
+  - name: Corleon Engine documentation
+    type: OTHER_LINK
+    url: https://github.com/karandeep2799-source/corleon-engine/tree/main/docs
+relationships: {}
+customFields: []
