@@ -21,8 +21,9 @@
 1. The current balance schema supports one currency per affiliate. Multi-currency balances require a separate schema migration and application-wide changes; this patch deliberately does not pretend to support them.
 2. Payout execution is guarded by PAYOUT_EXECUTION_ENABLED=false. Do not set it to true until payout account verification, finance authorization, provider idempotency, reconciliation operations, and a staging settlement test have been approved.
 3. A payout left in PROCESSING after an ambiguous provider response must be reconciled against the provider before any retry or replacement payout. Do not delete its payout items or release the associated commissions manually without a finance audit.
-4. The legacy Express-style requestPayout route requires trusted middleware to attach req.auth with organizationId and role. It fails closed if that context is absent. The current Next.js app does not expose this legacy handler as a route.
-5. The health endpoint is a readiness check, not a liveness check. A database outage intentionally produces HTTP 503.
+4. Stripe Connect transfer creation only credits a connected account balance; it is not proof of a bank payout. The Stripe provider therefore leaves the payout in PROCESSING until a separately designed and verified settlement/reconciliation workflow confirms final payout.
+5. The legacy Express-style requestPayout route requires trusted middleware to attach req.auth with organizationId and role. It fails closed if that context is absent. The current Next.js app does not expose this legacy handler as a route.
+6. The health endpoint is a readiness check, not a liveness check. A database outage intentionally produces HTTP 503.
 
 ## Remaining release blockers
 
