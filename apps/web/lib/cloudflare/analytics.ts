@@ -90,7 +90,7 @@ export function getAnalyticsWindow(
   range: AnalyticsRange,
   now: Date = new Date(),
 ): AnalyticsWindow {
-  const end = new Date(now);
+  const end = new Date(now.getTime());
   const start = new Date(end.getTime() - RANGE_MS[range]);
   return {
     range,
