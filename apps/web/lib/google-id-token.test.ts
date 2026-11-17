@@ -3,9 +3,8 @@ import { generateKeyPairSync, sign } from "node:crypto";
 import { verifyGoogleIdToken } from "./google-id-token";
 
 const { privateKey, publicKey } = generateKeyPairSync("rsa", { modulusLength: 2048 });
-const exported = publicKey.export({ format: "jwk" });
+const pem = publicKey.export({ type: "spki", format: "pem" }).toString();
 const kid = "corleon-google-test-key";
-const jwk = { ...exported, kid, kty: "RSA", alg: "RS256", use: "sig" };
 const originalClientId = process.env.GOOGLE_CLIENT_ID;
 
 function makeToken(payload: Record<string, unknown>): string {
@@ -19,7 +18,7 @@ function makeToken(payload: Record<string, unknown>): string {
 
 beforeAll(() => {
   process.env.GOOGLE_CLIENT_ID = "corleon-test-client";
-  vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({ keys: [jwk] }), {
+  vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({ [kid]: pem }), {
     status: 200,
     headers: { "cache-control": "public, max-age=300" },
   })));
