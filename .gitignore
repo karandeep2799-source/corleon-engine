@@ -1,0 +1,25 @@
+# Dependencies
+node_modules/
+
+# Next.js and Vercel build output
+.next/
+.vercel/
+out/
+build/
+dist/
+coverage/
+
+# eve build output
+.eve/
+.output/
+
+# TypeScript
+*.tsbuildinfo
+
+# Local environment and logs
+.env
+.env.local
+.env.*.local
+!.env.example
+npm-debug.log*
+*.log

@@ -19,7 +19,7 @@ describe("Razorpay signature verification", () => {
   });
   it("verifies webhooks against exact raw request bytes", () => {
     process.env.RAZORPAY_WEBHOOK_SECRET = "webhook-secret";
-    const raw = '{ "event" : "payment.captured", "payload": {} }';
+    const raw = '  { "event" : "payment.captured", "payload": {} } \n';
     const expected = createHmac("sha256", "webhook-secret").update(raw, "utf8").digest("hex");
     expect(verifyWebhookSignature(raw, expected)).toBe(true);
     expect(verifyWebhookSignature(raw.trim(), expected)).toBe(false);
