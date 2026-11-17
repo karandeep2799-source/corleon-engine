@@ -34,6 +34,7 @@ export function GoogleSignIn() {
   const [csrfToken, setCsrfToken] = useState("");
   const [message, setMessage] = useState("Preparing secure sign-in…");
   const [busy, setBusy] = useState(false);
+  const busyRef = useRef(false);
 
   useEffect(() => {
     let active = true;
@@ -58,7 +59,8 @@ export function GoogleSignIn() {
       client_id: clientId,
       nonce: csrfToken,
       callback: async ({ credential }) => {
-        if (!credential || busy) return;
+        if (!credential || busyRef.current) return;
+        busyRef.current = true;
         setBusy(true);
         setMessage("Verifying your Google identity…");
         try {
@@ -73,6 +75,7 @@ export function GoogleSignIn() {
           window.location.assign(result.redirectTo ?? "/");
         } catch (error) {
           setMessage(error instanceof Error ? error.message : "Sign-in failed. Please try again.");
+          busyRef.current = false;
           setBusy(false);
         }
       },
@@ -80,14 +83,14 @@ export function GoogleSignIn() {
     window.google.accounts.id.renderButton(buttonRef.current, {
       theme: "outline", size: "large", shape: "rectangular", text: "signin_with", width: 280,
     });
-  }, [scriptReady, csrfToken, busy]);
+  }, [scriptReady, csrfToken]);
 
   return (
-    <section className="w-full">
+    <section style={{ width: "100%" }}>
       <Script src="https://accounts.google.com/gsi/client" strategy="afterInteractive" onLoad={() => setScriptReady(true)} onError={() => setMessage("Google sign-in could not be loaded.")} />
-      <div ref={buttonRef} className="flex min-h-11 justify-center" />
-      {message ? <p role="status" aria-live="polite" className="mt-3 text-center text-sm text-slate-600">{message}</p> : null}
-      {busy ? <p className="mt-2 text-center text-xs text-slate-500">Please keep this window open.</p> : null}
+      <div ref={buttonRef} style={{ display: "flex", minHeight: 44, justifyContent: "center" }} />
+      {message ? <p role="status" aria-live="polite" style={{ marginTop: 12, textAlign: "center", fontSize: 14, color: "#475569" }}>{message}</p> : null}
+      {busy ? <p style={{ marginTop: 8, textAlign: "center", fontSize: 12, color: "#64748b" }}>Please keep this window open.</p> : null}
     </section>
   );
 }
