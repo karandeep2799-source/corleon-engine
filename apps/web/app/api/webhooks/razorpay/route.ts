@@ -72,15 +72,15 @@ export async function POST(request: NextRequest) {
   if (attempt && event.event === "payment.captured" && payment?.id
       && payment.amount === attempt.amountMinor && payment.currency === attempt.currency) {
       await prisma.$transaction(async (tx) => {
-        await tx.paymentAttempt.updateMany({
+        const updated = await tx.paymentAttempt.updateMany({
           where: { id: attempt.id, status: { not: "SUCCEEDED" } },
-          data: {
-            status: "SUCCEEDED",
-            razorpayPaymentId: payment.id,
-            providerReference: payment.id,
-            events: { create: { eventType: "RAZORPAY_WEBHOOK_PAYMENT_CAPTURED", provider: "razorpay", requestId: eventId, details: { paymentId: payment.id } } },
-          },
+          data: { status: "SUCCEEDED", razorpayPaymentId: payment.id, providerReference: payment.id },
         });
+        if (updated.count > 0) {
+          await tx.paymentAttemptEvent.create({
+            data: { paymentAttemptId: attempt.id, eventType: "RAZORPAY_WEBHOOK_PAYMENT_CAPTURED", provider: "razorpay", requestId: eventId, details: { paymentId: payment.id } },
+          });
+        }
         await tx.order.updateMany({
           where: { organizationId: attempt.organizationId, externalId: attempt.orderReference, status: "PENDING" },
           data: { status: "PAID", provider: "razorpay", providerEventId: payment.id },
