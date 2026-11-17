@@ -22,7 +22,9 @@ The failure workflow records a repair issue even when the agent token is not con
 3. Add it under **Settings → Secrets and variables → Actions** as `COPILOT_AGENT_TOKEN`.
 4. Never paste the token into a commit, issue, chat, or workflow file.
 
-GitHub's Copilot agent assignment API is a preview feature and its permission and payload requirements may change. The workflow logs an actionable warning if assignment is rejected.\n\nEnable **Dependency graph** under **Settings → Code security and analysis** to activate the dependency-review check. Until then, the security workflow reports a warning and skips only that check; CodeQL remains active.
+GitHub's Copilot agent assignment API is a preview feature and its permission and payload requirements may change. The workflow logs an actionable warning if assignment is rejected.
+
+Enable **Dependency graph** under **Settings → Code security and analysis** to activate the dependency-review check. Until then, the security workflow reports a warning and skips only that check; CodeQL remains active.
 
 ## Repair boundaries
 
