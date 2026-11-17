@@ -12,7 +12,7 @@ export function buildSetupPlan(env = process.env) {
 
   if (!clientId) throw new Error("CLAUDE_CODE_CLIENT_ID is required.");
   if (!clientSecret) throw new Error("CLAUDE_CODE_CLIENT_SECRET is required.");
-  if (!callbackPort || !/^\\d{1,5}$/.test(callbackPort)) {
+  if (!callbackPort || !/^\d{1,5}$/.test(callbackPort)) {
     throw new Error("CLAUDE_REDIRECT_PORT must be a valid TCP port.");
   }
 
@@ -39,7 +39,7 @@ function run() {
   try {
     plan = buildSetupPlan();
   } catch (error) {
-    process.stderr.write(`Google Pay & Wallet MCP setup: ${error.message}\\n`);
+    process.stderr.write(\`Google Pay & Wallet MCP setup: \${error.message}\n\`);
     process.exitCode = 1;
     return;
   }
@@ -50,19 +50,19 @@ function run() {
     transport: "http",
     server: GOOGLE_PAY_WALLET_MCP_URL,
     callbackPort: Number(process.env.CLAUDE_REDIRECT_PORT),
-  }) + "\\n");
+  }) + "\n");
 
   const result = spawnSync(plan.command, plan.args, {
     env: plan.env, stdio: "inherit", shell: false,
   });
 
   if (result.error) {
-    process.stderr.write(`Unable to start Claude Code: ${result.error.message}\\n`);
+    process.stderr.write(\`Unable to start Claude Code: \${result.error.message}\n\`);
     process.exitCode = 1;
     return;
   }
   if (result.status !== 0) {
-    process.stderr.write(`Claude Code MCP setup exited with status ${result.status ?? "unknown"}.\\n`);
+    process.stderr.write(\`Claude Code MCP setup exited with status \${result.status ?? "unknown"}.\n\`);
     process.exitCode = result.status ?? 1;
     return;
   }
@@ -71,7 +71,7 @@ function run() {
     event: "corleon.integration.setup.completed",
     integration: GOOGLE_PAY_WALLET_MCP_NAME,
     nextStep: "Run claude, then authenticate the google-pay-wallet-dev server.",
-  }) + "\\n");
+  }) + "\n");
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) run();
