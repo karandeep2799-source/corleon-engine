@@ -200,6 +200,7 @@ model Organization {
   fraudEvents FraudEvent[]
   auditLogs AuditLog[]
   ledgerEntries LedgerEntry[]
+  commissions Commission[]
   reconciliations Reconciliation[]
   paymentAttempts PaymentAttempt[]
   razorpayWebhookEvents RazorpayWebhookEvent[]
