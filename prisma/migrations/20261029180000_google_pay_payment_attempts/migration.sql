@@ -8,7 +8,7 @@ CREATE TABLE "PaymentAttempt" (
   "amountMinor" INTEGER NOT NULL,
   "currency" VARCHAR(3) NOT NULL,
   "status" "PaymentAttemptStatus" NOT NULL DEFAULT 'CREATED',
-  "provider" TEXT NOT NULL DEFAULT 'google_pay',
+  "provider" TEXT NOT NULL DEFAULT 'razorpay',
   "providerReference" TEXT,
   "failureCode" TEXT,
   "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -57,3 +57,5 @@ CREATE UNIQUE INDEX "RazorpayWebhookEvent_eventId_key" ON "RazorpayWebhookEvent"
 CREATE INDEX "RazorpayWebhookEvent_eventType_receivedAt_idx" ON "RazorpayWebhookEvent"("eventType", "receivedAt");
 CREATE INDEX "RazorpayWebhookEvent_processedAt_receivedAt_idx" ON "RazorpayWebhookEvent"("processedAt", "receivedAt");
 ALTER TABLE "RazorpayWebhookEvent" ADD CONSTRAINT "RazorpayWebhookEvent_organizationId_fkey" FOREIGN KEY ("organizationId") REFERENCES "Organization"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+ALTER TABLE "RazorpayWebhookEvent" ADD COLUMN "processingAt" TIMESTAMP(3);

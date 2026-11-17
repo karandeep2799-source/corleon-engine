@@ -26,18 +26,28 @@ jobs:
           --health-retries 5
     env:
       DATABASE_URL: postgresql://corleon:corleon@localhost:5432/corleon_test
+      RAZORPAY_KEY_ID: rzp_test_ci
       RAZORPAY_KEY_SECRET: ci-test-secret
       RAZORPAY_WEBHOOK_SECRET: ci-test-webhook-secret
+      PAYMENTS_ENABLED: "false"
+      RAZORPAY_CHECKOUT_ENABLED: "false"
+      TURBO_TELEMETRY_DISABLED: "1"
     steps:
       - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 12.4.0
+          run_install: false
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - run: npm install
-      - run: npx prisma format
-      - run: npx prisma validate
-      - run: npx prisma generate
-      - run: npm run typecheck
-      - run: npm run lint
-      - run: npm test
-      - run: npm run build
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm exec prisma format
+      - run: pnpm exec prisma validate
+      - run: pnpm exec prisma db push --skip-generate
+      - run: pnpm exec prisma generate
+      - run: pnpm --filter @corleon/web typecheck
+      - run: pnpm --filter @corleon/web lint
+      - run: pnpm --filter @corleon/web test
+      - run: pnpm build

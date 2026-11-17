@@ -61,7 +61,15 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    if (attempt && event.event === "payment.captured" && payment?.id
+    // Claim processing atomically to prevent concurrent duplicate deliveries.
+  const staleBefore = new Date(Date.now() - 5 * 60 * 1000);
+  const claim = await prisma.razorpayWebhookEvent.updateMany({
+    where: { eventId, processedAt: null, OR: [{ processingAt: null }, { processingAt: { lt: staleBefore } }] },
+    data: { processingAt: new Date() },
+  });
+  if (claim.count === 0) return NextResponse.json({ received: true, duplicate: true }, { headers });
+
+  if (attempt && event.event === "payment.captured" && payment?.id
       && payment.amount === attempt.amountMinor && payment.currency === attempt.currency) {
       await prisma.$transaction(async (tx) => {
         await tx.paymentAttempt.updateMany({
@@ -91,7 +99,7 @@ export async function POST(request: NextRequest) {
         }
       });
     }
-    await prisma.razorpayWebhookEvent.update({ where: { eventId }, data: { processedAt: new Date() } });
+    await prisma.razorpayWebhookEvent.update({ where: { eventId }, data: { processedAt: new Date(), processingAt: null } });
     return NextResponse.json({ received: true }, { headers });
   } catch {
     // Returning 5xx asks Razorpay to retry; the persisted event remains unprocessed.

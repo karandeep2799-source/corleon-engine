@@ -53,6 +53,8 @@ model Organization {
   reconciliations Reconciliation[]
   paymentAttempts PaymentAttempt[]
   razorpayWebhookEvents RazorpayWebhookEvent[]
+  paymentAttempts PaymentAttempt[]
+  razorpayWebhookEvents RazorpayWebhookEvent[]
 }
 
 model User {
@@ -600,6 +602,7 @@ model RazorpayWebhookEvent {
   payload        Json
   receivedAt     DateTime @default(now())
   processedAt    DateTime?
+  processingAt   DateTime?
   organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
 
   @@index([eventType, receivedAt])
