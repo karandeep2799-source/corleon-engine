@@ -16,8 +16,8 @@ This repository uses GitHub Actions for CI validation, security analysis, issue 
 
 The failure workflow records a repair issue even when the agent token is not configured. To enable automatic Copilot assignment:
 
-1. Confirm GitHub Copilot coding agent is available and enabled for this repository.
-2. Create a fine-grained personal access token for this repository, following GitHub's current Copilot coding-agent API documentation. Grant only the repository permissions needed to read contents and pull requests and write issues/contents for the agent workflow.
+1. Confirm Copilot cloud agent is enabled for the account and repository (GitHub documents this feature for paid Copilot plans).
+2. Create a fine-grained personal access token restricted to this repository with **Metadata: read** and **Actions, Contents, Issues, Pull requests: read and write**, as required by GitHub's Copilot issue-assignment API.
 3. Add it under **Settings → Secrets and variables → Actions** as `COPILOT_AGENT_TOKEN`.
 4. Never paste the token into a commit, issue, chat, or workflow file.
 
