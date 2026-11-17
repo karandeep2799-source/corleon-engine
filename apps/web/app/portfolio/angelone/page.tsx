@@ -81,7 +81,7 @@ export default function AngelOnePortfolioPage() {
         <button type="submit" disabled={loading || !accessToken} style={{ padding: "12px 20px", borderRadius: 8, border: 0, cursor: "pointer", fontWeight: 700 }}>
           {loading ? "Connecting…" : "Load portfolio"}
         </button>
-        <p style={{ width: "100%", margin: 0, fontSize: 12, opacity: 0.6 }}>The access token is held only in this page's memory and is not saved to browser storage.</p>
+        <p style={{ width: "100%", margin: 0, fontSize: 12, opacity: 0.6 }}>The access token is held only in this page&apos;s memory and is not saved to browser storage.</p>
       </form>
 
       {error && <p role="alert" style={{ color: "#ff8f8f" }}>{error}</p>}
