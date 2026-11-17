@@ -8,8 +8,6 @@ export const dynamic = "force-dynamic";
 const headers = { "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff" };
 
 export async function POST(request: NextRequest) {
-  const principal = await getAuthenticatedCheckoutPrincipal(request);
-  if (!principal) return NextResponse.json({ error: "Checkout unavailable: authenticated customer session is not configured." }, { status: 503, headers });
   if (process.env.PAYMENTS_ENABLED !== "true" || process.env.RAZORPAY_CHECKOUT_ENABLED !== "true") {
     return NextResponse.json({ error: "Payment verification is disabled." }, { status: 503, headers });
   }
@@ -25,9 +23,11 @@ export async function POST(request: NextRequest) {
   }
 
   const attempt = await prisma.paymentAttempt.findFirst({
-    where: { razorpayOrderId: orderId, organizationId: principal.organizationId, provider: "razorpay" },
+    where: { razorpayOrderId: orderId, provider: "razorpay" },
   });
   if (!attempt) return NextResponse.json({ error: "Payment attempt not found." }, { status: 404, headers });
+  const principal = await getAuthenticatedCheckoutPrincipal(request, attempt.orderReference, attempt.organizationId);
+  if (!principal) return NextResponse.json({ error: "Authenticated customer session or customer access mapping is unavailable." }, { status: 403, headers });
   const order = await prisma.order.findFirst({
     where: { externalId: attempt.orderReference, organizationId: principal.organizationId, customerId: principal.customerId },
   });
