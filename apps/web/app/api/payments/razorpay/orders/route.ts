@@ -8,8 +8,6 @@ export const dynamic = "force-dynamic";
 const headers = { "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff" };
 
 export async function POST(request: NextRequest) {
-  const principal = await getAuthenticatedCheckoutPrincipal(request);
-  if (!principal) return NextResponse.json({ error: "Checkout unavailable: authenticated customer session is not configured." }, { status: 503, headers });
   if (process.env.PAYMENTS_ENABLED !== "true" || process.env.RAZORPAY_CHECKOUT_ENABLED !== "true") {
     return NextResponse.json({ error: "Razorpay checkout is disabled by deployment configuration." }, { status: 503, headers });
   }
@@ -26,6 +24,9 @@ export async function POST(request: NextRequest) {
   if (typeof body.orderReference !== "string" || body.orderReference.length < 1 || body.orderReference.length > 128) {
     return NextResponse.json({ error: "A valid orderReference is required." }, { status: 400, headers });
   }
+
+  const principal = await getAuthenticatedCheckoutPrincipal(request, body.orderReference);
+  if (!principal) return NextResponse.json({ error: "Authenticated customer session or customer access mapping is unavailable." }, { status: 403, headers });
 
   const order = await prisma.order.findFirst({
     where: {
