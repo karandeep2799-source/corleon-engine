@@ -27,7 +27,7 @@ describe("Razorpay signature verification", () => {
     const raw = '{ "event" : "payment.captured", "payload": {} }';
     const expected = createHmac("sha256", "webhook-secret").update(raw, "utf8").digest("hex");
     expect(verifyWebhookSignature(raw, expected)).toBe(true);
-    expect(verifyWebhookSignature(raw.trim(), expected)).toBe(false);
+    expect(verifyWebhookSignature(raw + " ", expected)).toBe(false);
   });
 
   it("rejects malformed or different-length hexadecimal signatures", () => {
