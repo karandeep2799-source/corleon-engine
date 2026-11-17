@@ -32,7 +32,7 @@ export function GoogleSignIn() {
   const buttonRef = useRef<HTMLDivElement>(null);
   const [scriptReady, setScriptReady] = useState(false);
   const [csrfToken, setCsrfToken] = useState("");
-  const [message, setMessage] = useState("Preparing secure sign-in…");
+  const [message, setMessage] = useState(clientId ? "Preparing secure sign-in…" : "Google sign-in is not configured for this deployment.");
   const [busy, setBusy] = useState(false);
   const busyRef = useRef(false);
 
@@ -50,10 +50,7 @@ export function GoogleSignIn() {
 
   useEffect(() => {
     if (!scriptReady || !csrfToken || !buttonRef.current) return;
-    if (!clientId || !window.google?.accounts.id) {
-      setMessage("Google sign-in is not configured for this deployment.");
-      return;
-    }
+    if (!clientId || !window.google?.accounts.id) return;
 
     window.google.accounts.id.initialize({
       client_id: clientId,
