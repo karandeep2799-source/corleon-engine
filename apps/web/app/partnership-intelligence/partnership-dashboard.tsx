@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import type { PartnershipIntelligencePayload, PartnerRecord } from "../../lib/partnership-intelligence/demo-data";
 
 type View = "overview" | "partners" | "campaigns" | "governance";
@@ -56,7 +57,7 @@ export default function PartnershipDashboard() {
 
   return <main className="pi-shell">
     <aside className="pi-sidebar">
-      <a className="pi-brand" href="/"><span className="pi-brand-mark">C</span><span>corleon<span className="pi-brand-light"> engine</span></span></a>
+      <Link className="pi-brand" href="/"><span className="pi-brand-mark">C</span><span>corleon<span className="pi-brand-light"> engine</span></span></Link>
       <div className="pi-workspace-label">WORKSPACE</div><div className="pi-workspace"><span className="pi-workspace-dot" /> Growth & Partnerships <span className="pi-chevron">⌄</span></div>
       <div className="pi-nav-label">INTELLIGENCE</div>
       <nav className="pi-nav" aria-label="Partnership intelligence navigation">
