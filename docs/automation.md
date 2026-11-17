@@ -7,7 +7,8 @@ This repository uses GitHub Actions for CI validation, security analysis, issue 
 | Workflow | Trigger | Purpose |
 | --- | --- | --- |
 | `CI` | Push / pull request | pnpm install, lint, typecheck, tests, production build |
-| `Autonomous PR Repair` | Failed `CI` run | Assign Copilot to a same-repository failed PR, or open a repair issue |
+| `Autonomous PR Repair` | Failed `CI` or `Security` run | Assign Copilot to a same-repository failed PR, or open a repair issue |
+| `PR Review Repair` | Review requests changes | Assign Copilot to address reviewer feedback |
 | `Security` | Main push / PR / weekly schedule | CodeQL and dependency review |
 | `Issue Triage` | Issue opened / reopened | Apply `needs-triage` |
 | Dependabot | Weekly schedule | Update pnpm dependencies and GitHub Actions |
