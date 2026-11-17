@@ -48,15 +48,15 @@ export async function POST(request: NextRequest) {
   }
 
   await prisma.$transaction(async (tx) => {
-    await tx.paymentAttempt.updateMany({
+    const updated = await tx.paymentAttempt.updateMany({
       where: { id: attempt.id, status: { not: "SUCCEEDED" } },
-      data: {
-        status: "SUCCEEDED",
-        razorpayPaymentId: paymentId,
-        providerReference: paymentId,
-        events: { create: { eventType: "RAZORPAY_PAYMENT_CAPTURED", provider: "razorpay", details: { paymentId } } },
-      },
+      data: { status: "SUCCEEDED", razorpayPaymentId: paymentId, providerReference: paymentId },
     });
+    if (updated.count > 0) {
+      await tx.paymentAttemptEvent.create({
+        data: { paymentAttemptId: attempt.id, eventType: "RAZORPAY_PAYMENT_CAPTURED", provider: "razorpay", details: { paymentId } },
+      });
+    }
     await tx.order.updateMany({
       where: { id: order.id, status: "PENDING" },
       data: { status: "PAID", provider: "razorpay", providerEventId: paymentId },
