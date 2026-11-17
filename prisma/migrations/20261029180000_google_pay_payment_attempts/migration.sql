@@ -20,7 +20,7 @@ CREATE TABLE "PaymentAttemptEvent" (
   "id" TEXT NOT NULL,
   "paymentAttemptId" TEXT NOT NULL,
   "eventType" TEXT NOT NULL,
-  "provider" TEXT NOT NULL DEFAULT 'google_pay',
+  "provider" TEXT NOT NULL DEFAULT 'razorpay',
   "requestId" TEXT,
   "details" JSONB,
   "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -59,3 +59,43 @@ CREATE INDEX "RazorpayWebhookEvent_processedAt_receivedAt_idx" ON "RazorpayWebho
 ALTER TABLE "RazorpayWebhookEvent" ADD CONSTRAINT "RazorpayWebhookEvent_organizationId_fkey" FOREIGN KEY ("organizationId") REFERENCES "Organization"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 ALTER TABLE "RazorpayWebhookEvent" ADD COLUMN "processingAt" TIMESTAMP(3);
+
+CREATE TABLE "GoogleAccount" (
+  "id" TEXT NOT NULL,
+  "googleSub" TEXT NOT NULL,
+  "userId" TEXT NOT NULL,
+  "email" TEXT NOT NULL,
+  "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "updatedAt" TIMESTAMP(3) NOT NULL,
+  CONSTRAINT "GoogleAccount_pkey" PRIMARY KEY ("id")
+);
+CREATE UNIQUE INDEX "GoogleAccount_googleSub_key" ON "GoogleAccount"("googleSub");
+CREATE UNIQUE INDEX "GoogleAccount_userId_key" ON "GoogleAccount"("userId");
+CREATE INDEX "GoogleAccount_email_idx" ON "GoogleAccount"("email");
+ALTER TABLE "GoogleAccount" ADD CONSTRAINT "GoogleAccount_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+CREATE TABLE "Session" (
+  "id" TEXT NOT NULL,
+  "tokenHash" TEXT NOT NULL,
+  "userId" TEXT NOT NULL,
+  "expiresAt" TIMESTAMP(3) NOT NULL,
+  "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "lastSeenAt" TIMESTAMP(3),
+  CONSTRAINT "Session_pkey" PRIMARY KEY ("id")
+);
+CREATE UNIQUE INDEX "Session_tokenHash_key" ON "Session"("tokenHash");
+CREATE INDEX "Session_userId_expiresAt_idx" ON "Session"("userId", "expiresAt");
+CREATE INDEX "Session_expiresAt_idx" ON "Session"("expiresAt");
+ALTER TABLE "Session" ADD CONSTRAINT "Session_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+CREATE TABLE "CustomerUser" (
+  "id" TEXT NOT NULL,
+  "customerId" TEXT NOT NULL,
+  "userId" TEXT NOT NULL,
+  "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT "CustomerUser_pkey" PRIMARY KEY ("id")
+);
+CREATE UNIQUE INDEX "CustomerUser_customerId_userId_key" ON "CustomerUser"("customerId", "userId");
+CREATE INDEX "CustomerUser_userId_createdAt_idx" ON "CustomerUser"("userId", "createdAt");
+ALTER TABLE "CustomerUser" ADD CONSTRAINT "CustomerUser_customerId_fkey" FOREIGN KEY ("customerId") REFERENCES "Customer"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "CustomerUser" ADD CONSTRAINT "CustomerUser_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
