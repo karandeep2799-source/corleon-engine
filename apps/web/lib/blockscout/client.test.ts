@@ -21,7 +21,10 @@ describe("Blockscout client validation", () => {
     const chains = normalizeSupportedChains({ chains: { "1": {} } }, { "1": { name: "Ethereum", url: "http://127.0.0.1:8080" } });
     expect(chains[0].explorerUrl).toBeNull();
   });
-  it("accepts only bounded, allowlisted pagination fields", () => {
+  it("accepts cursor objects and filters unknown fields", () => {
+    expect(parsePaginationCursor({ block_number: 100, index: 2, injected: "ignored" })).toEqual({ block_number: "100", index: "2" });
+  });
+  it("accepts only bounded, allowlisted JSON cursor fields", () => {
     expect(parsePaginationCursor(JSON.stringify({ block_number: 100, index: 2, injected: "ignored" }))).toEqual({ block_number: "100", index: "2" });
     expect(() => parsePaginationCursor("{bad json")).toThrow(/JSON/i);
     expect(() => parsePaginationCursor("x".repeat(3000))).toThrow(/oversized/i);

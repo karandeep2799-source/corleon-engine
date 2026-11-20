@@ -4,13 +4,7 @@ const ADDRESS_PATTERN = /^0x[a-fA-F0-9]{40}$/;
 const MAX_CURSOR_LENGTH = 2048;
 const CURSOR_KEYS = new Set(["block_number", "index", "items_count", "fee", "hash", "inserted_at", "value", "filter", "token_name", "token_type", "token_id", "transaction_hash", "batch_log_index", "batch_block_hash", "batch_transaction_hash", "index_in_batch"]);
 
-export type SupportedChain = {
-  id: string;
-  name: string;
-  isTestnet: boolean;
-  explorerUrl: string | null;
-  nativeCurrencySymbol: string | null;
-};
+export type SupportedChain = { id: string; name: string; isTestnet: boolean; explorerUrl: string | null; nativeCurrencySymbol: string | null };
 export type TokenHolding = { address: string; name: string; symbol: string; decimals: number; balance: string; valueUsd: string | null };
 export type ChainPortfolio = { chain: SupportedChain; nativeBalance: string | null; transactionCount: number | null; tokens: TokenHolding[]; error?: string };
 
@@ -36,8 +30,7 @@ function safeHttpsUrl(value: string | null): string | null {
 }
 
 export function normalizeSupportedChains(config: unknown, metadata: unknown): SupportedChain[] {
-  const configRoot = asRecord(config);
-  const chainConfig = asRecord(configRoot.chains);
+  const chainConfig = asRecord(asRecord(config).chains);
   const metadataRoot = asRecord(metadata);
   const result: SupportedChain[] = [];
   for (const [id, raw] of Object.entries(metadataRoot)) {
@@ -135,10 +128,14 @@ export async function getChainPortfolio(chain: SupportedChain, addressInput: str
 }
 export function parsePaginationCursor(value: unknown): Record<string, string> {
   if (value === undefined || value === null || value === "") return {};
-  if (typeof value !== "string" || value.length > MAX_CURSOR_LENGTH) throw new Error("Invalid or oversized pagination cursor.");
-  let parsed: unknown;
-  try { parsed = JSON.parse(value); } catch { throw new Error("Pagination cursor must be valid JSON."); }
-  const record = asRecord(parsed);
+  let record: Record<string, unknown>;
+  if (typeof value === "string") {
+    if (value.length > MAX_CURSOR_LENGTH) throw new Error("Invalid or oversized pagination cursor.");
+    try { record = asRecord(JSON.parse(value)); } catch { throw new Error("Pagination cursor must be valid JSON."); }
+  } else {
+    record = asRecord(value);
+    if (JSON.stringify(record).length > MAX_CURSOR_LENGTH) throw new Error("Invalid or oversized pagination cursor.");
+  }
   const result: Record<string, string> = {};
   for (const [key, raw] of Object.entries(record)) {
     if (!CURSOR_KEYS.has(key) || (typeof raw !== "string" && typeof raw !== "number")) continue;
@@ -165,10 +162,7 @@ export async function getAddressActivity(chainId: string, addressInput: string, 
   return {
     transactions: Array.isArray(txRoot.items) ? txRoot.items : [],
     tokenTransfers: Array.isArray(transferRoot.items) ? transferRoot.items : [],
-    nextPageParams: {
-      transactions: asRecord(txRoot.next_page_params),
-      tokenTransfers: asRecord(transferRoot.next_page_params),
-    },
+    nextPageParams: { transactions: asRecord(txRoot.next_page_params), tokenTransfers: asRecord(transferRoot.next_page_params) },
   };
 }
 export function hasBlockscoutApiKey(): boolean { return Boolean(process.env.BLOCKSCOUT_PRO_API_KEY?.trim()); }
