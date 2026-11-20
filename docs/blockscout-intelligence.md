@@ -3,7 +3,6 @@
 ## Scope
 
 The Blockscout integration provides read-only EVM explorer data inside Corleon Engine:
-
 - Supported mainnet discovery through the Blockscout chain registry.
 - Native asset balances and token holdings for a public wallet address.
 - Address transaction and token-transfer activity.
@@ -26,30 +25,25 @@ Required:
 - BLOCKSCOUT_PRO_API_KEY: Blockscout PRO API key. Never expose it through a NEXT_PUBLIC_ variable or commit it.
 
 Optional:
-- BLOCKSCOUT_DEFAULT_CHAIN_IDS: comma-separated default chain IDs. Defaults to Ethereum, Optimism, Base, Arbitrum One, Gnosis and Polygon.
+- BLOCKSCOUT_DEFAULT_CHAIN_IDS: comma-separated default chain IDs. Defaults to Ethereum, Optimism, Gnosis, Arbitrum One, Celo and Robinhood Chain.
 - BLOCKSCOUT_MAX_CHAINS_PER_REQUEST: maximum networks per portfolio request (1–12; default 6).
 - UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN: distributed rate-limit storage. If configured but unavailable, requests fail closed with HTTP 503.
 
-Add the key to Vercel Project Settings -> Environment Variables for Preview first. Do not add it to GitHub, source files, client variables or chat messages. Keep the feature unavailable until the key is configured.
+Add the key to Vercel Project Settings -> Environment Variables for Preview first. Do not add it to GitHub, source files, client variables or chat messages.
 
 ## API
 
-GET /api/integrations/blockscout/chains
-Returns supported mainnet metadata. Cached for five minutes.
+GET /api/integrations/blockscout/chains returns supported mainnet metadata, cached for five minutes.
 
-POST /api/integrations/blockscout/portfolio
-Request JSON: { "address": "0x...", "chainIds": ["1", "10", "8453"] }
-Returns native balances, token holdings, transaction counters and per-chain errors. The route caps network fan-out and applies a per-IP request limit.
+POST /api/integrations/blockscout/portfolio accepts JSON containing an address and one to six chainIds. It returns native balances, token holdings, transaction counters and per-chain errors.
 
-POST /api/integrations/blockscout/activity
-Request JSON: { "address": "0x...", "chainId": "1", "cursor": null }
-Returns recent normal transactions and token transfers. Pagination cursors are bounded and filtered to known Blockscout cursor fields.
+POST /api/integrations/blockscout/activity accepts JSON containing an address, chainId and optional independent transaction and token-transfer cursors. It returns recent transactions and token transfers.
 
 ## Rate limiting and production operations
 
 Without Upstash, the route uses a best-effort in-memory per-instance limit. This is a local safeguard, not a global quota across Vercel serverless instances. For broad public production exposure, configure Upstash Redis or Vercel Firewall rate limiting before opening the dashboard to unauthenticated traffic.
 
-Monitor Blockscout PRO API credit usage and RPS in the developer portal. Keep the selected chain count conservative and handle HTTP 401/403/429 responses without retry storms.
+Monitor Blockscout PRO API credit usage and RPS in the developer portal. Some networks may require a higher Blockscout plan; confirm network entitlement in the developer portal before enabling them as defaults.
 
 ## Data limitations
 
@@ -69,4 +63,4 @@ Run from the repository root:
     pnpm test
     pnpm build
 
-The Blockscout routes return HTTP 503 until BLOCKSCOUT_PRO_API_KEY is configured. No production secret or deployment setting is changed by this code change.
+The portfolio and activity routes return HTTP 503 until BLOCKSCOUT_PRO_API_KEY is configured. No production secret or deployment setting is changed by this code change.

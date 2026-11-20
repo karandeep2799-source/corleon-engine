@@ -4,7 +4,7 @@ import { isRateLimited } from "../../../../../lib/blockscout/rate-limit";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
-const DEFAULT_CHAIN_IDS = ["1", "10", "8453", "42161", "100", "137"];
+const DEFAULT_CHAIN_IDS = ["1", "10", "100", "42161", "42220", "4663"];
 
 function maxChainsPerRequest(): number {
   const configured = Number(process.env.BLOCKSCOUT_MAX_CHAINS_PER_REQUEST ?? 6);
@@ -32,7 +32,7 @@ export async function POST(request: NextRequest) {
   }
   const requested = Array.isArray(payload.chainIds) ? payload.chainIds : (process.env.BLOCKSCOUT_DEFAULT_CHAIN_IDS ?? DEFAULT_CHAIN_IDS.join(",")).split(",");
   if (!requested.length || requested.length > maxChainsPerRequest()) return NextResponse.json({ error: "Select between 1 and " + maxChainsPerRequest() + " networks per request." }, { status: 400 });
-  if (requested.some((id) => typeof id !== "string" || !/^\\d{1,10}$/.test(id))) return NextResponse.json({ error: "Every chain ID must be a numeric string." }, { status: 400 });
+  if (requested.some((id) => typeof id !== "string" || !/^\d{1,10}$/.test(id))) return NextResponse.json({ error: "Every chain ID must be a numeric string." }, { status: 400 });
   const ids = [...new Set(requested as string[])];
   if (ids.length !== requested.length) return NextResponse.json({ error: "Duplicate chain IDs are not allowed." }, { status: 400 });
 

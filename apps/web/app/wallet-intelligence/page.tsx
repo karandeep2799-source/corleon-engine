@@ -7,7 +7,7 @@ type Chain = { id: string; name: string; explorerUrl: string | null; nativeCurre
 type Token = { address: string; name: string; symbol: string; decimals: number; balance: string; valueUsd: string | null };
 type ChainPortfolio = { chain: Chain; nativeBalance: string | null; transactionCount: number | null; tokens: Token[]; error?: string };
 type Portfolio = { generatedAt: string; supportedChainCount: number; queriedChainCount: number; chains: ChainPortfolio[]; totals: { chainsWithActivity: number; tokenCount: number; transactionCount: number }; readOnly: true };
-const DEFAULT_CHAIN_IDS = ["1", "10", "8453", "42161", "100", "137"];
+const DEFAULT_CHAIN_IDS = ["1", "10", "100", "42161", "42220", "4663"];
 
 function formatUnits(raw: string | null, decimals = 18): string {
   if (raw === null) return "—";
