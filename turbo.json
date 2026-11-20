@@ -1,5 +1,13 @@
 {
   "$schema": "https://turbo.build/schema.json",
+  "globalPassThroughEnv": [
+    "ENABLE_EXPERIMENTAL_COREPACK",
+    "BLOCKSCOUT_PRO_API_KEY",
+    "BLOCKSCOUT_DEFAULT_CHAIN_IDS",
+    "BLOCKSCOUT_MAX_CHAINS_PER_REQUEST",
+    "UPSTASH_REDIS_REST_URL",
+    "UPSTASH_REDIS_REST_TOKEN"
+  ],
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
