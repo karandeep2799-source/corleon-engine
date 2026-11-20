@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import styles from "./wallet-intelligence.module.css";
 
 type Chain = { id: string; name: string; explorerUrl: string | null; nativeCurrencySymbol: string | null };
@@ -48,9 +48,6 @@ export default function WalletIntelligencePage() {
     return () => { active = false; };
   }, []);
 
-  const selectedCount = selectedIds.length;
-  const selectedNames = useMemo(() => selectedIds.map((id) => chains.find((chain) => chain.id === id)?.name ?? id), [chains, selectedIds]);
-
   function toggleChain(id: string) {
     setSelectedIds((current) => current.includes(id) ? current.filter((value) => value !== id) : current.length >= 6 ? current : [...current, id]);
   }
@@ -95,7 +92,7 @@ export default function WalletIntelligencePage() {
             <button className={styles.scanButton} disabled={loading || loadingChains}>{loading ? "Scanning…" : "Scan wallet"}</button>
           </div>
           <div className={styles.networkHeader}>
-            <div><span className={styles.label}>Networks</span><p className={styles.helper}>{selectedCount} of 6 selected · {chains.length} supported mainnets discovered</p></div>
+            <div><span className={styles.label}>Networks</span><p className={styles.helper}>{selectedIds.length} of 6 selected · {chains.length} supported mainnets discovered</p></div>
             <span className={styles.helper}>Read-only · public address data</span>
           </div>
           {loadingChains ? <p className={styles.helper}>Loading Blockscout network registry…</p> : (

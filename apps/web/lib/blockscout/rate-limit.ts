@@ -16,7 +16,7 @@ function clientAddress(request: NextRequest): string {
  */
 export async function isRateLimited(request: NextRequest, scope: string, limit: number, windowSeconds = 60): Promise<boolean> {
   const key = "corleon:blockscout:" + scope + ":" + clientAddress(request);
-  const redisUrl = process.env.UPSTASH_REDIS_REST_URL?.replace(/\\/$/, "");
+  const redisUrl = process.env.UPSTASH_REDIS_REST_URL?.replace(/\/$/, "");
   const redisToken = process.env.UPSTASH_REDIS_REST_TOKEN;
   if (redisUrl && redisToken) {
     const init = { headers: { authorization: "Bearer " + redisToken }, cache: "no-store" as const, signal: AbortSignal.timeout(3000) };

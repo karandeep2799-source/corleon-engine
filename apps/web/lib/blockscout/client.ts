@@ -41,7 +41,7 @@ export function normalizeSupportedChains(config: unknown, metadata: unknown): Su
   const metadataRoot = asRecord(metadata);
   const result: SupportedChain[] = [];
   for (const [id, raw] of Object.entries(metadataRoot)) {
-    if (!/^\\d{1,10}$/.test(id)) continue;
+    if (!/^\d{1,10}$/.test(id)) continue;
     const chain = asRecord(raw);
     const configEntry = asRecord(chainConfig[id]);
     const testnetValue = chain.isTestnet ?? chain.is_testnet ?? configEntry.isTestnet ?? configEntry.is_testnet;
@@ -65,7 +65,7 @@ export async function getSupportedChains(): Promise<SupportedChain[]> {
   });
   if (!configResponse.ok) throw new Error("Blockscout chain registry failed (" + configResponse.status + ").");
   const config = await configResponse.json() as unknown;
-  const chainIds = Object.keys(asRecord(asRecord(config).chains)).filter((id) => /^\\d{1,10}$/.test(id)).slice(0, 300);
+  const chainIds = Object.keys(asRecord(asRecord(config).chains)).filter((id) => /^\d{1,10}$/.test(id)).slice(0, 300);
   if (!chainIds.length) throw new Error("Blockscout returned no supported EVM chain IDs.");
   const metadata: Record<string, unknown> = {};
   for (let offset = 0; offset < chainIds.length; offset += 50) {
@@ -86,8 +86,8 @@ function getApiKey(): string {
   return key;
 }
 async function requestJson<T>(chainId: string, path: string): Promise<T> {
-  if (!/^\\d{1,10}$/.test(chainId)) throw new Error("Invalid chain identifier.");
-  const url = new URL("/" + chainId + "/api/v2/" + path.replace(/^\\/+/, ""), PRO_API_BASE);
+  if (!/^\d{1,10}$/.test(chainId)) throw new Error("Invalid chain identifier.");
+  const url = new URL("/" + chainId + "/api/v2/" + path.replace(/^\/+/, ""), PRO_API_BASE);
   const response = await fetch(url, {
     headers: { accept: "application/json", authorization: "Bearer " + getApiKey() },
     cache: "no-store", signal: AbortSignal.timeout(12000),
@@ -149,20 +149,26 @@ export function parsePaginationCursor(value: unknown): Record<string, string> {
   if (!Object.keys(result).length) throw new Error("Pagination cursor contains no supported fields.");
   return result;
 }
-export async function getAddressActivity(chainId: string, addressInput: string, cursorValue?: unknown): Promise<{ transactions: unknown[]; tokenTransfers: unknown[]; nextPageParams: Record<string, unknown> | null }> {
+export async function getAddressActivity(chainId: string, addressInput: string, cursorValue?: unknown): Promise<{ transactions: unknown[]; tokenTransfers: unknown[]; nextPageParams: { transactions: Record<string, unknown>; tokenTransfers: Record<string, unknown> } }> {
   const address = validateAddress(addressInput);
-  const params = new URLSearchParams(parsePaginationCursor(cursorValue));
-  const suffix = params.size ? "?" + params.toString() : "";
+  const cursor = asRecord(cursorValue);
+  const txParams = new URLSearchParams(parsePaginationCursor(cursor.transactions));
+  const transferParams = new URLSearchParams(parsePaginationCursor(cursor.tokenTransfers));
+  const txSuffix = txParams.size ? "?" + txParams.toString() : "";
+  const transferSuffix = transferParams.size ? "?" + transferParams.toString() : "";
   const [transactions, transfers] = await Promise.all([
-    requestJson<Record<string, unknown>>(chainId, "addresses/" + address + "/transactions" + suffix),
-    requestJson<Record<string, unknown>>(chainId, "addresses/" + address + "/token-transfers" + suffix),
+    requestJson<Record<string, unknown>>(chainId, "addresses/" + address + "/transactions" + txSuffix),
+    requestJson<Record<string, unknown>>(chainId, "addresses/" + address + "/token-transfers" + transferSuffix),
   ]);
   const txRoot = asRecord(transactions);
   const transferRoot = asRecord(transfers);
   return {
     transactions: Array.isArray(txRoot.items) ? txRoot.items : [],
     tokenTransfers: Array.isArray(transferRoot.items) ? transferRoot.items : [],
-    nextPageParams: asRecord(txRoot.next_page_params),
+    nextPageParams: {
+      transactions: asRecord(txRoot.next_page_params),
+      tokenTransfers: asRecord(transferRoot.next_page_params),
+    },
   };
 }
 export function hasBlockscoutApiKey(): boolean { return Boolean(process.env.BLOCKSCOUT_PRO_API_KEY?.trim()); }
