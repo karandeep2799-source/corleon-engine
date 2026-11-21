@@ -151,7 +151,7 @@ export function parsePaginationCursor(value: unknown): Record<string, string> {
   for (const [key, raw] of Object.entries(record)) {
     // Blockscout cursors are opaque: retain future scalar fields, but never
     // forward malformed names, nested structures, or prototype-sensitive keys.
-    if (!/^[A-Za-z][A-Za-z0-9_]{0,63}$/.test(key)) continue;
+    if (!/^[A-Za-z][A-Za-z0-9_]{0,63}$/.test(key) || key === "constructor" || key === "prototype") continue;
     if (typeof raw !== "string" && typeof raw !== "number") continue;
     if (typeof raw === "number" && !Number.isFinite(raw)) continue;
 
