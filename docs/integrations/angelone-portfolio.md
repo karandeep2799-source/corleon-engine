@@ -30,17 +30,18 @@ SmartAPI sessions expire and must be refreshed using Angel One's official authen
 
 Generate the Corleon route access token with a password manager or a cryptographically secure generator (for example, `openssl rand -base64 48`). Store it only as a server environment variable. The route requires it as a Bearer token.
 
-## API
+## API and dashboard
 
-`GET /api/integrations/angelone/portfolio`
+- Private API: `GET /api/integrations/angelone/portfolio`
+- Dashboard: `/portfolio/angelone`
 
-Headers:
+API header:
 
 ```http
 Authorization: Bearer <ANGELONE_PORTFOLIO_ACCESS_TOKEN>
 ```
 
-The route returns holdings, aggregate holding valuation when supplied by Angel One, positions, retrieval time, and an explicit capability policy. Responses are marked `private, no-store`.
+The dashboard keeps the Corleon access token in component memory only; it does not write it to local storage, session storage, cookies, or URLs. The API returns holdings, aggregate holding valuation when supplied by Angel One, positions, retrieval time, and an explicit capability policy.
 
 ## Operational safeguards
 
@@ -48,6 +49,9 @@ The route returns holdings, aggregate holding valuation when supplied by Angel O
 - Server-side secrets only; never use public environment variables for credentials.
 - Constant-time comparison for the Corleon access token.
 - Request timeout, bounded error messages, upstream status handling, and response-shape validation.
+- Allowlisted response fields only; unknown upstream fields are discarded before data reaches the browser.
+- Numeric financial fields are checked for finite values; oversized collections and malformed rows fail closed.
+- Responses are marked `private, no-store`; upstream requests also bypass caching.
 - No raw upstream response, authorization header, JWT, or API key is logged.
 - No order execution or position conversion capability.
 - Do not deploy or enable the integration until credentials, IP/MAC header values, account access, and the intended operator have been verified.
@@ -62,4 +66,4 @@ pnpm --filter @corleon/web typecheck
 pnpm --filter @corleon/web build
 ```
 
-The included test covers route bearer-token authorization. Live API verification requires valid SmartAPI credentials and an active session; it is not performed by unit tests.
+Unit tests cover bearer-token authorization, missing configuration, upstream success and failure handling, response allowlisting, and malformed payload rejection. Live API verification requires valid SmartAPI credentials and an active session; it is not performed by unit tests.
