@@ -23,7 +23,7 @@ export default function Home() {
           together in one independently deployable application.
         </p>
         <div className="actions">
-          <a href="/api/health"><Button>Check platform health</Button></a>
+          <a href="/business"><Button>Open Business OS</Button></a>\n          <a href="/api/health">Platform health</a>
           <a className="secondary" href="#architecture">Explore architecture</a>
         </div>
       </section>
