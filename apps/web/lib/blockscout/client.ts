@@ -2,7 +2,6 @@ const PRO_API_BASE = "https://api.blockscout.com";
 const CHAINS_METADATA_BASE = "https://chains.blockscout.com/api/chains";
 const ADDRESS_PATTERN = /^0x[a-fA-F0-9]{40}$/;
 const MAX_CURSOR_LENGTH = 2048;
-const CURSOR_KEYS = new Set(["block_number", "index", "items_count", "fee", "hash", "inserted_at", "value", "filter", "token_name", "token_type", "token_id", "transaction_hash", "batch_log_index", "batch_block_hash", "batch_transaction_hash", "index_in_batch"]);
 
 export type SupportedChain = { id: string; name: string; isTestnet: boolean; explorerUrl: string | null; nativeCurrencySymbol: string | null };
 export type TokenHolding = { address: string; name: string; symbol: string; decimals: number; balance: string; valueUsd: string | null };
@@ -128,21 +127,39 @@ export async function getChainPortfolio(chain: SupportedChain, addressInput: str
 }
 export function parsePaginationCursor(value: unknown): Record<string, string> {
   if (value === undefined || value === null || value === "") return {};
+
   let record: Record<string, unknown>;
   if (typeof value === "string") {
     if (value.length > MAX_CURSOR_LENGTH) throw new Error("Invalid or oversized pagination cursor.");
-    try { record = asRecord(JSON.parse(value)); } catch { throw new Error("Pagination cursor must be valid JSON."); }
+    try {
+      record = asRecord(JSON.parse(value));
+    } catch {
+      throw new Error("Pagination cursor must be valid JSON.");
+    }
   } else {
     record = asRecord(value);
-    if (JSON.stringify(record).length > MAX_CURSOR_LENGTH) throw new Error("Invalid or oversized pagination cursor.");
+    let serialized: string;
+    try {
+      serialized = JSON.stringify(record);
+    } catch {
+      throw new Error("Invalid pagination cursor.");
+    }
+    if (serialized.length > MAX_CURSOR_LENGTH) throw new Error("Invalid or oversized pagination cursor.");
   }
-  const result: Record<string, string> = {};
+
+  const result: Record<string, string> = Object.create(null) as Record<string, string>;
   for (const [key, raw] of Object.entries(record)) {
-    if (!CURSOR_KEYS.has(key) || (typeof raw !== "string" && typeof raw !== "number")) continue;
+    // Blockscout cursors are opaque: retain future scalar fields, but never
+    // forward malformed names, nested structures, or prototype-sensitive keys.
+    if (!/^[A-Za-z][A-Za-z0-9_]{0,63}$/.test(key) || key === "constructor" || key === "prototype") continue;
+    if (typeof raw !== "string" && typeof raw !== "number") continue;
+    if (typeof raw === "number" && !Number.isFinite(raw)) continue;
+
     const text = String(raw);
     if (text.length > 256) throw new Error("Pagination cursor field is too large.");
     result[key] = text;
   }
+
   if (!Object.keys(result).length) throw new Error("Pagination cursor contains no supported fields.");
   return result;
 }
