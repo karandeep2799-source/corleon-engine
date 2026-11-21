@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, type FormEvent } from "react";
+import Link from "next/link";
 import styles from "./wallet-intelligence.module.css";
 
 type Chain = { id: string; name: string; explorerUrl: string | null; nativeCurrencySymbol: string | null };
@@ -76,7 +77,7 @@ export default function WalletIntelligencePage() {
   return (
     <main className={styles.page}>
       <header className={styles.topbar}>
-        <a href="/" className={styles.brand}>CORLEON ENGINE</a>
+        <Link href="/" className={styles.brand}>CORLEON ENGINE</Link>
         <span className={styles.readOnly}>READ-ONLY INTELLIGENCE</span>
       </header>
       <section className={styles.hero}>
