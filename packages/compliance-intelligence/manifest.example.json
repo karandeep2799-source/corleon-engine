@@ -1,0 +1,27 @@
+{
+  "version": 1,
+  "sources": [
+    {
+      "id": "google-site-policies",
+      "title": "Google Developers Site Policies",
+      "sourceUrl": "https://developers.google.com/terms/site-policies",
+      "publisher": "Google",
+      "materialKind": "documentation",
+      "license": "unknown",
+      "licenseEvidence": "Policy describes notices used on many documentation pages; no license conclusion recorded for this page.",
+      "reviewed": false,
+      "notes": "Verify the exact source page footer and exceptions before reuse."
+    },
+    {
+      "id": "google-code-sample-template",
+      "title": "Google code sample template; replace with actual page",
+      "sourceUrl": "https://developers.google.com/",
+      "publisher": "Google",
+      "materialKind": "code-sample",
+      "license": "unknown",
+      "licenseEvidence": "Template only; exact sample page has not been reviewed.",
+      "reviewed": false,
+      "notes": "Do not treat this record as proof of Apache 2.0."
+    }
+  ]
+}
