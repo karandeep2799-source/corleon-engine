@@ -1,0 +1,60 @@
+name: Corleon Forge engineering task
+description: Request a scoped, reviewable task for the Corleon AI Engineering Factory
+title: "[Forge] "
+labels: ["corleon-forge"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this template for work that can be implemented on a factory-owned branch and reviewed in a pull request. Do not include credentials, tokens, personal data, or production secrets.
+  - type: textarea
+    id: goal
+    attributes:
+      label: Goal
+      description: What outcome should this change achieve?
+      placeholder: Describe the problem and desired behavior.
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      description: List observable outcomes that can be verified.
+      placeholder: |
+        - [ ] ...
+        - [ ] ...
+    validations:
+      required: true
+  - type: dropdown
+    id: risk
+    attributes:
+      label: Risk
+      options:
+        - Low
+        - Medium
+        - High
+    validations:
+      required: true
+  - type: textarea
+    id: constraints
+    attributes:
+      label: Constraints and affected areas
+      description: Mention relevant paths, APIs, compatibility requirements, and things that must not change.
+    validations:
+      required: false
+  - type: textarea
+    id: verification
+    attributes:
+      label: Required verification
+      description: Tests, lint, type checks, build, migration validation, or other checks expected.
+    validations:
+      required: true
+  - type: checkboxes
+    id: approvals
+    attributes:
+      label: Sensitive operations
+      options:
+        - label: This task affects authentication, authorization, secrets, billing, data deletion, production infrastructure, or destructive database operations.
+          required: false
+        - label: I understand that the factory must open a draft PR and a human must approve merge/deployment.
+          required: true
