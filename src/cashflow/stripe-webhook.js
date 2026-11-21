@@ -1,9 +1,14 @@
 import Stripe from 'stripe';
 import { prisma } from './prisma.js';
 import { recordBillingEvent, reverseCommission } from './engine.js';
+import { stripeMinorToMajor } from './money.js';
 
-function centsToDecimal(cents) {
-  return (Number(cents || 0) / 100).toFixed(2);
+export class StripeWebhookConfigurationError extends Error {
+  constructor(message) { super(message); this.name = 'StripeWebhookConfigurationError'; }
+}
+
+export class StripeWebhookSignatureError extends Error {
+  constructor() { super('Invalid Stripe webhook signature'); this.name = 'StripeWebhookSignatureError'; }
 }
 
 function organizationIdFor(object) {
@@ -21,12 +26,18 @@ function isSupportedEvent(type) {
 }
 
 export async function handleStripeWebhook(rawBody, signature) {
-  if (!process.env.STRIPE_SECRET_KEY) throw new Error('STRIPE_SECRET_KEY is required');
-  if (!process.env.STRIPE_WEBHOOK_SECRET) throw new Error('STRIPE_WEBHOOK_SECRET is required');
-  if (!signature) throw new Error('Missing stripe-signature');
+  if (!process.env.STRIPE_SECRET_KEY || !process.env.STRIPE_WEBHOOK_SECRET) {
+    throw new StripeWebhookConfigurationError('Stripe webhook is not configured');
+  }
+  if (!signature) throw new StripeWebhookSignatureError();
 
   const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
-  const event = stripe.webhooks.constructEvent(rawBody, signature, process.env.STRIPE_WEBHOOK_SECRET);
+  let event;
+  try {
+    event = stripe.webhooks.constructEvent(rawBody, signature, process.env.STRIPE_WEBHOOK_SECRET);
+  } catch {
+    throw new StripeWebhookSignatureError();
+  }
   const object = event.data.object;
 
   // Acknowledge unrelated Stripe events instead of creating an invalid WebhookEvent row.
@@ -93,7 +104,7 @@ export async function handleStripeWebhook(rawBody, signature) {
         customerExternalId,
         customerEmail,
         orderExternalId,
-        amount: centsToDecimal(object.amount_received || object.amount),
+        amount: stripeMinorToMajor(object.amount_received || object.amount, object.currency),
         currency: String(object.currency).toUpperCase(),
         occurredAt: new Date(event.created * 1000),
         rawPayload: event
@@ -115,7 +126,7 @@ export async function handleStripeWebhook(rawBody, signature) {
         customerEmail,
         orderExternalId,
         subscriptionExternalId,
-        amount: centsToDecimal(object.amount_paid),
+        amount: stripeMinorToMajor(object.amount_paid, object.currency),
         currency: String(object.currency).toUpperCase(),
         occurredAt: new Date(event.created * 1000),
         rawPayload: event

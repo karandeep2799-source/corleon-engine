@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [main, fix/production-vercel-recovery]
+    branches: ['**']
   pull_request:
     branches: [main]
 
