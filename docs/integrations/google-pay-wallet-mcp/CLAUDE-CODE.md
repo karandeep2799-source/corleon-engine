@@ -1,36 +1,47 @@
 # Google Pay & Wallet Developer MCP — Claude Code
 
-This configures Google's remote developer MCP server in Claude Code. It does **not** enable customer checkout, move money, or replace Corleon's payment processor.
+This guide configures the remote Google Developer MCP server in Claude Code. It does **not** enable Google Pay customer checkout, move money, create a payment processor, or change the existing Razorpay integration.
 
-## Google Cloud prerequisites
+## 1. Google Cloud setup
 
 1. Select or create a Google Cloud project.
 2. Enable the **Pay & Wallet Developer API**.
-3. In Google Auth Platform → Clients → Create client, choose **Web application** for Claude Code.
-4. Register the exact callback URI `http://localhost:<CLAUDE_REDIRECT_PORT>/callback`.
-5. Create the OAuth client and store its ID and secret in a local secret manager or shell environment.
+3. Open Google Auth Platform → Clients → Create client.
+4. Select **Web application** for Claude Code.
+5. Add the callback URI:
+   `http://localhost:<CLAUDE_REDIRECT_PORT>/callback`
+6. Create the OAuth client and copy the client ID and secret into a secure local secret manager or shell environment.
 
-Use a dedicated Google identity for the agent. Google's documented scopes are:
+Use a dedicated Google identity for the agent. Grant only the permissions required for the intended MCP tools. Google documents these scopes:
 
 | Scope | Access |
 |---|---|
 | `https://www.googleapis.com/auth/paydeveloper.merchant` | Manage Google Pay merchant developer data |
 | `https://www.googleapis.com/auth/paydeveloper.issuer.readonly` | Read Google Wallet issuer data |
 
-The merchant scope is not read-only. Do not grant it unless merchant-management actions are required and approved.
+The merchant scope is not read-only. Do not grant it to an agent unless merchant-management actions are explicitly required and approved.
 
-## Configure locally
+## 2. Set local environment variables
 
-In the terminal where you will run Claude Code:
+Do this in the same terminal session from which Claude Code will be launched. Do not add these values to the repository's Next.js `.env`, Vercel environment variables, browser code, CI logs, or source control.
 
 ```bash
 export CLAUDE_CODE_CLIENT_ID="YOUR_GOOGLE_OAUTH_CLIENT_ID"
 export CLAUDE_CODE_CLIENT_SECRET="YOUR_GOOGLE_OAUTH_CLIENT_SECRET"
 export CLAUDE_REDIRECT_PORT="8787"
+```
+
+The callback port must match the redirect URI registered in Google Auth Platform. Ensure the port is available locally.
+
+## 3. Install the MCP server
+
+From the repository root:
+
+```bash
 node scripts/setup-google-pay-wallet-mcp.mjs
 ```
 
-Use a free local port between 1024 and 65535. The port must match the registered callback URI. The setup helper validates the values and runs Claude Code without a shell. It passes the secret through `MCP_CLIENT_SECRET` in the child process environment, never as a command-line argument or committed config value.
+The script validates the required values, invokes Claude Code without a shell, and passes the client secret through the child process environment variable `MCP_CLIENT_SECRET`. The secret is not written to a config file or passed as a command-line argument.
 
 Equivalent documented CLI command:
 
@@ -41,37 +52,36 @@ MCP_CLIENT_SECRET="$CLAUDE_CODE_CLIENT_SECRET" claude mcp add --transport http \
   google-pay-wallet-dev https://paydeveloper.googleapis.com/mcp
 ```
 
-## Authenticate and verify
+## 4. Authenticate and verify
 
-1. Run `claude`.
+1. Start Claude Code with `claude`.
 2. Run `/mcp` and select `google-pay-wallet-dev`.
 3. Complete Google's OAuth consent flow using the dedicated identity.
 4. Ask Claude Code to search official Google Pay integration documentation.
-5. If authorized, inspect existing merchant integration status or list Wallet issuer data.
+5. If authorized, ask it to list Wallet issuer data or inspect the status of an existing merchant integration.
 
-Do not enable APIs, change merchant settings, create passes, or perform other mutations until the exact action and target account have been reviewed and approved.
+Do not ask the agent to enable APIs, modify merchant settings, create passes, or make other changes until the exact action and target account have been reviewed and approved.
 
-## Tests
+## 5. Local tests
 
 ```bash
 node --test scripts/setup-google-pay-wallet-mcp.node-test.mjs
-pnpm --filter @corleon/web test -- src/mcp/google-pay-wallet-mcp.test.ts
 ```
 
-## Security and operating boundaries
+## 6. Security and operational controls
 
-- Google labels this MCP service **Pre-GA**; tools and behavior may change.
-- The server does not accept API keys.
-- Use a dedicated agent identity and least-privilege IAM.
-- Never print, commit, upload, or place OAuth secrets/tokens in Vercel or browser variables.
-- OAuth consent and token storage remain owned by Claude Code. Corleon stores only non-secret registry metadata.
-- Keep Developer MCP separate from customer payment checkout. In India, Google Pay may be presented as a UPI method through a supported PSP such as Razorpay; the Developer MCP is not that PSP.
+- Treat this Google MCP service as **Pre-GA**; availability, tools, and behavior may change.
+- The Google MCP server does not accept API keys.
+- Use a separate identity for the agent and least-privilege IAM.
+- Never print, commit, or upload OAuth client secrets or access/refresh tokens.
+- Keep OAuth authorization and token storage inside the MCP host. This Corleon integration registry does not persist Google OAuth tokens.
+- Keep this integration separate from payment checkout. In India, Google Pay may be offered as a UPI method through a supported PSP such as Razorpay; the Developer MCP is not the PSP.
 - Production merchant mutations, customer payments, refunds, and publishing remain disabled unless separately implemented, reviewed, and explicitly approved.
-- Revoke/rotate the OAuth client if its secret is exposed.
+- Rotate/revoke the OAuth client if its secret is exposed.
 
 ## Official references
 
-- https://developers.google.com/pay-wallet/ai-tools/mcp-server/mcp-server
-- https://developers.google.com/pay/api/web/guides/use-pay-wallet-mcp
-- https://developers.google.com/identity/protocols/oauth2
-- https://docs.anthropic.com/en/docs/claude-code/mcp
+- [Google Pay & Wallet Developer MCP server](https://developers.google.com/pay-wallet/ai-tools/mcp-server/mcp-server)
+- [Google Pay API MCP setup guide](https://developers.google.com/pay/api/web/guides/use-pay-wallet-mcp)
+- [Google Cloud OAuth 2.0](https://developers.google.com/identity/protocols/oauth2)
+- [Claude Code MCP documentation](https://docs.anthropic.com/en/docs/claude-code/mcp)

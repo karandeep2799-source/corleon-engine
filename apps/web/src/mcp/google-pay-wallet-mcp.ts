@@ -1,9 +1,6 @@
 /**
  * Registry metadata for Google's remote Developer MCP server.
- *
- * This is a developer-tool integration, not a payment processor. OAuth is
- * delegated to the supported MCP host (Claude Code), which owns interactive
- * authorization and the access/refresh-token lifecycle.
+ * This is a developer-tool integration, not a consumer payment processor.
  */
 export const googlePayWalletMcp = Object.freeze({
   id: "google-pay-wallet-dev",

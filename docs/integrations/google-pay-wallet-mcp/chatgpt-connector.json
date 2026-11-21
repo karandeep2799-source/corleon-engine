@@ -1,0 +1,9 @@
+{
+  "name": "Google Pay & Wallet MCP",
+  "server_url": "https://paydeveloper.googleapis.com/mcp",
+  "oauth_scopes": [
+    "https://www.googleapis.com/auth/paydeveloper.merchant",
+    "https://www.googleapis.com/auth/paydeveloper.issuer.readonly"
+  ],
+  "note": "Illustrative metadata only. ChatGPT generates the callback URL; register that exact URL in Google Auth Platform."
+}

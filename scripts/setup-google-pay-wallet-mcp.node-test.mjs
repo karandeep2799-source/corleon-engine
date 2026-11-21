@@ -10,6 +10,7 @@ const validEnv = {
   CLAUDE_CODE_CLIENT_ID: "example-client.apps.googleusercontent.com",
   CLAUDE_CODE_CLIENT_SECRET: "do-not-log-this-secret",
   CLAUDE_REDIRECT_PORT: "8787",
+  PATH: process.env.PATH ?? "",
 };
 
 test("builds the documented Claude Code HTTP MCP command", () => {
@@ -24,18 +25,30 @@ test("builds the documented Claude Code HTTP MCP command", () => {
   assert.equal(plan.env.MCP_CLIENT_SECRET, validEnv.CLAUDE_CODE_CLIENT_SECRET);
 });
 
-test("never places the OAuth secret in command arguments", () => {
+test("never places the client secret in process arguments", () => {
   const plan = buildSetupPlan(validEnv);
   assert.equal(plan.args.includes(validEnv.CLAUDE_CODE_CLIENT_SECRET), false);
 });
 
-test("rejects missing client ID and secret", () => {
-  assert.throws(() => buildSetupPlan({ ...validEnv, CLAUDE_CODE_CLIENT_ID: "" }), /CLAUDE_CODE_CLIENT_ID/);
-  assert.throws(() => buildSetupPlan({ ...validEnv, CLAUDE_CODE_CLIENT_SECRET: "" }), /CLAUDE_CODE_CLIENT_SECRET/);
+test("rejects missing OAuth client ID", () => {
+  assert.throws(
+    () => buildSetupPlan({ ...validEnv, CLAUDE_CODE_CLIENT_ID: "" }),
+    /CLAUDE_CODE_CLIENT_ID is required/,
+  );
 });
 
-test("rejects malformed and privileged callback ports", () => {
+test("rejects missing OAuth client secret", () => {
+  assert.throws(
+    () => buildSetupPlan({ ...validEnv, CLAUDE_CODE_CLIENT_SECRET: "" }),
+    /CLAUDE_CODE_CLIENT_SECRET is required/,
+  );
+});
+
+test("rejects invalid callback ports", () => {
   for (const port of ["abc", "80", "65536", "0"]) {
-    assert.throws(() => buildSetupPlan({ ...validEnv, CLAUDE_REDIRECT_PORT: port }), /CLAUDE_REDIRECT_PORT/);
+    assert.throws(
+      () => buildSetupPlan({ ...validEnv, CLAUDE_REDIRECT_PORT: port }),
+      /CLAUDE_REDIRECT_PORT/,
+    );
   }
 });

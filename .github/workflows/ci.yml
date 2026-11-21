@@ -1,91 +1,53 @@
 name: CI
-
 on:
-  push:
-    branches: [main, fix/production-vercel-recovery]
   pull_request:
-    branches: [main]
-
+  push:
+    branches: [main, "feat/**"]
 permissions:
   contents: read
-
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
-
 jobs:
   validate:
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: corleon
+          POSTGRES_PASSWORD: corleon
+          POSTGRES_DB: corleon_test
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U corleon -d corleon_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      DATABASE_URL: postgresql://corleon:corleon@localhost:5432/corleon_test
+      RAZORPAY_KEY_ID: rzp_test_ci
+      RAZORPAY_KEY_SECRET: ci-test-secret
+      RAZORPAY_WEBHOOK_SECRET: ci-test-webhook-secret
+      PAYMENTS_ENABLED: "false"
+      RAZORPAY_CHECKOUT_ENABLED: "false"
+      TURBO_TELEMETRY_DISABLED: "1"
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          persist-credentials: false
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
         with:
           version: 12.4.0
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+          run_install: false
+      - uses: actions/setup-node@v4
         with:
-          node-version: 24
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Lint web workspace
-        run: pnpm lint
-
-      - name: Typecheck web workspace
-        run: pnpm typecheck
-
-      - name: Run web workspace tests
-        run: pnpm test
-
-      - name: Build web workspace
-        run: pnpm build
-
-      - name: Upload generated lockfile for review
-        if: success()
-        uses: actions/upload-artifact@v4
-        with:
-          name: corleon-pnpm-lockfile
-          path: pnpm-lock.yaml
-          if-no-files-found: error
-          retention-days: 7
-
-  commit-lockfile:
-    name: Commit generated pnpm lockfile
-    needs: validate
-    if: github.event_name == 'push' && github.ref == 'refs/heads/fix/production-vercel-recovery'
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          persist-credentials: true
-
-      - name: Download generated lockfile
-        uses: actions/download-artifact@v4
-        with:
-          name: corleon-pnpm-lockfile
-          path: .lockfile-artifact
-
-      - name: Commit lockfile
-        shell: bash
-        run: |
-          cp .lockfile-artifact/pnpm-lock.yaml pnpm-lock.yaml
-          git add pnpm-lock.yaml
-          if git diff --cached --quiet -- pnpm-lock.yaml; then
-            echo "Lockfile is already current."
-            exit 0
-          fi
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git commit -m "chore: commit pnpm workspace lockfile"
-          git push
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm exec prisma format
+      - run: pnpm exec prisma validate
+      - run: pnpm exec prisma db push --skip-generate
+      - run: pnpm exec prisma generate
+      - run: pnpm --filter @corleon/web typecheck
+      - run: pnpm --filter @corleon/web lint
+      - run: pnpm --filter @corleon/web test
+      - run: pnpm build
