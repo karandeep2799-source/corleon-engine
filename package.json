@@ -18,7 +18,9 @@
     "dev": "turbo run dev --filter=@corleon/web",
     "lint": "turbo run lint --filter=@corleon/web",
     "test": "turbo run test --filter=@corleon/web",
-    "typecheck": "turbo run typecheck --filter=@corleon/web"
+    "typecheck": "turbo run typecheck --filter=@corleon/web",
+    "stripe:listen": "stripe listen --forward-to localhost:3000/api/webhooks/stripe",
+    "stripe:version": "stripe --version"
   },
   "dependencies": {
     "@openai/agents": "^0.17.0",
