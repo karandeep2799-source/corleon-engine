@@ -7,24 +7,87 @@ on:
     types: [opened, synchronize, reopened, closed]
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   sync:
+    # GitHub intentionally withholds repository secrets from fork-originated PRs.
+    # Skip those safely; same-repository PRs must have the integration configured.
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
       - name: Publish repository event
         env:
           NOTION_SYNC_WEBHOOK_URL: ${{ secrets.NOTION_SYNC_WEBHOOK_URL }}
           NOTION_SYNC_TOKEN: ${{ secrets.NOTION_SYNC_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_EVENT_NAME: ${{ github.event_name }}
+          GITHUB_REF: ${{ github.ref }}
+          GITHUB_SHA: ${{ github.sha }}
+          GITHUB_ACTOR: ${{ github.actor }}
+          GITHUB_RUN_ID: ${{ github.run_id }}
+          GITHUB_SERVER_URL: ${{ github.server_url }}
+        shell: bash
         run: |
-          if [ -z "$NOTION_SYNC_WEBHOOK_URL" ]; then
-            echo "NOTION_SYNC_WEBHOOK_URL is not configured; skipping sync."
-            exit 0
+          set -euo pipefail
+
+          if [[ -z "${NOTION_SYNC_WEBHOOK_URL}" ]]; then
+            echo "::error::NOTION_SYNC_WEBHOOK_URL is missing. Configure it in Settings > Secrets and variables > Actions."
+            exit 1
           fi
-          payload=$(cat <<'JSON'
-          {"repository":"${{ github.repository }}","event":"${{ github.event_name }}","ref":"${{ github.ref }}","sha":"${{ github.sha }}","actor":"${{ github.actor }}","run_id":"${{ github.run_id }}","run_url":"https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"}
-          JSON
-          )
-          curl --fail-with-body -X POST "$NOTION_SYNC_WEBHOOK_URL" \
-            -H "Content-Type: application/json" \
-            -H "Authorization: Bearer $NOTION_SYNC_TOKEN" \
-            --data "$payload"
+
+          if [[ -z "${NOTION_SYNC_TOKEN}" ]]; then
+            echo "::error::NOTION_SYNC_TOKEN is missing. Configure it in Settings > Secrets and variables > Actions."
+            exit 1
+          fi
+
+          case "${NOTION_SYNC_WEBHOOK_URL}" in
+            https://*) ;;
+            *)
+              echo "::error::NOTION_SYNC_WEBHOOK_URL must use HTTPS."
+              exit 1
+              ;;
+          esac
+
+          payload="$(jq -n \
+            --arg repository "${GITHUB_REPOSITORY}" \
+            --arg event "${GITHUB_EVENT_NAME}" \
+            --arg ref "${GITHUB_REF}" \
+            --arg sha "${GITHUB_SHA}" \
+            --arg actor "${GITHUB_ACTOR}" \
+            --arg run_id "${GITHUB_RUN_ID}" \
+            --arg run_url "${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}" \
+            '{
+              repository: $repository,
+              event: $event,
+              ref: $ref,
+              sha: $sha,
+              actor: $actor,
+              run_id: $run_id,
+              run_url: $run_url
+            }')"
+
+          response_file="$(mktemp)"
+          trap 'rm -f "${response_file}"' EXIT
+
+          http_status="$(curl --silent --show-error \
+            --connect-timeout 10 \
+            --max-time 30 \
+            --retry 3 \
+            --retry-all-errors \
+            --output "${response_file}" \
+            --write-out '%{http_code}' \
+            --request POST "${NOTION_SYNC_WEBHOOK_URL}" \
+            --header 'Content-Type: application/json' \
+            --header "Authorization: Bearer ${NOTION_SYNC_TOKEN}" \
+            --data "${payload}")"
+
+          if [[ ! "${http_status}" =~ ^2[0-9][0-9]$ ]]; then
+            echo "::error::Notion sync endpoint returned HTTP ${http_status}."
+            # Do not print response bodies: they may contain sensitive diagnostics.
+            exit 1
+          fi
+
+          echo "Repository event delivered successfully (HTTP ${http_status})."
